@@ -184,7 +184,7 @@ func _build_map() -> void:
 	var variants := ["bldg1", "bldg2", "bldg3", "bldg2", "bldg3", "bldg1"]
 	var ramen_slot := 2
 	var tower_slot := 3                       # the 紫金大廈, right of the ramen shop
-	var store_slot := 1                       # the 升級商店, left of the ramen shop
+	var store_slot := -1                      # (upgrade store disabled — craft focus, not management)
 	for i in slots.size():
 		var sx: int = slots[i]
 		for yy in range(ft, ft + 4):
@@ -457,10 +457,8 @@ func _draw() -> void:
 	elif near_store:
 		_draw_hint("[E] 升級")
 
-	# screen-space HUD pinned to the top-left of the view
+	# screen-space hint pinned to the top-right of the view
 	var vtl: Vector2 = cam.position - get_viewport_rect().size / (2.0 * cam.zoom)
-	draw_rect(Rect2(vtl.x + 4, vtl.y + 4, 62, 16), Color(0, 0, 0, 0.55))
-	_wtext("￥ " + str(Game.coins), vtl + Vector2(9, 16), 9, C_YELLOW)
 	_wtext("[ESC] 菜單", vtl + Vector2(get_viewport_rect().size.x / cam.zoom.x - 50, 16), 8, Color(1, 1, 1, 0.7))
 
 

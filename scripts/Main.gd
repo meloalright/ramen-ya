@@ -79,7 +79,15 @@ var spawn_interval: float = 4.0
 # the bowl being assembled + what we're currently holding
 var bowl := {}
 var held: String = ""              # "" or soup/noodles/beef/scallion/cilantro/chili
+var held_q := ""                   # quality of held noodles: raw / ok / over
+var bowl_nq := ""                  # noodle quality placed in the bowl
 var mouse_pos := Vector2(W / 2.0, H / 2.0)
+
+# 麵鍋 cooking: you must boil a portion and lift it at the right moment
+var noodle_state := "empty"        # empty / cooking
+var noodle_t := 0.0
+const COOK_READY := 3.0            # perfect window opens
+const COOK_OVER := 4.8             # ... and closes (after this it's overcooked)
 
 # stations: {item, name, rect, cx}
 var stations: Array = []
@@ -170,6 +178,8 @@ func _reset_bowl() -> void:
 		"scallion": false, "cilantro": false, "chili": false,
 	}
 	held = ""
+	held_q = ""
+	bowl_nq = ""
 
 
 # =====================================================================
@@ -178,6 +188,9 @@ func _reset_bowl() -> void:
 func _process(delta: float) -> void:
 	if flash > 0.0:
 		flash = max(0.0, flash - delta)
+
+	if noodle_state == "cooking":
+		noodle_t = min(8.0, noodle_t + delta)
 
 	chef_anim += delta
 	if chef_anim > 0.22:
@@ -198,17 +211,11 @@ func _process(delta: float) -> void:
 
 
 func _update_play(delta: float) -> void:
-	day_time -= delta
-	if day_time <= 0.0:
-		day_time = 0.0
-		_end_game()
-		return
-
+	# relaxed craft: customers keep coming, no day timer, no fail state
 	spawn_timer -= delta
 	if spawn_timer <= 0.0:
 		_try_spawn()
-		spawn_interval = max(2.0, 4.0 - served * 0.12)
-		spawn_timer = spawn_interval
+		spawn_timer = 5.0
 
 	for i in SEATS:
 		var c = customers[i]
@@ -216,14 +223,9 @@ func _update_play(delta: float) -> void:
 			continue
 		c.patience -= delta
 		if c.patience <= 0.0:
-			_spawn_float(Vector2(seat_x[i], 70), "生氣走了！", COL_RED)
+			# they wander off on their own — no penalty, just make room
+			_spawn_float(Vector2(seat_x[i], 70), "先走啦～", COL_YELLOW)
 			customers[i] = null
-			reputation -= 1
-			flash = 0.25
-			flash_col = COL_RED
-			if reputation <= 0:
-				_end_game()
-				return
 
 
 func _try_spawn() -> void:
@@ -243,7 +245,7 @@ func _make_order() -> Dictionary:
 	var wants := {}
 	for k in TOP_ORDER:
 		wants[k] = (randi() % 2 == 0)
-	var pat := 22.0 + Game.up_patience * 5.0
+	var pat := 45.0          # generous — no rush, it's about doing it well
 	return { "wants": wants, "patience": pat, "max_patience": pat, "face": randi() % 4 }
 
 
@@ -295,11 +297,43 @@ func _handle_click(p: Vector2) -> void:
 		_place_into_bowl()
 		return
 
-	# pick up from a station
+	# pick up from a station (麵鍋 is special — you cook then lift)
 	for s in stations:
 		if s.rect.has_point(p):
-			held = s.item
+			if s.item == "noodles":
+				_noodle_pot_click(s.cx)
+			else:
+				held = s.item
+				held_q = ""
 			return
+
+
+func _noodle_pot_click(cx: float) -> void:
+	if held == "noodles":
+		return
+	if held != "":
+		_spawn_float(Vector2(cx, 168), "手上拿著東西", COL_YELLOW)
+		return
+	if noodle_state == "empty":
+		noodle_state = "cooking"
+		noodle_t = 0.0
+		_spawn_float(Vector2(cx, 168), "下麵煮！", COL_GREEN)
+	else:
+		# lift the noodles — quality depends on the timing
+		held = "noodles"
+		held_q = _noodle_quality()
+		noodle_state = "empty"
+		noodle_t = 0.0
+		var msg := "剛剛好！" if held_q == "ok" else ("還太生" if held_q == "raw" else "煮過頭")
+		_spawn_float(Vector2(cx, 156), "提起 " + msg, COL_GREEN if held_q == "ok" else COL_YELLOW)
+
+
+func _noodle_quality() -> String:
+	if noodle_t < COOK_READY:
+		return "raw"
+	if noodle_t <= COOK_OVER:
+		return "ok"
+	return "over"
 
 
 func _place_into_bowl() -> void:
@@ -310,9 +344,12 @@ func _place_into_bowl() -> void:
 		_spawn_float(Vector2(240, 130), "已經放過了", COL_YELLOW)
 	else:
 		bowl[held] = true
+		if held == "noodles":
+			bowl_nq = held_q
 		var label := _item_name(held)
 		_spawn_float(Vector2(240, 126), "放入 " + label, COL_GREEN)
 	held = ""
+	held_q = ""
 
 
 func _serve() -> void:
@@ -324,31 +361,26 @@ func _serve() -> void:
 		_spawn_float(Vector2(240, 150), "還沒做好！", COL_YELLOW)
 		return
 
-	if _matches(c):
-		var want_n := 0
-		for k in TOP_ORDER:
-			if c.wants[k]:
-				want_n += 1
-		var tip: int = 60 + int(round(c.patience / c.max_patience * 50.0)) + 12 * want_n
-		tip = int(round(tip * (1.0 + Game.up_tip * 0.15)))
-		money += tip
-		served += 1
-		Game.add_coins(tip)                 # bank into the persistent wallet
-		_spawn_float(Vector2(seat_x[selected_seat], 60), "+" + str(tip), COL_GREEN)
-		flash = 0.2
-		flash_col = COL_GREEN
-	else:
-		money = max(0, money - 30)
-		reputation -= 1
-		Game.add_coins(-30)
-		_spawn_float(Vector2(seat_x[selected_seat], 60), "錯了！ -30", COL_RED)
-		flash = 0.25
-		flash_col = COL_RED
+	if not _matches(c):
+		# wrong toppings — let the player try again, no penalty
+		_spawn_float(Vector2(seat_x[selected_seat], 60), "配料不對…", COL_YELLOW)
+		flash = 0.18
+		flash_col = COL_YELLOW
+		return
 
+	# served! the bowl's quality is judged on the noodles' doneness
+	served += 1
+	var sx: int = seat_x[selected_seat]
+	if bowl_nq == "ok":
+		_spawn_float(Vector2(sx, 56), "完美的一碗！★", COL_GREEN)
+	elif bowl_nq == "raw":
+		_spawn_float(Vector2(sx, 56), "好吃，但麵有點生", COL_YELLOW)
+	else:
+		_spawn_float(Vector2(sx, 56), "好吃,下次麵別煮太久", COL_YELLOW)
+	flash = 0.2
+	flash_col = COL_GREEN
 	customers[selected_seat] = null
 	_reset_bowl()
-	if reputation <= 0:
-		_end_game()
 
 
 func _base_ok() -> bool:
@@ -377,15 +409,12 @@ func _item_name(item: String) -> String:
 # =====================================================================
 func _start_game() -> void:
 	state = State.PLAY
-	money = 0
 	served = 0
-	reputation = 3
-	day_len = 120.0 + Game.up_day * 20.0
-	day_time = day_len
 	spawn_timer = 0.8
-	spawn_interval = 4.0
 	selected_seat = 0
 	customers = [null, null, null]
+	noodle_state = "empty"
+	noodle_t = 0.0
 	_reset_bowl()
 	float_texts.clear()
 
@@ -468,17 +497,8 @@ func _draw_play() -> void:
 
 func _draw_hud() -> void:
 	draw_rect(Rect2(0, 0, W, 22), COL_INK)
-	_text("￥ " + str(money), Vector2(8, 16), 13, COL_YELLOW)
-	_text("賣出 " + str(served), Vector2(150, 16), 11, COL_WHITE)
-	_text("信譽", Vector2(250, 16), 11, COL_WHITE)
-	for i in 3:
-		var c := COL_RED if i < reputation else Color("44333a")
-		draw_rect(Rect2(286 + i * 14, 5, 11, 11), c)
-	_text("時間", Vector2(338, 16), 10, COL_WHITE)
-	var bw := 110
-	draw_rect(Rect2(372, 6, bw, 10), COL_PANEL)
-	var frac: float = clamp(day_time / day_len, 0.0, 1.0)
-	draw_rect(Rect2(372, 6, int(bw * frac), 10), COL_GREEN)
+	_text("拉麵屋 · 親手做一碗", Vector2(8, 16), 11, COL_YELLOW)
+	_text("今日已做 " + str(served) + " 碗", Vector2(W - 130, 16), 11, COL_WHITE)
 
 
 func _draw_seat(i: int) -> void:
@@ -583,6 +603,26 @@ func _draw_station(s: Dictionary) -> void:
 				_draw_ing_bowl(Vector2(cx, top + 14), C_BEEF, C_BEEF_HI)
 			_:
 				_draw_ing_bowl(Vector2(cx, top + 14), TOPPING[s.item].col, TOPPING[s.item].col.lightened(0.25))
+	# 麵鍋 boil gauge — green window = the moment to lift
+	if s.item == "noodles" and noodle_state == "cooking":
+		var gx := r.position.x + 6
+		var gw := r.size.x - 12
+		var gy := r.position.y + 2
+		draw_rect(Rect2(gx, gy, gw, 5), COL_INK)
+		# ready window band
+		var rx0 := gx + gw * (COOK_READY / 8.0)
+		var rx1 := gx + gw * (COOK_OVER / 8.0)
+		draw_rect(Rect2(rx0, gy, rx1 - rx0, 5), Color(0.37, 0.68, 0.37, 0.5))
+		var frac: float = clamp(noodle_t / 8.0, 0.0, 1.0)
+		var gc := COL_YELLOW
+		if noodle_t >= COOK_READY and noodle_t <= COOK_OVER:
+			gc = COL_GREEN
+		elif noodle_t > COOK_OVER:
+			gc = COL_RED
+		draw_rect(Rect2(gx, gy, gw * frac, 5), gc)
+		if noodle_t >= COOK_READY and int(flash * 0 + Engine.get_frames_drawn() / 12) % 2 == 0:
+			_text("提起!", Vector2(cx, r.position.y + 30), 9,
+				COL_GREEN if noodle_t <= COOK_OVER else COL_RED, HORIZONTAL_ALIGNMENT_CENTER)
 	_text(s.name, Vector2(cx, r.position.y + r.size.y - 3), 9, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 
 
