@@ -1,0 +1,119 @@
+#!/usr/bin/env python3
+"""Cartoon (American/Western) cook sprites, hand-drawn as SVG -> PNG.
+
+Keeps the SAME geometry the game expects so the layered bowl + vats + trays
+line up:
+  td_bowl   128, opening ellipse at (64,50) rx52 ry40 (3/4 tilt, wall below)
+  td_broth/td_noodles/td_beef 128, contents inside that opening
+  td_vat_*  88,  opening at (44,36)  (VAT_OPEN_Y=36 in Main.gd)
+  td_box_*  48,  ingredient tray
+Bold black outlines, flat vibrant colours, soft cel shading, chunky shapes.
+"""
+import os
+import cairosvg
+
+OUT = os.path.dirname(os.path.abspath(__file__))
+INK = "#241818"
+
+
+def render(name, w, h, body):
+    svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}">{body}</svg>'
+    cairosvg.svg2png(bytestring=svg.encode(), write_to=os.path.join(OUT, name + ".png"),
+                     output_width=w, output_height=h)
+    print("wrote", name)
+
+
+# ---- the assembly bowl (layers) -------------------------------------
+def bowl_empty():
+    body = f'''
+    <path d="M12 50 C12 27 116 27 116 50 C116 95 96 112 64 112 C32 112 12 95 12 50 Z"
+          fill="#dc4a44" stroke="{INK}" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M64 112 C32 112 12 95 12 50 C20 90 40 104 64 106 Z" fill="#b83a35" opacity="0.55"/>
+    <path d="M22 78 C40 100 88 100 106 78" fill="none" stroke="#3a6ea5" stroke-width="6" stroke-linecap="round"/>
+    <ellipse cx="64" cy="50" rx="52" ry="40" fill="#ec6a60" stroke="{INK}" stroke-width="5"/>
+    <ellipse cx="64" cy="52" rx="44" ry="33" fill="#efe6d4"/>
+    <path d="M22 56 a44 33 0 0 0 84 0 a44 33 0 0 1 -84 0" fill="#dccdb4" opacity="0.7"/>'''
+    render("td_bowl", 128, 128, body)
+
+
+def broth():
+    body = '''
+    <ellipse cx="64" cy="50" rx="48" ry="36" fill="#eaa43e"/>
+    <path d="M16 54 a48 36 0 0 0 96 0 a48 36 0 0 1 -96 0" fill="#d18b2c"/>
+    <ellipse cx="48" cy="40" rx="16" ry="8" fill="#f2bd5c" opacity="0.7"/>'''
+    render("td_broth", 128, 128, body)
+
+
+def noodles():
+    body = '''
+    <g fill="none" stroke="#f4e3a0" stroke-width="6" stroke-linecap="round">
+     <path d="M26 46 q20 14 40 0 q20 -14 38 0"/>
+     <path d="M28 56 q20 14 40 0 q20 -14 36 0"/>
+     <path d="M34 66 q18 12 38 0 q18 -12 32 0"/></g>'''
+    render("td_noodles", 128, 128, body)
+
+
+def beef():
+    body = f'''
+    <g stroke="#5e2c20" stroke-width="5">
+     <ellipse cx="50" cy="46" rx="20" ry="12" fill="#a8503a"/>
+     <ellipse cx="50" cy="46" rx="10" ry="5" fill="#c46b4f"/>
+     <ellipse cx="78" cy="58" rx="19" ry="11" fill="#a8503a"/>
+     <ellipse cx="78" cy="58" rx="9" ry="4" fill="#c46b4f"/></g>'''
+    render("td_beef", 128, 128, body)
+
+
+# ---- big vats (大缸) -------------------------------------------------
+def vat(name, liquid, liquid_d, hi, basket):
+    extra = ""
+    if basket:
+        extra = f'''<ellipse cx="56" cy="36" rx="16" ry="11" fill="#cfcab4" stroke="{INK}" stroke-width="3"/>
+        <g stroke="#d7b25a" stroke-width="2"><path d="M44 36 h24 M44 40 h24 M44 32 h24"/></g>'''
+    else:
+        extra = '<ellipse cx="34" cy="30" rx="9" ry="5" fill="#f2bd5c" opacity="0.7"/>'
+    body = f'''
+    <path d="M5 36 C5 16 83 16 83 36 C83 70 66 86 44 86 C22 86 5 70 5 36 Z"
+          fill="#8a5a3c" stroke="{INK}" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M44 86 C22 86 5 70 5 36 C12 66 28 78 44 80 Z" fill="#6f452d" opacity="0.6"/>
+    <path d="M10 58 C24 78 64 78 78 58" fill="none" stroke="#5e3a24" stroke-width="6" stroke-linecap="round"/>
+    <ellipse cx="44" cy="36" rx="40" ry="30" fill="#a06b46" stroke="{INK}" stroke-width="5"/>
+    <ellipse cx="44" cy="36" rx="33" ry="24" fill="{liquid}"/>
+    <path d="M11 39 a33 24 0 0 0 66 0 a33 24 0 0 1 -66 0" fill="{liquid_d}"/>
+    {extra}'''
+    render(name, 88, 88, body)
+
+
+# ---- ingredient trays -----------------------------------------------
+def tray(name, fill, fill_d, chunky):
+    bits = ""
+    cols = {"beef": ["#a8503a", "#c46b4f"], "scallion": ["#7ec24a", "#a6e070"],
+            "cilantro": ["#3f8f4a", "#5fae5f"], "chili": ["#e23b3b", "#f06a6a"]}
+    c = cols[chunky]
+    if chunky == "beef":
+        bits = f'<g stroke="#5e2c20" stroke-width="2"><ellipse cx="18" cy="17" rx="9" ry="5" fill="{c[0]}"/><ellipse cx="30" cy="22" rx="9" ry="5" fill="{c[0]}"/></g>'
+    else:
+        import_dots = ""
+        for cx, cy in ((14, 15), (24, 13), (33, 18), (18, 22), (28, 23)):
+            import_dots += f'<circle cx="{cx}" cy="{cy}" r="3.4" fill="{c[1]}" stroke="{c[0]}" stroke-width="1.5"/>'
+        bits = import_dots
+    body = f'''
+    <path d="M4 18 C4 10 44 10 44 18 C44 34 38 40 24 40 C10 40 4 34 4 18 Z"
+          fill="#6b4a2e" stroke="{INK}" stroke-width="4" stroke-linejoin="round"/>
+    <ellipse cx="24" cy="18" rx="20" ry="13" fill="{fill}" stroke="{INK}" stroke-width="4"/>
+    <path d="M4 20 a20 13 0 0 0 40 0 a20 13 0 0 1 -40 0" fill="{fill_d}"/>
+    {bits}'''
+    render(name, 48, 48, body)
+
+
+def main():
+    bowl_empty(); broth(); noodles(); beef()
+    vat("td_vat_soup", "#eaa43e", "#d18b2c", "#f2bd5c", False)
+    vat("td_vat_noodle", "#dfe3d2", "#c6ccb4", "#eef0e4", True)
+    tray("td_box_beef", "#b06246", "#8a4a33", "beef")
+    tray("td_box_scallion", "#8fd25a", "#6fb244", "scallion")
+    tray("td_box_cilantro", "#4e9e58", "#3a7a42", "cilantro")
+    tray("td_box_chili", "#e05050", "#b83a3a", "chili")
+
+
+if __name__ == "__main__":
+    main()
