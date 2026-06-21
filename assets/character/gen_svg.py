@@ -30,15 +30,22 @@ def to_png(body):
 
 def hair(cx, top, back=False):
     c = HAIR
-    # one organic jagged spiky shape (varied heights = tousled, not a crown)
-    jag = (f"L{cx-13} {top+3} L{cx-9} {top-3} L{cx-5} {top+1} L{cx-1} {top-5} "
-           f"L{cx+3} {top-1} L{cx+7} {top-4} L{cx+11} {top} L{cx+13} {top+4}")
-    bottom = top + 14 if back else top + 9
-    mid = top + 9 if back else top + 5
-    return (f'<path d="M{cx-13} {top+8} {jag} L{cx+13} {bottom} '
-            f'Q{cx} {mid} {cx-13} {top+8} Z" fill="{c}" stroke="{INK}" '
-            f'stroke-width="2" stroke-linejoin="round"/>'
-            f'<path d="M{cx-9} {top+4} q9 4 18 0" fill="none" stroke="{HAIR_D}" stroke-width="1.6" stroke-linecap="round"/>')
+    # sharp anime spikes across the top
+    spikes = (f"L{cx-13} {top+5} L{cx-9} {top-6} L{cx-4} {top} L{cx} {top-8} "
+              f"L{cx+4} {top-1} L{cx+8} {top-7} L{cx+12} {top-1} L{cx+13} {top+5}")
+    if back:
+        path = (f'<path d="M{cx-13} {top+5} {spikes} L{cx+13} {top+16} '
+                f'Q{cx} {top+11} {cx-13} {top+16} Z" fill="{c}" stroke="{INK}" '
+                f'stroke-width="2" stroke-linejoin="round"/>')
+        return path
+    # side-locks down the sides + a zigzag bang fringe above the eyes
+    bangs = (f"L{cx+13} {top+18} L{cx+10} {top+11} L{cx+6} {top+9} L{cx+3} {top+12} "
+             f"L{cx} {top+9} L{cx-3} {top+12} L{cx-6} {top+9} L{cx-10} {top+11} "
+             f"L{cx-13} {top+18}")
+    path = (f'<path d="M{cx-13} {top+5} {spikes} {bangs} Z" fill="{c}" '
+            f'stroke="{INK}" stroke-width="2" stroke-linejoin="round"/>')
+    shade = f'<path d="M{cx-8} {top+2} q8 3 16 0" fill="none" stroke="{HAIR_D}" stroke-width="1.3" stroke-linecap="round"/>'
+    return path + shade
 
 
 def front(ph, back=False):
@@ -65,8 +72,19 @@ def front(ph, back=False):
     # head
     out.append(f'<rect x="13" y="{8+b}" width="26" height="24" rx="11" fill="{SKIN}" stroke="{INK}" stroke-width="2.4"/>')
     if not back:
-        out.append(f'<circle cx="21" cy="{20+b}" r="2.4" fill="{EYE}"/><circle cx="31" cy="{20+b}" r="2.4" fill="{EYE}"/>')
-        out.append(f'<path d="M23 {26+b} q3 3 6 0" fill="none" stroke="{INK}" stroke-width="1.8" stroke-linecap="round"/>')
+        # blush
+        out.append(f'<ellipse cx="17.5" cy="{24+b}" rx="2" ry="1.3" fill="#f5a0a0" opacity="0.55"/>'
+                   f'<ellipse cx="34.5" cy="{24+b}" rx="2" ry="1.3" fill="#f5a0a0" opacity="0.55"/>')
+        # big anime eyes (iris + highlight)
+        for ex in (21, 31):
+            out.append(f'<ellipse cx="{ex}" cy="{21+b}" rx="2.9" ry="4" fill="#ffffff" stroke="{INK}" stroke-width="1.4"/>')
+            out.append(f'<ellipse cx="{ex}" cy="{21.5+b}" rx="2.2" ry="3.2" fill="#3a6ea5"/>')
+            out.append(f'<circle cx="{ex}" cy="{22+b}" r="1.3" fill="{EYE}"/>')
+            out.append(f'<circle cx="{ex-0.8}" cy="{19.5+b}" r="1.1" fill="#ffffff"/>')
+        # eyebrows
+        out.append(f'<path d="M18 {15+b} q3 -1.4 5 0 M29 {15+b} q3 -1.4 5 0" fill="none" stroke="{INK}" stroke-width="1.3" stroke-linecap="round"/>')
+        # small mouth
+        out.append(f'<path d="M24.5 {27+b} q1.5 1.6 3 0" fill="none" stroke="{INK}" stroke-width="1.3" stroke-linecap="round"/>')
     out.append(hair(cx, 8 + b, back))
     return "".join(out)
 
@@ -92,8 +110,14 @@ def side(ph):
     out.append(f'<circle cx="{27+a}" cy="{44+b}" r="2.6" fill="{SKIN}" stroke="{INK}" stroke-width="1.6"/>')
     # head (facing left)
     out.append(f'<rect x="16" y="{8+b}" width="22" height="24" rx="11" fill="{SKIN}" stroke="{INK}" stroke-width="2.4"/>')
-    out.append(f'<circle cx="15" cy="{21+b}" r="2.2" fill="{SKIN}" stroke="{INK}" stroke-width="1.6"/>')  # nose
-    out.append(f'<circle cx="22" cy="{20+b}" r="2.4" fill="{EYE}"/>')
+    out.append(f'<circle cx="15" cy="{22+b}" r="1.8" fill="{SKIN}" stroke="{INK}" stroke-width="1.4"/>')  # nose
+    out.append(f'<ellipse cx="22.5" cy="{24+b}" rx="1.6" ry="1" fill="#f5a0a0" opacity="0.55"/>')  # blush
+    # big anime eye (profile)
+    out.append(f'<ellipse cx="21" cy="{21+b}" rx="2.6" ry="3.8" fill="#ffffff" stroke="{INK}" stroke-width="1.4"/>')
+    out.append(f'<ellipse cx="21.4" cy="{21.5+b}" rx="1.9" ry="3" fill="#3a6ea5"/>')
+    out.append(f'<circle cx="21.5" cy="{22+b}" r="1.2" fill="{EYE}"/>')
+    out.append(f'<circle cx="20.6" cy="{19.5+b}" r="1" fill="#ffffff"/>')
+    out.append(f'<path d="M18 {15+b} q3 -1.4 5 0" fill="none" stroke="{INK}" stroke-width="1.3" stroke-linecap="round"/>')  # brow
     out.append(hair(cx, 8 + b, False))
     return "".join(out)
 
