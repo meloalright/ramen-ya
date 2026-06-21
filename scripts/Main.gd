@@ -56,7 +56,7 @@ var day_time: float = 120.0          # length of one business day (sec)
 
 var customers: Array = []            # one entry per seat (or null)
 const SEATS := 3
-var seat_x := [80, 240, 400]
+var seat_x := [108, 240, 372]
 var selected_seat: int = 0
 
 var spawn_timer: float = 1.0
@@ -244,7 +244,7 @@ func _handle_click(p: Vector2) -> void:
 
 	# seat selection
 	for i in SEATS:
-		var r := Rect2(seat_x[i] - 70, 24, 140, 126)
+		var r := Rect2(seat_x[i] - 56, 50, 112, 118)
 		if r.has_point(p) and customers[i] != null:
 			selected_seat = i
 			return
@@ -403,21 +403,25 @@ func Time_blink() -> bool:
 
 
 func _draw_play() -> void:
-	# --- counter / kitchen backdrop ---
-	draw_rect(Rect2(0, 24, W, 126), COL_WOOD)
-	draw_rect(Rect2(0, 150, W, 4), COL_COUNTER)        # counter top edge
-	draw_rect(Rect2(0, 154, W, 42), COL_PANEL)         # kitchen band
-	draw_rect(Rect2(0, 196, W, 74), COL_PANEL_HI)      # control panel bg
+	# --- ramen-stall art as the scene backdrop ---
+	if stall_tex != null:
+		draw_texture_rect(stall_tex, Rect2(-6, 6, 492, 264), false)
+	else:
+		draw_rect(Rect2(0, 24, W, 126), COL_WOOD)
+		draw_rect(Rect2(0, 150, W, 4), COL_COUNTER)
+	# gentle darken so UI reads over the art
+	draw_rect(Rect2(0, 22, W, 248), Color(0, 0, 0, 0.18))
 
 	# --- seats / customers ---
 	for i in SEATS:
 		_draw_seat(i)
 
-	# --- selected bowl-building area ---
-	_draw_build_area()
+	# --- bottom control panel (your station) ---
+	draw_rect(Rect2(0, 168, W, 102), Color(0.07, 0.06, 0.09, 0.82))
+	draw_rect(Rect2(0, 168, W, 2), COL_COUNTER)
 
-	# --- the chef at his station (faces the counter) ---
-	_draw_chef(Vector2(454, 196), 52, CHEF_SIDE)
+	# --- current-bowl build area (top of panel) ---
+	_draw_build_area()
 
 	# --- buttons ---
 	for b in buttons:
@@ -448,43 +452,42 @@ func _draw_hud() -> void:
 
 func _draw_seat(i: int) -> void:
 	var cx: int = seat_x[i]
-	# selection highlight
-	if i == selected_seat and customers[i] != null:
-		draw_rect(Rect2(cx - 72, 26, 144, 124), Color(1, 1, 1, 0.08))
-		draw_rect(Rect2(cx - 72, 26, 144, 2), COL_YELLOW)
-
 	var c = customers[i]
 	if c == null:
-		_text("空席", Vector2(cx, 95), 11, Color(1, 1, 1, 0.25), HORIZONTAL_ALIGNMENT_CENTER)
 		return
 
-	# --- customer body (simple pixel figure) ---
-	_draw_customer(Vector2(cx, 96), c.face)
+	# selection highlight (under the customer)
+	if i == selected_seat:
+		draw_rect(Rect2(cx - 52, 52, 104, 116), Color(1, 1, 1, 0.10))
+		draw_rect(Rect2(cx - 30, 165, 60, 3), COL_YELLOW)
 
-	# --- patience bar ---
-	var pw := 90
+	# --- customer body (simple pixel figure) ---
+	_draw_customer(Vector2(cx, 122), c.face)
+
+	# --- patience bar (at the customer's place) ---
+	var pw := 84
 	var px: int = cx - pw / 2
-	draw_rect(Rect2(px, 140, pw, 6), COL_INK)
+	draw_rect(Rect2(px, 161, pw, 5), COL_INK)
 	var pf: float = clamp(c.patience / c.max_patience, 0.0, 1.0)
 	var pcol := COL_GREEN
 	if pf < 0.5: pcol = COL_YELLOW
 	if pf < 0.25: pcol = COL_RED
-	draw_rect(Rect2(px, 140, int(pw * pf), 6), pcol)
+	draw_rect(Rect2(px, 161, int(pw * pf), 5), pcol)
 
-	# --- order speech bubble ---
-	_draw_order_bubble(Vector2(cx, 30), c)
+	# --- order speech bubble (above the customer) ---
+	_draw_order_bubble(Vector2(cx, 56), c)
 
 
-func _draw_order_bubble(top_left_center: Vector2, c: Dictionary) -> void:
-	var bx := int(top_left_center.x) - 64
-	var by := 27
+func _draw_order_bubble(anchor: Vector2, c: Dictionary) -> void:
+	var bx := int(anchor.x) - 64
+	var by := int(anchor.y)
 	var bw := 128
 	var bh := 36
 	draw_rect(Rect2(bx, by, bw, bh), COL_WHITE)
 	draw_rect(Rect2(bx, by, bw, 2), COL_INK)
 	draw_rect(Rect2(bx, by + bh, bw, 2), COL_INK)
 	# little tail
-	draw_rect(Rect2(int(top_left_center.x) - 4, by + bh, 8, 6), COL_WHITE)
+	draw_rect(Rect2(int(anchor.x) - 4, by + bh, 8, 6), COL_WHITE)
 
 	# broth swatch
 	draw_rect(Rect2(bx + 6, by + 8, 20, 20), BROTH[c.broth])
@@ -520,13 +523,27 @@ func _draw_customer(center: Vector2, face: int) -> void:
 
 func _draw_build_area() -> void:
 	# label
-	_text("Seat #" + str(selected_seat + 1) + " — building:", Vector2(8, 168), 10, COL_WHITE)
+	var occ: bool = customers[selected_seat] != null
+	_text("Seat #" + str(selected_seat + 1) + (" — building:" if occ else " — empty"),
+		Vector2(8, 184), 10, COL_WHITE)
 	# the bowl preview
-	_draw_bowl(Vector2(248, 176), bowl.broth, bowl.toppings, 1.3)
+	_draw_bowl(Vector2(176, 186), bowl.broth, bowl.toppings, 1.2)
 	# noodles indicator
-	var nood_col := COL_YELLOW if bowl.noodles else Color(1, 1, 1, 0.2)
-	_text("麺", Vector2(300, 182), 12, nood_col)
-	_text(("noodles OK" if bowl.noodles else "no noodles"), Vector2(312, 182), 9, nood_col)
+	var nood_col := COL_YELLOW if bowl.noodles else Color(1, 1, 1, 0.25)
+	_text("麺", Vector2(214, 190), 12, nood_col)
+	_text(("OK" if bowl.noodles else "—"), Vector2(228, 190), 9, nood_col)
+	# compact reference of the selected customer's required order
+	if occ:
+		var c = customers[selected_seat]
+		_text("wants:", Vector2(252, 178), 9, Color(1, 1, 1, 0.7))
+		var ix := 252
+		draw_rect(Rect2(ix, 182, 13, 13), BROTH[c.broth])
+		draw_rect(Rect2(ix, 182, 13, 13), COL_INK, false, 1.0)
+		ix += 16
+		for t in c.toppings:
+			draw_rect(Rect2(ix, 182, 13, 13), TOP[t].col)
+			draw_rect(Rect2(ix, 182, 13, 13), COL_INK, false, 1.0)
+			ix += 15
 
 
 # draws a ramen bowl with given broth key ("" = empty) and toppings list
