@@ -3,12 +3,15 @@
 > 用法:每张**单独生成**,把**原始整图发我(不要自己裁切/缩放)**,我来切片、抠底、缩放、导入。
 > 每个提示词都先加下面这段【统一风格】,保证整套素材一致。
 
-## 【统一风格】(粘在每个提示词开头)
+## 【统一风格】(粘在每个提示词开头) — v2 美式卡通
 ```
-cozy detailed 16-bit pixel art, warm cozy Chinese ramen-shop theme,
-soft directional lighting, clean readable shapes, limited warm palette,
-crisp pixels, no text, no letters, no logos, no watermark, no UI, no grid lines
+American cartoon / Western hand-drawn illustration style, bold clean black
+outlines, vibrant saturated colors with soft cel-shading, rounded chunky
+exaggerated playful shapes, warm cozy ramen-shop theme, expressive and fun,
+NOT pixel art, NOT photorealistic, NOT a 3D render, no text, no letters,
+no logos, no watermark, no UI, no grid lines
 ```
+> 注:本项目画风已从像素风改为**美式卡通**(见 `核心理念.md`)。旧的像素素材将逐步按此风格重做。
 
 ## 【通用规则】
 - **要抠图的**(角色 / 物件 / 建筑 / 道具):**纯黑 `#000000` 背景**,主体居中、四周留空,**不要地面阴影**。
