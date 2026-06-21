@@ -93,6 +93,16 @@ const COOK_OVER := 4.8             # ... and closes (after this it's overcooked)
 var soup_fill := 0.0
 const SOUP_LADLE := 0.34           # ~3 ladles to fill
 
+# 撒料: shake a topping over the bowl — where & how much is up to you
+var sprinkles: Array = []          # {type, pos}
+var dragging := false
+var last_sprinkle := Vector2(-999, -999)
+var sprinkle_cd := 0.0
+const SPRINKLE_MAX := 16           # per topping
+const SPRINKLE_C := Vector2(240, 130)
+const SPRINKLE_RX := 34.0
+const SPRINKLE_RY := 10.0
+
 # stations: {item, name, rect, cx}
 var stations: Array = []
 
@@ -208,6 +218,8 @@ func _reset_bowl() -> void:
 	held_q = ""
 	bowl_nq = ""
 	soup_fill = 0.0
+	sprinkles.clear()
+	last_sprinkle = Vector2(-999, -999)
 
 
 # =====================================================================
@@ -219,6 +231,8 @@ func _process(delta: float) -> void:
 
 	if noodle_state == "cooking":
 		noodle_t = min(8.0, noodle_t + delta)
+	if sprinkle_cd > 0.0:
+		sprinkle_cd = max(0.0, sprinkle_cd - delta)
 
 	# rising steam from hot things (juice)
 	for p in steam:
@@ -297,8 +311,17 @@ func _make_order() -> Dictionary:
 #  INPUT
 # =====================================================================
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_handle_click(get_global_mouse_position())
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			dragging = true
+			_handle_click(get_global_mouse_position())
+		else:
+			dragging = false
+	elif event is InputEventMouseMotion and dragging:
+		# drag a topping over the bowl to keep sprinkling
+		var mp := get_global_mouse_position()
+		if state == State.PLAY and held in TOP_ORDER and BOWL_RECT.has_point(mp):
+			_sprinkle(mp)
 	elif event is InputEventKey and event.pressed and not event.echo:
 		_handle_key(event.keycode)
 
@@ -336,9 +359,12 @@ func _handle_click(p: Vector2) -> void:
 		_spawn_float(Vector2(240, 150), "倒掉了", COL_YELLOW)
 		return
 
-	# drop a held ingredient into the assembly bowl
+	# over the assembly bowl: sprinkle a topping, or drop an ingredient
 	if BOWL_RECT.has_point(p):
-		_place_into_bowl()
+		if held in TOP_ORDER:
+			_sprinkle(p)
+		else:
+			_place_into_bowl()
 		return
 
 	# pick up from a station (麵鍋 is special — you cook then lift)
@@ -381,6 +407,31 @@ func _noodle_quality() -> String:
 	if noodle_t <= COOK_OVER:
 		return "ok"
 	return "over"
+
+
+func _sprinkle(p: Vector2) -> void:
+	if not (held in TOP_ORDER):
+		return
+	if p.distance_to(last_sprinkle) < 5.0:      # spread out on drags
+		return
+	var cnt := 0
+	for s in sprinkles:
+		if s.type == held:
+			cnt += 1
+	if cnt >= SPRINKLE_MAX:
+		return
+	last_sprinkle = p
+	# clamp onto the broth-surface ellipse
+	var d: Vector2 = p - SPRINKLE_C
+	var e := Vector2(d.x / SPRINKLE_RX, d.y / SPRINKLE_RY)
+	if e.length() > 1.0:
+		d = e.normalized() * Vector2(SPRINKLE_RX, SPRINKLE_RY)
+	var pos: Vector2 = SPRINKLE_C + d + Vector2(randf_range(-2, 2), randf_range(-1.5, 1.5))
+	sprinkles.append({"type": held, "pos": pos})
+	bowl[held] = true
+	if sprinkle_cd <= 0.0:
+		_sfx("pick")
+		sprinkle_cd = 0.09
 
 
 func _place_into_bowl() -> void:
@@ -748,9 +799,11 @@ func _draw_assembly(center: Vector2) -> void:
 			draw_texture_rect(ctex["b_noodles"], dst, false)
 		if bowl.beef and ctex.has("b_beef"):
 			draw_texture_rect(ctex["b_beef"], dst, false)
-		for k in TOP_ORDER:
-			if bowl[k] and ctex.has("b_" + k):
-				draw_texture_rect(ctex["b_" + k], dst, false)
+		# toppings appear exactly where you sprinkled them
+		for sp in sprinkles:
+			var scol: Color = TOPPING[sp.type].col
+			draw_rect(Rect2(sp.pos.x - 1, sp.pos.y - 1, 3, 3), scol)
+			draw_rect(Rect2(sp.pos.x - 1, sp.pos.y - 1, 3, 1), scol.lightened(0.25))
 		return
 
 	var cx := center.x
