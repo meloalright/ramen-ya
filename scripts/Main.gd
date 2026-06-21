@@ -29,8 +29,8 @@ const BOWL_RY := 38.0
 const BOWL_HIT_RX := 56.0              # generous click radii (incl. rim)
 const BOWL_HIT_RY := 44.0
 
-# the shared 湯+麵 pot, drawn once behind its two click zones
-const BIGPOT_C := Vector2(78, 150)
+# big vats (大缸): the sprite's opening sits VAT_OPEN_Y down from its top
+const VAT_OPEN_Y := 36.0
 
 # ---- game states ----------------------------------------------------
 enum State { TITLE, PLAY, OVER }
@@ -173,7 +173,7 @@ func _load_cook() -> void:
 			"b_chili", "sbowl_beef", "sbowl_scallion", "sbowl_cilantro", "sbowl_chili",
 			"pot_soup", "pot_noodle", "bowl_mini",
 			"td_bowl", "td_broth", "td_noodles", "td_beef", "td_pot_soup", "td_pot_noodle",
-			"td_pot_big", "td_box_beef", "td_box_scallion", "td_box_cilantro", "td_box_chili"]:
+			"td_vat_soup", "td_vat_noodle", "td_box_beef", "td_box_scallion", "td_box_cilantro", "td_box_chili"]:
 		var p := "res://assets/cook/%s.png" % key
 		if ResourceLoader.exists(p):
 			ctex[key] = load(p)
@@ -203,14 +203,13 @@ func _make_font() -> Font:
 
 
 func _build_stations() -> void:
-	# 湯 + 麵 share one big boiling pot on the left (split into two click zones);
-	# ingredient boxes down the right.
+	# two big separate vats (大缸) stacked on the left; ingredient boxes on the right.
+	# center = the vat's opening (where labels/clicks/steam go)
 	stations.clear()
-	# 湯 = the broth (left half of the pot), 麵 = the noodle basket (right half)
-	stations.append({"item": "soup", "name": "湯", "center": Vector2(54, 140), "r": 24,
-		"rect": Rect2(28, 110, 52, 58), "cx": 54})
-	stations.append({"item": "noodles", "name": "麵", "center": Vector2(104, 140), "r": 22,
-		"rect": Rect2(80, 110, 52, 58), "cx": 104})
+	stations.append({"item": "soup", "name": "湯", "center": Vector2(54, 100), "r": 30,
+		"rect": Rect2(8, 62, 92, 88), "cx": 54})
+	stations.append({"item": "noodles", "name": "麵", "center": Vector2(54, 192), "r": 30,
+		"rect": Rect2(8, 154, 92, 88), "cx": 54})
 	var defs := [
 		["beef", "牛肉", Vector2(434, 80), 22],
 		["scallion", "蔥花", Vector2(434, 126), 22],
@@ -264,9 +263,9 @@ func _process(delta: float) -> void:
 			steam_t = 0.16
 			if _base_ok() or soup_fill > 0.0 or bowl.noodles:
 				_puff(BOWL_OPEN.x, BOWL_OPEN.y - 8)   # the assembled bowl
-			_puff(58, 128)                            # broth side of the big pot
+			_puff(54, 94)                             # 湯 vat
 			if noodle_state == "cooking":
-				_puff(102, 128)                       # noodle basket while boiling
+				_puff(54, 186)                        # 麵 vat while boiling
 
 	chef_anim += delta
 	if chef_anim > 0.22:
@@ -620,16 +619,10 @@ func _draw_play() -> void:
 	for i in SEATS:
 		_draw_ticket(i)
 
-	# the shared 湯+麵 pot (drawn once, behind its two click zones)
-	if ctex.has("td_pot_big"):
-		var bp: Texture2D = ctex["td_pot_big"]
-		draw_texture_rect(bp, Rect2(BIGPOT_C.x - bp.get_width() / 2.0,
-			BIGPOT_C.y - bp.get_height() / 2.0, bp.get_width(), bp.get_height()), false)
-
 	# the bowl (top-down) in the middle of the counter
 	_draw_assembly(BOWL_C)
 
-	# pot zones & ingredient boxes
+	# vats & ingredient boxes
 	for s in stations:
 		_draw_station(s)
 
@@ -792,14 +785,20 @@ func _draw_ticket(i: int) -> void:
 func _draw_station(s: Dictionary) -> void:
 	var c: Vector2 = s.center
 	var rr: int = s.r
-	# 湯 / 麵 are zones on the shared big pot (already drawn) — no separate sprite
+	# 湯 / 麵 are two big separate vats (大缸)
 	if s.item == "soup" or s.item == "noodles":
+		var vk := "td_vat_soup" if s.item == "soup" else "td_vat_noodle"
+		if ctex.has(vk):
+			var vt: Texture2D = ctex[vk]
+			# draw so the vat's opening (sprite y=VAT_OPEN_Y) lands at the station center
+			draw_texture_rect(vt, Rect2(c.x - vt.get_width() / 2.0, c.y - VAT_OPEN_Y,
+				vt.get_width(), vt.get_height()), false)
 		var lit: bool = (s.item == "soup" and held == "soup") \
 			or (s.item == "noodles" and (held == "noodles" or noodle_state == "cooking"))
 		if lit:
-			_draw_ellipse_ring(c, rr, rr * 0.72, COL_YELLOW)
+			_draw_ellipse_ring(c, 38, 28, COL_YELLOW)
 		if s.item == "noodles" and noodle_state == "cooking":
-			_draw_boil_gauge(Vector2(138, 128))
+			_draw_boil_gauge(Vector2(104, 188))
 		# bold label on the broth / basket
 		_text(s.name, Vector2(c.x + 1, c.y + 5), 13, COL_INK, HORIZONTAL_ALIGNMENT_CENTER)
 		_text(s.name, Vector2(c.x, c.y + 4), 13, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)

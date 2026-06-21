@@ -232,6 +232,53 @@ def td_pot_big(S=116):
     return outline(im)
 
 
+def td_vat(liquid, hi, basket=False, S=88):
+    # a big glazed earthenware vat (大缸): thick ceramic rim, deep body,
+    # boiling contents.  3/4 overhead — opening ellipse high, wall below.
+    im = img(S); px = im.load()
+    cx = 44.0; oy = 36.0; rx = 40.0; ry = 30.0; ry2 = ry + 22.0
+    CER = (104, 78, 64, 255); CER_D = (74, 54, 46, 255)
+    CER_HI = (134, 104, 84, 255); RIM = (156, 126, 102, 255); RIM_D = (122, 96, 78, 255)
+    for y in range(S):
+        for x in range(S):
+            dx = x - cx; dy = y - oy
+            t = math.sqrt((dx / rx) ** 2 + (dy / ry) ** 2)
+            if t <= 1.0:
+                if t > 0.82:                              # thick ceramic rim lip
+                    px[x, y] = RIM_D if dy > 0 else RIM
+                else:
+                    col = liquid
+                    if dx < 0 and dy < 0 and t < 0.6:
+                        col = hi
+                    px[x, y] = col
+            elif dy > 0 and (dx / rx) ** 2 + (dy / ry2) ** 2 <= 1.0:
+                shade = dy / ry2
+                col = CER
+                if shade > 0.72:
+                    col = CER_D
+                elif dx < 0 and shade < 0.5:
+                    col = CER_HI                          # glaze highlight, upper-left
+                # a darker decorative band partway down the body
+                if ry + 7 <= dy <= ry + 11:
+                    col = CER_D if dx >= 0 else RIM_D
+                px[x, y] = col
+    # noodle basket sitting in the broth
+    if basket:
+        bx, by, br = cx, oy + 1, rx * 0.56
+        for y in range(int(by - br - 1), int(by + br + 1)):
+            for x in range(int(bx - br - 1), int(bx + br + 1)):
+                d = math.hypot(x - bx, (y - by) / 0.8)
+                if d <= br:
+                    px[int(x), int(y)] = METAL_D if d > br - 2 else (NOODLE if int(y) % 3 else NOODLE_D)
+    # bubbles
+    for cxx, cyy, r in ((cx - 16, oy - 4, 4), (cx + 12, oy + 6, 3), (cx - 6, oy + 9, 3)):
+        for y in range(int(cyy - r), int(cyy + r)):
+            for x in range(int(cxx - r), int(cxx + r)):
+                if math.hypot(x - cxx, y - cyy) <= r:
+                    px[int(x), int(y)] = hi
+    return outline(im)
+
+
 def td_box(fill, hi, S=48):
     # slight 3/4 tilt: elliptical mouth, wood wall showing below
     im = img(S); px = im.load()
@@ -262,7 +309,8 @@ def main():
     save(td_beef(), "td_beef.png")
     save(td_pot(GOLD, GOLD_HI, False), "td_pot_soup.png")
     save(td_pot((210, 206, 188, 255), (234, 230, 214, 255), True), "td_pot_noodle.png")
-    save(td_pot_big(), "td_pot_big.png")
+    save(td_vat(GOLD, GOLD_HI, False), "td_vat_soup.png")
+    save(td_vat((206, 202, 186, 255), (232, 228, 214, 255), True), "td_vat_noodle.png")
     save(td_box(BEEF, BEEF_HI), "td_box_beef.png")
     save(td_box((143, 210, 78, 255), (176, 232, 110, 255)), "td_box_scallion.png")
     save(td_box((63, 143, 74, 255), (96, 178, 104, 255)), "td_box_cilantro.png")

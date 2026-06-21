@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dxqbn05rf0df5"
-path="res://.godot/imported/td_pot_big.png-12ba7d36f0bab7481878cf2bb34c2058.ctex"
+uid="uid://d0pd8g8376jet"
+path="res://.godot/imported/td_vat_soup.png-9b3240a149a15052b832bfea00d7da08.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cook/td_pot_big.png"
-dest_files=["res://.godot/imported/td_pot_big.png-12ba7d36f0bab7481878cf2bb34c2058.ctex"]
+source_file="res://assets/cook/td_vat_soup.png"
+dest_files=["res://.godot/imported/td_vat_soup.png-9b3240a149a15052b832bfea00d7da08.ctex"]
 
 [params]
 
