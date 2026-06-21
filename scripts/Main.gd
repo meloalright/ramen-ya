@@ -81,12 +81,17 @@ const CHEF_SEQ := [0, 1, 0, 2]       # gentle step cycle
 var chef_anim: float = 0.0
 var chef_idx: int = 0
 
+# ---- environment art (extracted from the prop atlas) ----------------
+var stall_tex: Texture2D
+
 
 func _ready() -> void:
 	randomize()
 	font = ThemeDB.fallback_font
 	if ResourceLoader.exists("res://assets/chef_sheet.png"):
 		chef_tex = load("res://assets/chef_sheet.png")
+	if ResourceLoader.exists("res://assets/env/ramen_stall.png"):
+		stall_tex = load("res://assets/env/ramen_stall.png")
 	_build_buttons()
 	set_process(true)
 
@@ -365,24 +370,31 @@ func _draw() -> void:
 
 
 func _draw_title() -> void:
-	# backdrop
-	draw_rect(Rect2(0, 150, W, 120), COL_WOOD_D)
-	draw_rect(Rect2(0, 150, W, 8), COL_COUNTER)
-	# noren / banner
-	draw_rect(Rect2(120, 40, 240, 70), COL_BOWL_RIM)
-	draw_rect(Rect2(120, 40, 240, 10), Color("a02a2a"))
-	_text("らーめん", Vector2(240, 92), 40, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	# --- ramen-stall art as the backdrop ---
+	if stall_tex != null:
+		var sw := 472.0
+		var sh := sw * stall_tex.get_height() / float(stall_tex.get_width())
+		draw_texture_rect(stall_tex, Rect2((W - sw) / 2.0, 4, sw, sh), false)
+	else:
+		# fallback if the asset is missing
+		draw_rect(Rect2(120, 40, 240, 70), COL_BOWL_RIM)
+		_text("らーめん", Vector2(240, 92), 40, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 
-	_text("R A M E N - Y A", Vector2(240, 145), 22, COL_YELLOW, HORIZONTAL_ALIGNMENT_CENTER)
-	_text("2D Pixel Ramen-Shop Manager  (DEMO)", Vector2(240, 172), 11, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	# the chef stands in front of the stall
+	_draw_chef(Vector2(64, 262), 118, CHEF_DOWN)
 
-	# the chef + a decorative bowl on the counter
-	_draw_chef(Vector2(95, 256), 150, CHEF_DOWN)
-	_draw_bowl(Vector2(390, 205), "miso", ["chashu", "negi", "egg"], 1.7)
+	# --- title text on a dark strip for legibility ---
+	draw_rect(Rect2(0, 224, W, 46), Color(0.07, 0.06, 0.09, 0.78))
+	_title_text("R A M E N - Y A", Vector2(244, 240), 20, COL_YELLOW)
+	_title_text("2D Pixel Ramen-Shop Manager  (DEMO)", Vector2(242, 254), 10, COL_WHITE)
+	_title_text("[ CLICK or press SPACE to start ]", Vector2(242, 267), 11,
+		COL_GREEN if Time_blink() else COL_WHITE)
 
-	if int(day_time * 2.0) % 2 == 0 or true:
-		_text("[ CLICK or press SPACE to start ]", Vector2(240, 235), 12,
-			COL_GREEN if (Time_blink()) else COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+
+# centered text with a 1px ink shadow
+func _title_text(s: String, pos: Vector2, size: int, col: Color) -> void:
+	_text(s, pos + Vector2(1, 1), size, COL_INK, HORIZONTAL_ALIGNMENT_CENTER)
+	_text(s, pos, size, col, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 func Time_blink() -> bool:
