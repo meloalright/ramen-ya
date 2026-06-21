@@ -13,14 +13,16 @@ const W := 480
 const H := 270
 
 # on-screen "back to shop" button (also bound to ESC / M)
-const BACK_RECT := Rect2(W - 58, 25, 54, 16)
+const BACK_RECT := Rect2(W - 52, 4, 48, 15)
 
 # action buttons
-const CLEAR_RECT := Rect2(148, 247, 88, 18)
-const SERVE_RECT := Rect2(244, 247, 88, 18)
+const CLEAR_RECT := Rect2(118, 246, 96, 20)
+const SERVE_RECT := Rect2(266, 246, 96, 20)
 
-# the assembly bowl (click target to drop a held ingredient)
-const BOWL_RECT := Rect2(196, 112, 88, 56)
+# the assembly bowl (top-down) — click target to add / sprinkle
+const BOWL_C := Vector2(235, 138)
+const BOWL_R := 60.0
+const BOWL_INNER := 50.0           # where contents / sprinkles live
 
 # ---- game states ----------------------------------------------------
 enum State { TITLE, PLAY, OVER }
@@ -32,6 +34,8 @@ const COL_WALL     := Color("3a2c2e")
 const COL_WALL_HI  := Color("4d3a3a")
 const COL_COUNTER  := Color("c89b6a")
 const COL_COUNTER_D:= Color("a07c4c")
+const COL_WOOD     := Color("a9794a")
+const COL_WOOD_D   := Color("946a3f")
 const COL_WHITE    := Color("f4f0e6")
 const COL_INK      := Color("1a1620")
 const COL_RED      := Color("d94f4f")
@@ -98,10 +102,7 @@ var sprinkles: Array = []          # {type, pos}
 var dragging := false
 var last_sprinkle := Vector2(-999, -999)
 var sprinkle_cd := 0.0
-const SPRINKLE_MAX := 16           # per topping
-const SPRINKLE_C := Vector2(240, 130)
-const SPRINKLE_RX := 34.0
-const SPRINKLE_RY := 10.0
+const SPRINKLE_MAX := 18            # per topping
 
 # stations: {item, name, rect, cx}
 var stations: Array = []
@@ -162,7 +163,9 @@ func _sfx(k: String) -> void:
 func _load_cook() -> void:
 	for key in ["bowl_big", "b_broth", "b_noodles", "b_beef", "b_scallion", "b_cilantro",
 			"b_chili", "sbowl_beef", "sbowl_scallion", "sbowl_cilantro", "sbowl_chili",
-			"pot_soup", "pot_noodle", "bowl_mini"]:
+			"pot_soup", "pot_noodle", "bowl_mini",
+			"td_bowl", "td_broth", "td_noodles", "td_beef", "td_pot_soup", "td_pot_noodle",
+			"td_box_beef", "td_box_scallion", "td_box_cilantro", "td_box_chili"]:
 		var p := "res://assets/cook/%s.png" % key
 		if ResourceLoader.exists(p):
 			ctex[key] = load(p)
@@ -170,12 +173,12 @@ func _load_cook() -> void:
 
 func _item_sprite(item: String) -> String:
 	match item:
-		"soup": return "pot_soup"
-		"noodles": return "pot_noodle"
-		"beef": return "sbowl_beef"
-		"scallion": return "sbowl_scallion"
-		"cilantro": return "sbowl_cilantro"
-		"chili": return "sbowl_chili"
+		"soup": return "td_pot_soup"
+		"noodles": return "td_pot_noodle"
+		"beef": return "td_box_beef"
+		"scallion": return "td_box_scallion"
+		"cilantro": return "td_box_cilantro"
+		"chili": return "td_box_chili"
 	return ""
 
 
@@ -192,20 +195,23 @@ func _make_font() -> Font:
 
 
 func _build_stations() -> void:
+	# top-down workspace: pots on the left, ingredient boxes on the right
 	stations.clear()
 	var defs := [
-		["soup", "湯鍋"], ["noodles", "麵鍋"], ["beef", "牛肉片"],
-		["scallion", "蔥花"], ["cilantro", "香菜"], ["chili", "辣椒"],
+		["soup", "湯鍋", Vector2(52, 102), 32],
+		["noodles", "麵鍋", Vector2(52, 190), 32],
+		["beef", "牛肉", Vector2(434, 80), 22],
+		["scallion", "蔥花", Vector2(434, 126), 22],
+		["cilantro", "香菜", Vector2(434, 172), 22],
+		["chili", "辣椒", Vector2(434, 218), 22],
 	]
-	var centers := [52, 128, 204, 280, 356, 432]
-	var ww := 64
-	var hh := 46
-	for i in defs.size():
+	for d in defs:
+		var c: Vector2 = d[2]
+		var r: int = d[3]
 		stations.append({
-			"item": defs[i][0],
-			"name": defs[i][1],
-			"rect": Rect2(centers[i] - ww / 2.0, 178, ww, hh),
-			"cx": centers[i],
+			"item": d[0], "name": d[1], "center": c, "r": r,
+			"rect": Rect2(c.x - r, c.y - r, r * 2, r * 2),
+			"cx": c.x,
 		})
 
 
@@ -245,10 +251,10 @@ func _process(delta: float) -> void:
 		if steam_t <= 0.0:
 			steam_t = 0.16
 			if _base_ok() or soup_fill > 0.0 or bowl.noodles:
-				_puff(240, 120)                       # the assembled bowl
-			_puff(52, 166)                            # 湯鍋
+				_puff(BOWL_C.x, BOWL_C.y - 18)        # the assembled bowl
+			_puff(52, 80)                             # 湯鍋
 			if noodle_state == "cooking":
-				_puff(128, 166)                       # 麵鍋 while boiling
+				_puff(52, 168)                        # 麵鍋 while boiling
 
 	chef_anim += delta
 	if chef_anim > 0.22:
@@ -320,7 +326,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventMouseMotion and dragging:
 		# drag a topping over the bowl to keep sprinkling
 		var mp := get_global_mouse_position()
-		if state == State.PLAY and held in TOP_ORDER and BOWL_RECT.has_point(mp):
+		if state == State.PLAY and held in TOP_ORDER and _in_bowl(mp):
 			_sprinkle(mp)
 	elif event is InputEventKey and event.pressed and not event.echo:
 		_handle_key(event.keycode)
@@ -344,9 +350,9 @@ func _handle_click(p: Vector2) -> void:
 		_start_game()
 		return
 
-	# seat selection
+	# pick an order ticket to fill
 	for i in SEATS:
-		if Rect2(seat_x[i] - 40, 24, 80, 80).has_point(p) and customers[i] != null:
+		if _ticket_rect(i).has_point(p) and customers[i] != null:
 			selected_seat = i
 			return
 
@@ -356,11 +362,11 @@ func _handle_click(p: Vector2) -> void:
 		return
 	if CLEAR_RECT.has_point(p):
 		_reset_bowl()
-		_spawn_float(Vector2(240, 150), "倒掉了", COL_YELLOW)
+		_spawn_float(BOWL_C, "倒掉了", COL_YELLOW)
 		return
 
-	# over the assembly bowl: sprinkle a topping, or drop an ingredient
-	if BOWL_RECT.has_point(p):
+	# over the bowl: sprinkle a topping, or drop an ingredient
+	if _in_bowl(p):
 		if held in TOP_ORDER:
 			_sprinkle(p)
 		else:
@@ -421,12 +427,11 @@ func _sprinkle(p: Vector2) -> void:
 	if cnt >= SPRINKLE_MAX:
 		return
 	last_sprinkle = p
-	# clamp onto the broth-surface ellipse
-	var d: Vector2 = p - SPRINKLE_C
-	var e := Vector2(d.x / SPRINKLE_RX, d.y / SPRINKLE_RY)
-	if e.length() > 1.0:
-		d = e.normalized() * Vector2(SPRINKLE_RX, SPRINKLE_RY)
-	var pos: Vector2 = SPRINKLE_C + d + Vector2(randf_range(-2, 2), randf_range(-1.5, 1.5))
+	# clamp onto the round broth surface
+	var d: Vector2 = p - BOWL_C
+	if d.length() > BOWL_INNER:
+		d = d.normalized() * BOWL_INNER
+	var pos: Vector2 = BOWL_C + d + Vector2(randf_range(-2, 2), randf_range(-2, 2))
 	sprinkles.append({"type": held, "pos": pos})
 	bowl[held] = true
 	if sprinkle_cd <= 0.0:
@@ -578,24 +583,21 @@ func _draw_title() -> void:
 
 
 func _draw_play() -> void:
-	# kitchen wall + wooden counter
-	draw_rect(Rect2(0, 22, W, 90), COL_WALL)
-	draw_rect(Rect2(0, 22, W, 3), COL_WALL_HI)
-	draw_rect(Rect2(0, 112, W, H - 112), COL_COUNTER)
-	draw_rect(Rect2(0, 112, W, 3), Color(1, 1, 1, 0.18))
-	draw_rect(Rect2(0, 168, W, 2), COL_COUNTER_D)
+	# top-down wooden prep counter
+	draw_rect(Rect2(0, 0, W, H), COL_WOOD)
+	for y in range(0, H, 12):
+		draw_rect(Rect2(0, y, W, 1), COL_WOOD_D)
 
-	# customers behind the counter
+	# order tickets along the top
 	for i in SEATS:
-		_draw_seat(i)
+		_draw_ticket(i)
 
-	# stations on the counter
+	# the bowl (top-down) in the middle of the counter
+	_draw_assembly(BOWL_C)
+
+	# pots & ingredient boxes around it
 	for s in stations:
 		_draw_station(s)
-
-	# assembly bowl
-	_draw_assembly(Vector2(240, 140))
-	_text("組裝中", Vector2(240, 106), 9, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 
 	# rising steam
 	for p in steam:
@@ -700,53 +702,82 @@ func _draw_customer(center: Vector2, face: int) -> void:
 
 
 # --- stations --------------------------------------------------------
-func _draw_station(s: Dictionary) -> void:
-	var r: Rect2 = s.rect
-	var cx: float = s.cx
-	var picked: bool = held == s.item
-	# tray slot
-	draw_rect(r, COL_PANEL)
+func _in_bowl(p: Vector2) -> bool:
+	return p.distance_to(BOWL_C) <= BOWL_R
+
+
+func _ticket_rect(i: int) -> Rect2:
+	return Rect2(18 + i * 132, 24, 116, 40)
+
+
+func _draw_ticket(i: int) -> void:
+	var c = customers[i]
+	if c == null:
+		return
+	var r := _ticket_rect(i)
+	draw_rect(r, Color("efe7d6"))
 	draw_rect(r, COL_INK, false, 1.0)
-	if picked:
+	if i == selected_seat:
 		draw_rect(r, COL_YELLOW, false, 2.0)
-	var top := r.position.y + 6
+	draw_rect(Rect2(r.position.x + r.size.x / 2 - 2, r.position.y - 3, 4, 5), COL_RED)   # pin
+	_text("訂單 #" + str(i + 1), Vector2(r.position.x + 8, r.position.y + 14), 8, Color("7a6a52"))
+	_text("牛肉麵", Vector2(r.position.x + 8, r.position.y + 30), 11, COL_INK)
+	var wants := []
+	for k in TOP_ORDER:
+		if c.wants[k]:
+			wants.append(k)
+	if wants.is_empty():
+		_text("原味", Vector2(r.position.x + 64, r.position.y + 30), 9, Color("7a6a52"))
+	else:
+		var ix := r.position.x + 62
+		for k in wants:
+			draw_rect(Rect2(ix, r.position.y + 22, 11, 11), TOPPING[k].col)
+			draw_rect(Rect2(ix, r.position.y + 22, 11, 11), COL_INK, false, 1.0)
+			ix += 14
+	# patience
+	var pw := r.size.x - 16
+	var pf: float = clamp(c.patience / c.max_patience, 0.0, 1.0)
+	var pc := COL_GREEN
+	if pf < 0.4:
+		pc = COL_YELLOW
+	draw_rect(Rect2(r.position.x + 8, r.position.y + r.size.y - 7, pw, 3), Color(0, 0, 0, 0.18))
+	draw_rect(Rect2(r.position.x + 8, r.position.y + r.size.y - 7, int(pw * pf), 3), pc)
+
+
+func _draw_station(s: Dictionary) -> void:
+	var c: Vector2 = s.center
+	var rr: int = s.r
 	var spr := _item_sprite(s.item)
 	if ctex.has(spr):
 		var t: Texture2D = ctex[spr]
-		draw_texture_rect(t, Rect2(cx - t.get_width() / 2.0, top, t.get_width(), t.get_height()), false)
-	else:
-		match s.item:
-			"soup":
-				_draw_pot(Vector2(cx, top + 14), C_SOUP, true)
-			"noodles":
-				_draw_pot(Vector2(cx, top + 14), Color("d8d2c0"), true)
-				draw_rect(Rect2(cx - 6, top + 6, 12, 9), Color("caa45a"))
-				draw_rect(Rect2(cx - 6, top + 6, 12, 9), COL_INK, false, 1.0)
-			"beef":
-				_draw_ing_bowl(Vector2(cx, top + 14), C_BEEF, C_BEEF_HI)
-			_:
-				_draw_ing_bowl(Vector2(cx, top + 14), TOPPING[s.item].col, TOPPING[s.item].col.lightened(0.25))
-	# 麵鍋 boil gauge — green window = the moment to lift
+		draw_texture_rect(t, Rect2(c.x - t.get_width() / 2.0, c.y - t.get_height() / 2.0,
+			t.get_width(), t.get_height()), false)
+	if held == s.item:
+		draw_arc(c, rr + 2, 0.0, TAU, 24, COL_YELLOW, 2.0)
+	# 麵鍋 boil gauge — green window = the moment to lift (to the right of the pot)
 	if s.item == "noodles" and noodle_state == "cooking":
-		var gx := r.position.x + 6
-		var gw := r.size.x - 12
-		var gy := r.position.y + 2
-		draw_rect(Rect2(gx, gy, gw, 5), COL_INK)
-		# ready window band
+		var gw := 52.0
+		var gx := c.x + rr + 9
+		var gy := c.y - 2
+		draw_rect(Rect2(gx, gy, gw, 6), COL_INK)
 		var rx0 := gx + gw * (COOK_READY / 8.0)
 		var rx1 := gx + gw * (COOK_OVER / 8.0)
-		draw_rect(Rect2(rx0, gy, rx1 - rx0, 5), Color(0.37, 0.68, 0.37, 0.5))
+		draw_rect(Rect2(rx0, gy, rx1 - rx0, 6), Color(0.37, 0.68, 0.37, 0.5))
 		var frac: float = clamp(noodle_t / 8.0, 0.0, 1.0)
 		var gc := COL_YELLOW
 		if noodle_t >= COOK_READY and noodle_t <= COOK_OVER:
 			gc = COL_GREEN
 		elif noodle_t > COOK_OVER:
 			gc = COL_RED
-		draw_rect(Rect2(gx, gy, gw * frac, 5), gc)
-		if noodle_t >= COOK_READY and int(flash * 0 + Engine.get_frames_drawn() / 12) % 2 == 0:
-			_text("提起!", Vector2(cx, r.position.y + 30), 9,
+		draw_rect(Rect2(gx, gy, gw * frac, 6), gc)
+		if noodle_t >= COOK_READY and int(Engine.get_frames_drawn() / 12) % 2 == 0:
+			_text("提起!", Vector2(gx + gw / 2, gy - 12), 9,
 				COL_GREEN if noodle_t <= COOK_OVER else COL_RED, HORIZONTAL_ALIGNMENT_CENTER)
-	_text(s.name, Vector2(cx, r.position.y + r.size.y - 3), 9, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	# label: to the left for the right-hand boxes, below for the left-hand pots
+	if c.x > W * 0.6:
+		_text(s.name, Vector2(c.x - rr - 5, c.y + 4), 10, COL_WHITE, HORIZONTAL_ALIGNMENT_RIGHT)
+	else:
+		_text(s.name, Vector2(c.x, c.y + rr + 12), 10, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 func _draw_pot(center: Vector2, liquid: Color, steam: bool) -> void:
@@ -774,31 +805,27 @@ func _draw_ing_bowl(center: Vector2, col: Color, hi: Color) -> void:
 	draw_rect(Rect2(cx + 2, cy, 4, 3), hi)
 
 
-# --- assembly bowl ---------------------------------------------------
+# --- assembly bowl (top-down) ----------------------------------------
 func _draw_assembly(center: Vector2) -> void:
-	# highlight when holding something to drop
-	if held != "":
-		draw_rect(BOWL_RECT, Color(1, 1, 0.4, 0.12))
-		draw_rect(BOWL_RECT, COL_YELLOW, false, 1.0)
-
-	if ctex.has("bowl_big"):
-		var big: Texture2D = ctex["bowl_big"]
-		var o := Vector2(center.x - big.get_width() / 2.0, center.y - big.get_height() / 2.0)
-		var dst := Rect2(o, Vector2(big.get_width(), big.get_height()))
-		draw_texture_rect(big, dst, false)
-		if soup_fill > 0.0 and ctex.has("b_broth"):
-			# broth rises as you ladle (reveal the bottom of the broth band)
-			var bt: Texture2D = ctex["b_broth"]
-			var band_top := 12.0
-			var band_bot := 27.0
-			var shown: float = (band_bot - band_top) * clamp(soup_fill, 0.0, 1.0)
-			var sy: float = band_bot - shown
-			draw_texture_rect_region(bt, Rect2(o.x, o.y + sy, bt.get_width(), shown),
-				Rect2(0, sy, bt.get_width(), shown))
-		if bowl.noodles and ctex.has("b_noodles"):
-			draw_texture_rect(ctex["b_noodles"], dst, false)
-		if bowl.beef and ctex.has("b_beef"):
-			draw_texture_rect(ctex["b_beef"], dst, false)
+	if ctex.has("td_bowl"):
+		var b: Texture2D = ctex["td_bowl"]
+		var dst := Rect2(center.x - b.get_width() / 2.0, center.y - b.get_height() / 2.0,
+			b.get_width(), b.get_height())
+		# subtle ring highlight while holding something
+		if held != "":
+			draw_arc(center, BOWL_R + 1, 0.0, TAU, 36, Color(1, 1, 0.4, 0.45), 1.5)
+		draw_texture_rect(b, dst, false)
+		# broth fills out from the centre as you ladle
+		if soup_fill > 0.0 and ctex.has("td_broth"):
+			var t: Texture2D = ctex["td_broth"]
+			var sc: float = clamp(soup_fill, 0.0, 1.0)
+			var w := t.get_width() * sc
+			var h := t.get_height() * sc
+			draw_texture_rect(t, Rect2(center.x - w / 2.0, center.y - h / 2.0, w, h), false)
+		if bowl.noodles and ctex.has("td_noodles"):
+			draw_texture_rect(ctex["td_noodles"], dst, false)
+		if bowl.beef and ctex.has("td_beef"):
+			draw_texture_rect(ctex["td_beef"], dst, false)
 		# toppings appear exactly where you sprinkled them
 		for sp in sprinkles:
 			var scol: Color = TOPPING[sp.type].col
