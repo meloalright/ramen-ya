@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Slice the AI-generated walk sheet (ai_source.jpg) into chef_sheet.png.
 
-The AI sheet is 4 columns (walk frames) x 3 rows, but only drew:
-  row0 = facing DOWN, row1 = facing LEFT (side), row2 = (another left).
-So we build the game sheet as DOWN / SIDE-left / UP, reusing the front
-frames for UP (the AI gave no back view). Background (black) is removed by
-flood-fill from each cell's border, preserving dark hair/eyes inside.
+The AI sheet is a 4x4 grid on a black background.  Rows:
+  0 = facing DOWN (front), 1 = facing UP (back), 2 = LEFT, 3 = RIGHT.
+We build the game sheet as DOWN / SIDE-left / UP (right is mirrored in code).
+Each cell is cropped around its grid centre, the black background removed by
+flood-fill from the borders, then the character is bbox-cropped and scaled.
 """
 from PIL import Image, ImageFilter
 from collections import deque
@@ -16,19 +16,21 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "ai_source.jpg")
 OUT = os.path.normpath(os.path.join(HERE, "..", "chef_sheet.png"))
 
-# source grid: 4x4 cells.  AI rows: 0=DOWN, 1=UP(back), 2=LEFT, 3=RIGHT
-X0, Y0, CW, CH = 81, 40, 159, 179
-TH = 78                       # brightness (r+g+b) below this = black background
+# 4x4 grid centres (detected from the 800x800 sheet)
+COL_C = [125, 298, 482, 661]
+ROW_C = [120, 302, 484, 662]
+CELL_W, CELL_H = 152, 178      # region cropped around each centre
+TH = 80                        # brightness (r+g+b) below this = black background
 
-# keep the frames near the on-screen size (avoids a blurry shrink-then-upscale)
-FW, FH = 52, 68               # output frame cell
-CHAR_H = 64                   # scale each character to this height
+FW, FH = 52, 68                # output frame cell (near on-screen size)
+CHAR_H = 64                    # scale each character to this height
 
 
 def cut(im, bright, r, c):
-    cx, cy = X0 + c * CW, Y0 + r * CH
-    cell = im.crop((cx, cy, cx + CW, cy + CH)).convert("RGBA")
-    b = bright[cy:cy + CH, cx:cx + CW]
+    cx0 = COL_C[c] - CELL_W // 2
+    cy0 = ROW_C[r] - CELL_H // 2
+    cell = im.crop((cx0, cy0, cx0 + CELL_W, cy0 + CELL_H)).convert("RGBA")
+    b = bright[cy0:cy0 + CELL_H, cx0:cx0 + CELL_W]
     H, W = b.shape
     bg = np.zeros((H, W), bool)
     dq = deque()
@@ -50,7 +52,6 @@ def cut(im, bright, r, c):
     cell.putalpha(Image.fromarray(alpha, "L"))
     bb = cell.getbbox()
     cell = cell.crop(bb)
-    # scale to CHAR_H, center horizontally, feet at the bottom of FWxFH
     w, h = cell.size
     nw = max(1, round(w * CHAR_H / h))
     cell = cell.resize((nw, CHAR_H), Image.LANCZOS)
@@ -63,12 +64,12 @@ def cut(im, bright, r, c):
 def main():
     im = Image.open(SRC).convert("RGB")
     bright = np.asarray(im).astype(int).sum(2)
-    # game sheet rows: 0=DOWN, 1=SIDE-left, 2=UP — right is mirrored in code
+    # game sheet rows: 0=DOWN, 1=SIDE-left, 2=UP
     sheet = Image.new("RGBA", (FW * 4, FH * 3), (0, 0, 0, 0))
     for c in range(4):
-        sheet.alpha_composite(cut(im, bright, 0, c), (c * FW, 0 * FH))   # DOWN  ← AI row0
-        sheet.alpha_composite(cut(im, bright, 2, c), (c * FW, 1 * FH))   # LEFT  ← AI row2
-        sheet.alpha_composite(cut(im, bright, 1, c), (c * FW, 2 * FH))   # UP    ← AI row1 (back)
+        sheet.alpha_composite(cut(im, bright, 0, c), (c * FW, 0 * FH))   # DOWN ← row0
+        sheet.alpha_composite(cut(im, bright, 2, c), (c * FW, 1 * FH))   # LEFT ← row2
+        sheet.alpha_composite(cut(im, bright, 1, c), (c * FW, 2 * FH))   # UP   ← row1
     sheet.save(OUT)
     print("wrote", OUT, sheet.size)
 
