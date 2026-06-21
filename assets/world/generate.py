@@ -186,13 +186,11 @@ def shop():
     tower = (152, 152, 164, 255)
     tower_d = (120, 120, 134, 255)
     tower_hi = (178, 178, 190, 255)
-    seam = (104, 104, 118, 255)
     win = (250, 218, 138, 255)
     win_off = (78, 92, 124, 255)
     win_fr = (58, 58, 68, 255)
     roof = (108, 108, 120, 255)
     roof_d = (82, 82, 94, 255)
-    tank = (96, 96, 108, 255)
     awn = (200, 66, 66, 255)
     awn_w = (238, 232, 220, 255)
     awn_d = (150, 46, 46, 255)
@@ -204,12 +202,14 @@ def shop():
     door = (78, 50, 30, 255)
     door_d = (44, 28, 18, 255)
     noren = (210, 72, 72, 255)
-    W, H = 96, 176
+    # a small, cozy ramen shop (much shorter than a tower)
+    W, H = 96, 96
     im = img(W, H)
     px = im.load()
+    ay = H - 54                       # top of the storefront / awning
 
-    # ===== tower body (y 10..122) =====
-    for y in range(10, 122):
+    # --- small upper part: parapet + one window floor ---
+    for y in range(10, ay + 2):
         for x in range(3, W - 3):
             c = tower
             if x < 6:
@@ -217,70 +217,42 @@ def shop():
             elif x > W - 7:
                 c = tower_d
             px[x, y] = c
-    # parapet / flat roof
     for y in range(6, 12):
         for x in range(2, W - 2):
             px[x, y] = roof if y > 7 else roof_d
-    # rooftop water tank
-    for y in range(0, 7):
-        for x in range(58, 74):
-            px[x, y] = tank if y > 1 else roof_d
+    for ci, wx in enumerate([12, 41, 70]):
+        col = win if ci % 2 == 0 else win_off
+        for y in range(18, 27):
+            for x in range(wx, wx + 14):
+                px[x, y] = win_fr if (x == wx or x == wx + 13 or y == 18 or y == 26) else col
+            px[wx + 6, y] = win_fr
 
-    # floors of windows, stacked upward
-    wcols = [12, 41, 70]
-    fy = 110
-    fi = 0
-    while fy > 16:
-        for x in range(3, W - 3):            # floor slab line
-            px[x, fy + 9] = seam
-        for ci, wx in enumerate(wcols):
-            lit = ((fi * 7 + ci * 5) % 3) != 0
-            col = win if lit else win_off
-            for y in range(fy, fy + 9):
-                for x in range(wx, wx + 14):
-                    if x == wx or x == wx + 13 or y == fy or y == fy + 8:
-                        px[x, y] = win_fr
-                    else:
-                        px[x, y] = col
-                px[wx + 6, y] = win_fr        # vertical mullion
-        fy -= 20
-        fi += 1
-
-    # ===== ground-floor storefront (y 122..176) =====
-    # awning: red/white stripes projecting over the shop front
-    # (runs down to where the storefront wall begins — no transparent gap)
-    for y in range(120, 136):
+    # --- storefront ---
+    for y in range(ay, ay + 16):                  # awning
         for x in range(1, W - 1):
             c = awn if (x // 6) % 2 == 0 else awn_w
-            if y >= 129:
-                c = awn_d                     # valance shadow
+            if y >= ay + 13:
+                c = awn_d
             px[x, y] = c
-    # dark sign plate on the valance (Godot draws 拉麵 here)
-    for y in range(SHOP_SIGN_Y - 8, SHOP_SIGN_Y + 4):
+    for y in range(ay + 2, ay + 13):              # dark sign plate (Godot draws 拉麵)
         for x in range(32, 64):
-            if 33 < x < 62 and SHOP_SIGN_Y - 7 < y < SHOP_SIGN_Y + 3:
-                px[x, y] = sign
-            else:
-                px[x, y] = awn_d
-    # storefront wall
-    for y in range(136, H):
+            px[x, y] = sign if (33 < x < 62 and ay + 3 < y < ay + 12) else awn_d
+    for y in range(ay + 16, H):                   # wall
         for x in range(2, W - 2):
             px[x, y] = wall_d if y >= H - 2 else wall
-    # display windows (warm glow), left & right of the door
-    for wx0, wx1 in ((6, 38), (58, 90)):
-        for y in range(140, 170):
+    for wx0, wx1 in ((6, 38), (58, 90)):          # display windows
+        for y in range(ay + 20, H - 6):
             for x in range(wx0, wx1):
-                if x == wx0 or x == wx1 - 1 or y == 140 or y == 169:
+                if x == wx0 or x == wx1 - 1 or y == ay + 20 or y == H - 7:
                     px[x, y] = win_fr
                 else:
-                    px[x, y] = glass_lit if y > 152 else glass
-        for y in range(140, 170):
+                    px[x, y] = glass_lit if y > ay + 32 else glass
+        for y in range(ay + 20, H - 6):
             px[(wx0 + wx1) // 2, y] = win_fr
-    # entrance door + noren
-    for y in range(150, H):
+    for y in range(ay + 24, H):                   # door
         for x in range(40, 56):
             px[x, y] = door_d if (x == 40 or x == 55 or y >= H - 2) else door
-    for y in range(150, 158):
+    for y in range(ay + 24, ay + 30):             # noren
         for x in range(40, 56):
             if x != 47 and x != 48:
                 px[x, y] = noren

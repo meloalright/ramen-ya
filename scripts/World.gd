@@ -560,7 +560,7 @@ func _draw_building(b: Dictionary) -> void:
 		draw_texture_rect(s, Rect2(ox, oy, s.get_width(), s.get_height()), false)
 		var mid := ox + s.get_width() / 2.0
 		if b.kind == "ramen":
-			_wtext("拉麵", Vector2(mid, oy + 134), 9, C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+			_wtext("拉麵", Vector2(mid, oy + s.get_height() - 41), 9, C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 		elif b.kind == "tower":
 			_wtext("紫金", Vector2(mid, oy + 130), 9, C_YELLOW, HORIZONTAL_ALIGNMENT_CENTER)
 		elif b.kind == "store":
