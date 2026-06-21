@@ -25,6 +25,7 @@ window/size/window_height_override=540
 window/stretch/mode="canvas_items"
 window/stretch/aspect="keep"
 window/dpi/allow_hidpi=true
+window/handheld/orientation="landscape"
 
 [rendering]
 

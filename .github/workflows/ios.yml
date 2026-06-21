@@ -1,0 +1,81 @@
+name: Build iOS (.ipa)
+
+# iOS builds require macOS + Xcode, so this runs on a macOS runner.
+# Manual trigger only — macOS CI minutes are billed at a higher rate.
+on:
+  workflow_dispatch:
+    inputs:
+      signed:
+        description: "Produce a signed device build (needs IOS_TEAM_ID + signing secrets). Off = unsigned artifact."
+        type: boolean
+        default: false
+
+env:
+  GODOT_VERSION: "4.3"
+
+jobs:
+  build-ios:
+    name: Export & build iOS
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Godot ${{ env.GODOT_VERSION }} + iOS export templates
+        run: |
+          set -e
+          BASE="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          curl -L -o godot.zip   "$BASE/Godot_v${GODOT_VERSION}-stable_macos.universal.zip"
+          curl -L -o templates.tpz "$BASE/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q godot.zip
+          GODOT_BIN="$PWD/Godot.app/Contents/MacOS/Godot"
+          chmod +x "$GODOT_BIN"
+          echo "GODOT_BIN=$GODOT_BIN" >> "$GITHUB_ENV"
+          TPL_DIR="$HOME/Library/Application Support/Godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$TPL_DIR"
+          unzip -q templates.tpz -d templates
+          mv templates/templates/* "$TPL_DIR"/
+
+      - name: Set Apple Team ID in the iOS preset
+        run: |
+          # Godot's iOS export validation requires a non-empty Team ID even for
+          # an unsigned build. Use the repo variable if present, else a placeholder.
+          TEAM_ID="${{ vars.IOS_TEAM_ID }}"
+          [ -z "$TEAM_ID" ] && TEAM_ID="ABCDE12345"
+          sed -i '' "s#application/app_store_team_id=\"[^\"]*\"#application/app_store_team_id=\"$TEAM_ID\"#" export_presets.cfg
+
+      - name: Import project
+        run: |
+          "$GODOT_BIN" --headless --import || true
+
+      - name: Export iOS Xcode project
+        run: |
+          mkdir -p build/ios
+          "$GODOT_BIN" --headless --verbose --export-debug "iOS" build/ios/ramenya.ipa
+          echo "--- generated ---"
+          ls -la build/ios
+
+      - name: Build unsigned .ipa with Xcode
+        if: ${{ !inputs.signed }}
+        run: |
+          set -e
+          cd build/ios
+          SCHEME=$(xcodebuild -project ramenya.xcodeproj -list | awk '/Schemes:/{f=1;next} f&&NF{print $1; exit}')
+          echo "Scheme: $SCHEME"
+          xcodebuild -project ramenya.xcodeproj -scheme "$SCHEME" \
+            -configuration Release -sdk iphoneos -derivedDataPath dd \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+          APP=$(find dd/Build/Products -name "*.app" -maxdepth 3 | head -1)
+          echo "App: $APP"
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          zip -qr ../../ramenya-unsigned.ipa Payload
+
+      - name: Upload iOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ramenya-ios
+          path: |
+            ramenya-unsigned.ipa
+            build/ios
+          if-no-files-found: warn
