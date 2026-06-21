@@ -19,10 +19,15 @@ const BACK_RECT := Rect2(W - 52, 4, 48, 15)
 const CLEAR_RECT := Rect2(118, 246, 96, 20)
 const SERVE_RECT := Rect2(266, 246, 96, 20)
 
-# the assembly bowl (top-down) — click target to add / sprinkle
-const BOWL_C := Vector2(235, 138)
-const BOWL_R := 60.0
-const BOWL_INNER := 50.0           # where contents / sprinkles live
+# the assembly bowl (slightly-tilted overhead) — click target to add / sprinkle.
+# the 128px sprite is drawn centred at BOWL_C; its bowl opening sits a little
+# higher than the sprite centre (opening centre at sprite y=50, centre y=64).
+const BOWL_C := Vector2(235, 142)
+const BOWL_OPEN := Vector2(235, 128)   # = BOWL_C + (0, -14)
+const BOWL_RX := 50.0                  # opening (sprinkle) radii
+const BOWL_RY := 38.0
+const BOWL_HIT_RX := 56.0              # generous click radii (incl. rim)
+const BOWL_HIT_RY := 44.0
 
 # ---- game states ----------------------------------------------------
 enum State { TITLE, PLAY, OVER }
@@ -251,7 +256,7 @@ func _process(delta: float) -> void:
 		if steam_t <= 0.0:
 			steam_t = 0.16
 			if _base_ok() or soup_fill > 0.0 or bowl.noodles:
-				_puff(BOWL_C.x, BOWL_C.y - 18)        # the assembled bowl
+				_puff(BOWL_OPEN.x, BOWL_OPEN.y - 8)   # the assembled bowl
 			_puff(52, 80)                             # 湯鍋
 			if noodle_state == "cooking":
 				_puff(52, 168)                        # 麵鍋 while boiling
@@ -442,11 +447,12 @@ func _sprinkle(p: Vector2) -> void:
 	if cnt >= SPRINKLE_MAX:
 		return
 	last_sprinkle = p
-	# clamp onto the round broth surface
-	var d: Vector2 = p - BOWL_C
-	if d.length() > BOWL_INNER:
-		d = d.normalized() * BOWL_INNER
-	var pos: Vector2 = BOWL_C + d + Vector2(randf_range(-2, 2), randf_range(-2, 2))
+	# clamp onto the elliptical broth surface
+	var d: Vector2 = p - BOWL_OPEN
+	var e := Vector2(d.x / BOWL_RX, d.y / BOWL_RY)
+	if e.length() > 1.0:
+		d = e.normalized() * Vector2(BOWL_RX, BOWL_RY)
+	var pos: Vector2 = BOWL_OPEN + d + Vector2(randf_range(-2, 2), randf_range(-2, 2))
 	sprinkles.append({"type": held, "pos": pos})
 	bowl[held] = true
 	if sprinkle_cd <= 0.0:
@@ -718,7 +724,18 @@ func _draw_customer(center: Vector2, face: int) -> void:
 
 # --- stations --------------------------------------------------------
 func _in_bowl(p: Vector2) -> bool:
-	return p.distance_to(BOWL_C) <= BOWL_R
+	var nx := (p.x - BOWL_OPEN.x) / BOWL_HIT_RX
+	var ny := (p.y - BOWL_OPEN.y) / BOWL_HIT_RY
+	return nx * nx + ny * ny <= 1.0
+
+
+func _draw_ellipse_ring(c: Vector2, rx: float, ry: float, col: Color) -> void:
+	var pts := PackedVector2Array()
+	var n := 28
+	for i in range(n + 1):
+		var a := TAU * i / float(n)
+		pts.append(c + Vector2(cos(a) * rx, sin(a) * ry))
+	draw_polyline(pts, col, 1.5)
 
 
 func _ticket_rect(i: int) -> Rect2:
@@ -826,17 +843,19 @@ func _draw_assembly(center: Vector2) -> void:
 		var b: Texture2D = ctex["td_bowl"]
 		var dst := Rect2(center.x - b.get_width() / 2.0, center.y - b.get_height() / 2.0,
 			b.get_width(), b.get_height())
-		# subtle ring highlight while holding something
+		# subtle ring highlight (over the opening) while holding something
 		if held != "":
-			draw_arc(center, BOWL_R + 1, 0.0, TAU, 36, Color(1, 1, 0.4, 0.45), 1.5)
+			_draw_ellipse_ring(BOWL_OPEN, BOWL_RX + 2, BOWL_RY + 2, Color(1, 1, 0.4, 0.45))
 		draw_texture_rect(b, dst, false)
-		# broth fills out from the centre as you ladle
+		# broth fills out from the opening centre as you ladle
 		if soup_fill > 0.0 and ctex.has("td_broth"):
 			var t: Texture2D = ctex["td_broth"]
 			var sc: float = clamp(soup_fill, 0.0, 1.0)
 			var w := t.get_width() * sc
 			var h := t.get_height() * sc
-			draw_texture_rect(t, Rect2(center.x - w / 2.0, center.y - h / 2.0, w, h), false)
+			# keep the broth ellipse centred on the opening (sprite opening at 64,50)
+			var pos := BOWL_OPEN - Vector2(t.get_width() * 0.5 * sc, t.get_height() * (50.0 / 128.0) * sc)
+			draw_texture_rect(t, Rect2(pos, Vector2(w, h)), false)
 		if bowl.noodles and ctex.has("td_noodles"):
 			draw_texture_rect(ctex["td_noodles"], dst, false)
 		if bowl.beef and ctex.has("td_beef"):

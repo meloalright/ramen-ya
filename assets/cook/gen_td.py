@@ -61,50 +61,67 @@ def disc(px, cx, cy, r, shade):
                     px[x, y] = c
 
 
-def td_bowl(S=128):
-    im = img(S); px = im.load(); c = S / 2
-    R = S / 2 - 4
+# slightly-tilted overhead: the opening is an ellipse high in the canvas,
+# the bowl's front wall is visible below it.  Opening centre = (64, 50).
+CX = 64.0
+OY = 50.0
+RX = 52.0
+RY = 40.0
+WALL = 22.0          # how much of the outer front wall shows
+CERAMIC   = (232, 224, 210, 255)
+CERAMIC_D = (196, 186, 170, 255)
 
-    def sh(dx, dy, t):
-        if t > 0.86:                      # rim ring (ceramic)
-            col = RED
-            if dx + dy < -R * 0.4:
-                col = RED_HI
-            elif dx + dy > R * 0.5:
-                col = RED_D
-            return col
-        # interior
-        col = CREAM
-        if t > 0.78:
-            col = CREAM_D                 # inner shadow under the rim
-        return col
-    disc(px, c, c, R, sh)
+
+def td_bowl(S=128):
+    im = img(S); px = im.load()
+    ry2 = RY + WALL
+    for y in range(S):
+        for x in range(S):
+            dx = x - CX
+            dy = y - OY
+            t = math.sqrt((dx / RX) ** 2 + (dy / RY) ** 2)
+            if t <= 1.0:                                  # the opening
+                if t > 0.84:                              # rim ring
+                    col = RED
+                    if dx < 0 and dy < 0:
+                        col = RED_HI
+                    elif dy > 0:
+                        col = RED_D                       # front lip in shadow
+                    px[x, y] = col
+                else:
+                    px[x, y] = CREAM_D if t > 0.72 else CREAM
+            elif dy > 0 and (dx / RX) ** 2 + (dy / ry2) ** 2 <= 1.0:
+                # front outer wall (the "side" of the bowl)
+                shade = dy / ry2
+                px[x, y] = CERAMIC_D if shade > 0.62 else CERAMIC
     return outline(im)
 
 
 def td_broth(S=128):
-    im = img(S); px = im.load(); c = S / 2
-    R = S / 2 - 12
-
-    def sh(dx, dy, t):
-        col = GOLD
-        if dx < -R * 0.2 and dy < -R * 0.2 and t < 0.7:
-            col = GOLD_HI
-        elif t > 0.8:
-            col = GOLD_D
-        return col
-    disc(px, c, c, R, sh)
+    im = img(S); px = im.load()
+    rx, ry = RX - 4, RY - 4
+    for y in range(S):
+        for x in range(S):
+            dx = x - CX
+            dy = y - OY
+            t = (dx / rx) ** 2 + (dy / ry) ** 2
+            if t <= 1.0:
+                col = GOLD
+                if dx < 0 and dy < 0 and t < 0.6:
+                    col = GOLD_HI
+                elif t > 0.82:
+                    col = GOLD_D
+                px[x, y] = col
     return im
 
 
 def td_noodles(S=128):
-    im = img(S); px = im.load(); c = S / 2
-    R = S / 2 - 14
-    # wavy noodle strands across the nest
-    for base in range(-int(R), int(R), 6):
-        for x in range(int(c - R), int(c + R)):
-            y = c + base + math.sin(x * 0.5) * 3
-            if math.hypot(x - c, y - c) <= R:
+    im = img(S); px = im.load()
+    rx, ry = RX - 6, RY - 6
+    for base in range(-int(ry), int(ry), 5):
+        for x in range(int(CX - rx), int(CX + rx)):
+            y = OY + base + math.sin(x * 0.5) * 2.5
+            if ((x - CX) / rx) ** 2 + ((y - OY) / ry) ** 2 <= 1.0:
                 px[int(x), int(y)] = NOODLE
                 if int(y) + 1 < S:
                     px[int(x), int(y) + 1] = NOODLE_D
@@ -112,15 +129,15 @@ def td_noodles(S=128):
 
 
 def td_beef(S=128):
-    im = img(S); px = im.load(); c = S / 2
-    for ox, oy in ((-16, -6), (10, 8), (-2, 16)):
+    im = img(S); px = im.load()
+    for ox, oy in ((-14, -4), (9, 5), (-2, 12)):
         for y in range(S):
             for x in range(S):
-                dx = (x - (c + ox)) / 15.0
-                dy = (y - (c + oy)) / 9.0
+                dx = (x - (CX + ox)) / 13.0
+                dy = (y - (OY + oy)) / 8.0
                 d = dx * dx + dy * dy
                 if d <= 1.0:
-                    px[x, y] = BEEF_HI if (d < 0.4 and y < c + oy) else BEEF
+                    px[x, y] = BEEF_HI if (d < 0.4 and y < OY + oy) else BEEF
     return im
 
 
