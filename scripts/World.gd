@@ -85,6 +85,11 @@ var near_door := false
 var font: Font
 var hint_blink := 0.0
 
+# ---- click / touch to move -----------------------------------------
+var move_target := Vector2.ZERO
+var has_target := false
+var enter_on_arrive := false
+
 
 # =====================================================================
 func _ready() -> void:
@@ -242,6 +247,18 @@ func _process(delta: float) -> void:
 	if Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN):
 		dir.y += 1.0
 
+	# keyboard takes over; otherwise steer toward a clicked/tapped target
+	if dir != Vector2.ZERO:
+		has_target = false
+		enter_on_arrive = false
+	elif has_target:
+		var to: Vector2 = move_target - player_pos
+		if to.length() <= 2.5:
+			has_target = false
+		else:
+			dir = to.normalized()
+
+	var prev := player_pos
 	moving = dir != Vector2.ZERO
 	if moving:
 		dir = dir.normalized()
@@ -264,6 +281,11 @@ func _process(delta: float) -> void:
 	player_pos.x = clamp(player_pos.x, FEET_W, MAP_W * TILE - FEET_W)
 	player_pos.y = clamp(player_pos.y, FEET_H + 2, MAP_H * TILE - 2)
 
+	# click-move that hit a wall and made no progress → drop the target
+	if has_target and dir != Vector2.ZERO and player_pos.distance_to(prev) < 0.05:
+		has_target = false
+		enter_on_arrive = false
+
 	# --- walk animation ---
 	if moving:
 		anim_t += delta
@@ -283,6 +305,11 @@ func _process(delta: float) -> void:
 		var dcenter := Vector2(door_cell.x * TILE + TILE / 2.0, door_cell.y * TILE + TILE)
 		near_door = player_pos.distance_to(dcenter) < 26.0
 
+	# walked up to the door after tapping it → step inside
+	if near_door and enter_on_arrive:
+		_enter_shop()
+		return
+
 	queue_redraw()
 
 
@@ -290,6 +317,29 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_E and near_door:
 			_enter_shop()
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		# (touch is delivered as a mouse button too — emulate_mouse_from_touch)
+		_on_pointer(get_global_mouse_position())
+
+
+func _on_pointer(world_pos: Vector2) -> void:
+	# tapping the shop door walks there and enters (great for touch / mouse-only)
+	if door_cell.x >= 0 and _door_rect().has_point(world_pos):
+		if near_door:
+			_enter_shop()
+		else:
+			move_target = Vector2(door_cell.x * TILE + TILE / 2.0, door_cell.y * TILE + TILE)
+			has_target = true
+			enter_on_arrive = true
+		return
+	# otherwise just walk toward the tapped point
+	move_target = world_pos
+	has_target = true
+	enter_on_arrive = false
+
+
+func _door_rect() -> Rect2:
+	return Rect2(door_cell.x * TILE, door_cell.y * TILE, TILE, TILE)
 
 
 func _enter_shop() -> void:
@@ -326,6 +376,10 @@ func _draw() -> void:
 				_draw_shop()
 			"player":
 				_draw_player()
+
+	# click/tap destination marker
+	if has_target:
+		_draw_target_marker()
 
 	# door interaction hint (screen-space would need canvas layer; draw in world above head)
 	if near_door:
@@ -467,6 +521,14 @@ func _draw_hint() -> void:
 		var tw: float = font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		draw_rect(Rect2(hx - tw / 2.0 - 4, hy - fs, tw + 8, fs + 4), Color(0, 0, 0, 0.72))
 		_wtext(label, Vector2(hx, hy), fs, C_YELLOW, HORIZONTAL_ALIGNMENT_CENTER)
+
+
+func _draw_target_marker() -> void:
+	var a: float = 0.4 + 0.35 * sin(hint_blink * 8.0)
+	var col := Color(1, 1, 0.4, a)
+	draw_arc(move_target, 5.0, 0.0, TAU, 18, col, 1.2)
+	draw_line(move_target - Vector2(3, 0), move_target + Vector2(3, 0), col, 1.0)
+	draw_line(move_target - Vector2(0, 3), move_target + Vector2(0, 3), col, 1.0)
 
 
 func _wtext(s: String, pos: Vector2, size: int, col: Color, align := HORIZONTAL_ALIGNMENT_LEFT) -> void:

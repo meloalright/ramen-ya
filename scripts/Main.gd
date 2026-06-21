@@ -10,6 +10,9 @@ extends Node2D
 const W := 480
 const H := 270
 
+# on-screen "back to overworld" button (also bound to ESC / M)
+const BACK_RECT := Rect2(W - 58, 25, 54, 16)
+
 # ---- game states ----------------------------------------------------
 enum State { TITLE, PLAY, OVER }
 var state: int = State.TITLE
@@ -239,6 +242,10 @@ func _handle_key(key: int) -> void:
 
 
 func _handle_click(p: Vector2) -> void:
+	# back-to-map button works in every state
+	if BACK_RECT.has_point(p):
+		get_tree().change_scene_to_file("res://scenes/World.tscn")
+		return
 	if state == State.TITLE:
 		_start_game()
 		return
@@ -361,6 +368,9 @@ func _draw() -> void:
 		State.OVER:
 			_draw_play()      # keep scene behind
 			_draw_over()
+
+	# back-to-overworld button (on top of the scene, all states)
+	_draw_back_button()
 
 	# flash overlay
 	if flash > 0.0:
@@ -638,6 +648,13 @@ func _draw_chef(center_bottom: Vector2, h: float, row: int) -> void:
 	var w := CHEF_FW / float(CHEF_FH) * h
 	var dst := Rect2(center_bottom.x - w / 2.0, center_bottom.y - h, w, h)
 	draw_texture_rect_region(chef_tex, dst, src)
+
+
+func _draw_back_button() -> void:
+	draw_rect(BACK_RECT, Color(0, 0, 0, 0.6))
+	draw_rect(BACK_RECT, COL_YELLOW, false, 1.0)
+	_text("← 地図", Vector2(BACK_RECT.position.x + BACK_RECT.size.x / 2, BACK_RECT.position.y + 12),
+		9, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 # ---- text helper ----------------------------------------------------

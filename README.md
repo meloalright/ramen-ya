@@ -16,8 +16,12 @@ Walk the chef around the map — grass, flowers, trees, a pond, a dirt road. Fin
 
 | Action | Control |
 |---|---|
-| Move | `W A S D` / arrow keys |
-| Enter the shop | `E` (when the **[E] 入店 ENTER** prompt shows at the door) |
+| Move | `W A S D` / arrow keys, **or click / tap** where you want to walk |
+| Enter the shop | `E` at the door, **or click / tap the door** |
+
+> Click-to-move makes the game fully playable with mouse or touch (no keyboard needed) —
+> handy on the Web build. Inside the shop, a **← 地図 MAP** button (top-right) returns you
+> to the overworld.
 
 ### Inside the shop (the cooking minigame)
 You run the counter. Customers sit down and order a bowl shown in their speech bubble
