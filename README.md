@@ -12,7 +12,8 @@ so the project is tiny and exports cleanly to the **Web (HTML5)**.
 
 ### Overworld (`scenes/World.tscn` — the main scene)
 Walk the chef around the map — grass, flowers, trees, a pond, a dirt road. Find the
-**ramen shop** (red roof) and walk up to its door.
+**ramen shop** — the ground-floor storefront (底商) of a tall building, with a red-and-white
+awning and the 拉麵 sign — and walk up to its door.
 
 | Action | Control |
 |---|---|

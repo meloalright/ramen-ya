@@ -176,72 +176,113 @@ def tree():
 
 
 # ---------------------------------------------------- shop building
+# the ramen shop is the GROUND-FLOOR unit (底商) of a tall building.
+# sprite is bottom-aligned to the footprint; SHOP_SIGN_Y is where Godot
+# should draw the 拉麵 text (kept in sync with the awning valance below).
+SHOP_SIGN_Y = 132
+
+
 def shop():
-    wall = (200, 160, 106, 255)
-    wall_d = (160, 124, 76, 255)
-    wall_hi = (220, 184, 130, 255)
-    roof = (198, 64, 64, 255)
-    roof_d = (156, 46, 46, 255)
-    roof_hi = (224, 96, 96, 255)
+    tower = (152, 152, 164, 255)
+    tower_d = (120, 120, 134, 255)
+    tower_hi = (178, 178, 190, 255)
+    seam = (104, 104, 118, 255)
+    win = (250, 218, 138, 255)
+    win_off = (78, 92, 124, 255)
+    win_fr = (58, 58, 68, 255)
+    roof = (108, 108, 120, 255)
+    roof_d = (82, 82, 94, 255)
+    tank = (96, 96, 108, 255)
+    awn = (200, 66, 66, 255)
+    awn_w = (238, 232, 220, 255)
+    awn_d = (150, 46, 46, 255)
+    sign = (32, 26, 38, 255)
+    wall = (206, 166, 110, 255)
+    wall_d = (168, 130, 80, 255)
+    glass = (96, 132, 144, 255)
+    glass_lit = (250, 224, 150, 255)
     door = (78, 50, 30, 255)
     door_d = (44, 28, 18, 255)
     noren = (210, 72, 72, 255)
-    win = (250, 214, 130, 255)
-    win_d = (120, 92, 50, 255)
-    sign = (34, 28, 40, 255)
-    sign_b = (96, 74, 46, 255)
-    W, H = 96, 84
+    W, H = 96, 176
     im = img(W, H)
     px = im.load()
 
-    # --- roof: a red hip roof, eaves overhanging the walls ---
-    top_l, top_r, top_y = 30, 66, 10
-    bot_l, bot_r, bot_y = 1, 95, 62
-    for y in range(top_y, bot_y):
-        t = (y - top_y) / float(bot_y - top_y)
-        xl = int(round(lerp((top_l,), (bot_l,), t)[0]))
-        xr = int(round(lerp((top_r,), (bot_r,), t)[0]))
-        for x in range(xl, xr + 1):
-            c = roof
-            if (y - top_y) % 6 == 0:
-                c = roof_d                            # tile courses
-            if x <= xl + 1 or y < top_y + 2:
-                c = roof_hi                           # left/top sheen
-            elif x >= xr - 1:
-                c = roof_d
-            if y >= bot_y - 3:
-                c = roof_d                            # eaves shadow
+    # ===== tower body (y 10..122) =====
+    for y in range(10, 122):
+        for x in range(3, W - 3):
+            c = tower
+            if x < 6:
+                c = tower_hi
+            elif x > W - 7:
+                c = tower_d
             px[x, y] = c
+    # parapet / flat roof
+    for y in range(6, 12):
+        for x in range(2, W - 2):
+            px[x, y] = roof if y > 7 else roof_d
+    # rooftop water tank
+    for y in range(0, 7):
+        for x in range(58, 74):
+            px[x, y] = tank if y > 1 else roof_d
 
-    # --- wall + door (bottom strip = footprint row 3) ---
-    for y in range(64, H):
-        for x in range(4, 92):
-            c = wall
-            if y == 64:
-                c = wall_hi
-            elif y >= H - 2:
-                c = wall_d
-            elif nz(x, y, 61) < 0.15:
-                c = wall_d
+    # floors of windows, stacked upward
+    wcols = [12, 41, 70]
+    fy = 110
+    fi = 0
+    while fy > 16:
+        for x in range(3, W - 3):            # floor slab line
+            px[x, fy + 9] = seam
+        for ci, wx in enumerate(wcols):
+            lit = ((fi * 7 + ci * 5) % 3) != 0
+            col = win if lit else win_off
+            for y in range(fy, fy + 9):
+                for x in range(wx, wx + 14):
+                    if x == wx or x == wx + 13 or y == fy or y == fy + 8:
+                        px[x, y] = win_fr
+                    else:
+                        px[x, y] = col
+                px[wx + 6, y] = win_fr        # vertical mullion
+        fy -= 20
+        fi += 1
+
+    # ===== ground-floor storefront (y 122..176) =====
+    # awning: red/white stripes projecting over the shop front
+    for y in range(120, 132):
+        for x in range(1, W - 1):
+            c = awn if (x // 6) % 2 == 0 else awn_w
+            if y >= 129:
+                c = awn_d                     # valance shadow
             px[x, y] = c
-    # windows
-    for wx in (14, 70):
-        for y in range(68, 78):
-            for x in range(wx, wx + 12):
-                px[x, y] = win if (4 < (x - wx) < 11 and 1 < (y - 68) < 9) else win_d
-    # door (centred under the sign)
-    for y in range(66, H):
+    # dark sign plate on the valance (Godot draws 拉麵 here)
+    for y in range(SHOP_SIGN_Y - 8, SHOP_SIGN_Y + 4):
+        for x in range(32, 64):
+            if 33 < x < 62 and SHOP_SIGN_Y - 7 < y < SHOP_SIGN_Y + 3:
+                px[x, y] = sign
+            else:
+                px[x, y] = awn_d
+    # storefront wall
+    for y in range(136, H):
+        for x in range(2, W - 2):
+            px[x, y] = wall_d if y >= H - 2 else wall
+    # display windows (warm glow), left & right of the door
+    for wx0, wx1 in ((6, 38), (58, 90)):
+        for y in range(140, 170):
+            for x in range(wx0, wx1):
+                if x == wx0 or x == wx1 - 1 or y == 140 or y == 169:
+                    px[x, y] = win_fr
+                else:
+                    px[x, y] = glass_lit if y > 152 else glass
+        for y in range(140, 170):
+            px[(wx0 + wx1) // 2, y] = win_fr
+    # entrance door + noren
+    for y in range(150, H):
         for x in range(40, 56):
             px[x, y] = door_d if (x == 40 or x == 55 or y >= H - 2) else door
-    for y in range(66, 71):                            # noren over the doorway
+    for y in range(150, 158):
         for x in range(40, 56):
             if x != 47 and x != 48:
                 px[x, y] = noren
-
-    # --- signboard at the top centre (text drawn by Godot over it) ---
-    for y in range(2, 16):
-        for x in range(33, 63):
-            px[x, y] = sign_b if (x < 35 or x > 60 or y < 4 or y > 13) else sign
     return im
 
 

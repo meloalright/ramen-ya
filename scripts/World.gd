@@ -178,8 +178,8 @@ func _build_map() -> void:
 		if _walkable_for_tree(tx, ty):
 			map[ty][tx] = T_TREE
 
-	# --- the ramen shop (building) ---
-	_place_shop(rx - 4, 6)
+	# --- the ramen shop: ground floor of a tall building ---
+	_place_shop(rx - 4, 11)
 
 
 func _walkable_for_tree(x: int, y: int) -> bool:
@@ -514,10 +514,11 @@ func _draw_shop() -> void:
 	if wtex.has("shop"):
 		var s: Texture2D = wtex["shop"]
 		var ox := tl.x * TILE
-		var oy := tl.y * TILE - 20            # sprite reserves 20px above the footprint
+		# bottom-align the tall building to the footprint (4 tiles tall)
+		var oy := (tl.y + 4) * TILE - s.get_height()
 		draw_texture_rect(s, Rect2(ox, oy, s.get_width(), s.get_height()), false)
-		# shop name on the signboard baked into the sprite
-		_wtext("拉麵", Vector2(ox + s.get_width() / 2.0, oy + 12), 9, C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+		# shop name on the storefront awning sign (SHOP_SIGN_Y in generate.py)
+		_wtext("拉麵", Vector2(ox + s.get_width() / 2.0, oy + 134), 9, C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 		return
 	var w := 6
 	var h := 4
