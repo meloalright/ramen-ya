@@ -85,6 +85,9 @@ var near_door := false
 var font: Font
 var hint_blink := 0.0
 
+# ---- generated overworld tileset (assets/world/*.png) --------------
+var wtex := {}
+
 # ---- click / touch to move -----------------------------------------
 var move_target := Vector2.ZERO
 var has_target := false
@@ -96,6 +99,7 @@ func _ready() -> void:
 	font = ThemeDB.fallback_font
 	if ResourceLoader.exists("res://assets/chef_sheet.png"):
 		chef_tex = load("res://assets/chef_sheet.png")
+	_load_world_tiles()
 	_build_map()
 	# spawn on the path just south of the shop door
 	if door_cell.x >= 0:
@@ -117,6 +121,13 @@ func _setup_camera() -> void:
 	cam.limit_bottom = MAP_H * TILE
 	cam.position = player_pos
 	cam.reset_smoothing()
+
+
+func _load_world_tiles() -> void:
+	for key in ["grass", "grass2", "path", "sand", "water", "tree", "shop"]:
+		var p := "res://assets/world/%s.png" % key
+		if ResourceLoader.exists(p):
+			wtex[key] = load(p)
 
 
 # =====================================================================
@@ -407,6 +418,23 @@ func _draw_ground_tile(tx: int, ty: int) -> void:
 	var t: int = map[ty][tx]
 	var px := tx * TILE
 	var py := ty * TILE
+	var nm := "grass"
+	match t:
+		T_WATER: nm = "water"
+		T_PATH:  nm = "path"
+		T_SAND:  nm = "sand"
+		T_GRASS2: nm = "grass2"
+		_: nm = "grass"
+	if wtex.has(nm):
+		draw_texture_rect(wtex[nm], Rect2(px, py, TILE, TILE), false)
+	else:
+		_draw_ground_fallback(tx, ty)
+
+
+func _draw_ground_fallback(tx: int, ty: int) -> void:
+	var t: int = map[ty][tx]
+	var px := tx * TILE
+	var py := ty * TILE
 	var r := Rect2(px, py, TILE, TILE)
 	match t:
 		T_WATER:
@@ -436,13 +464,19 @@ func _draw_ground_tile(tx: int, ty: int) -> void:
 func _draw_tree(tx: int, ty: int) -> void:
 	var px := tx * TILE + TILE / 2.0
 	var base := ty * TILE + TILE
-	# trunk
+	if wtex.has("tree"):
+		var t: Texture2D = wtex["tree"]
+		var tw := t.get_width()
+		var th := t.get_height()
+		# soft shadow at the trunk base
+		draw_rect(Rect2(px - 7, base - 3, 14, 4), Color(0, 0, 0, 0.18))
+		draw_texture_rect(t, Rect2(px - tw / 2.0, base - th, tw, th), false)
+		return
+	# fallback: stacked blobs
 	draw_rect(Rect2(px - 2, base - 9, 4, 9), C_TRUNK)
-	# canopy (three stacked blobs reaching above the tile)
 	draw_rect(Rect2(px - 11, base - 30, 22, 16), C_LEAF_D)
 	draw_rect(Rect2(px - 9, base - 33, 18, 16), C_LEAF)
 	draw_rect(Rect2(px - 6, base - 36, 12, 12), C_LEAF_HI)
-	# tiny highlight specks
 	draw_rect(Rect2(px - 4, base - 30, 3, 3), C_LEAF_HI)
 	draw_rect(Rect2(px + 3, base - 24, 3, 3), C_LEAF_HI)
 
@@ -464,6 +498,14 @@ func _shop_base_y() -> float:
 func _draw_shop() -> void:
 	var tl := _shop_top_left()
 	if tl.x < 0:
+		return
+	if wtex.has("shop"):
+		var s: Texture2D = wtex["shop"]
+		var ox := tl.x * TILE
+		var oy := tl.y * TILE - 20            # sprite reserves 20px above the footprint
+		draw_texture_rect(s, Rect2(ox, oy, s.get_width(), s.get_height()), false)
+		# shop name on the signboard baked into the sprite
+		_wtext("らーめん", Vector2(ox + s.get_width() / 2.0, oy + 12), 8, C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 		return
 	var w := 6
 	var h := 4
