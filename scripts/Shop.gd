@@ -10,8 +10,8 @@ extends Node2D
 # =====================================================================
 
 const TILE := 16
-const MAP_W := 24            # tiles (incl. walls)
-const MAP_H := 15
+const MAP_W := 11            # tiles (incl. walls) — narrow
+const MAP_H := 30            # tall vertical room
 
 enum { FLOOR, WALL, KITCHEN, COUNTER, TABLE, CHAIR, DOOR }
 
@@ -122,13 +122,18 @@ func _load_tileset() -> void:
 
 
 func _setup_camera() -> void:
-	# frame the whole room (fixed camera, no follow)
+	# narrow room: zoom so the WIDTH fills the screen, then scroll vertically
 	var room := Vector2(MAP_W * TILE, MAP_H * TILE)
 	var vp := get_viewport_rect().size
-	var z: float = min(vp.x / room.x, vp.y / room.y) * 0.99
+	var z: float = vp.x / room.x
 	cam.zoom = Vector2(z, z)
-	cam.position_smoothing_enabled = false
-	cam.position = room / 2.0
+	cam.position_smoothing_enabled = true
+	cam.position_smoothing_speed = 9.0
+	cam.limit_left = 0
+	cam.limit_top = 0
+	cam.limit_right = int(room.x)
+	cam.limit_bottom = int(room.y)
+	cam.position = player_pos
 	cam.reset_smoothing()
 
 
@@ -157,13 +162,16 @@ func _build_room() -> void:
 	map[MAP_H - 1][dx] = DOOR
 	door_cell = Vector2i(dx, MAP_H - 1)
 
-	# dining sets: [chair][table][table][chair], two rows
-	for ry in [7, 10]:
-		for bx in [3, 10, 17]:
-			map[ry][bx] = CHAIR
-			map[ry][bx + 1] = TABLE
-			map[ry][bx + 2] = TABLE
-			map[ry][bx + 3] = CHAIR
+	# booths down both walls, with a clear central aisle (x4,5,6)
+	for ry in [6, 10, 14, 18, 22, 26]:
+		# left booth: table against the wall, chair facing the aisle
+		map[ry][1] = TABLE
+		map[ry][2] = TABLE
+		map[ry][3] = CHAIR
+		# right booth
+		map[ry][MAP_W - 2] = TABLE
+		map[ry][MAP_W - 3] = TABLE
+		map[ry][MAP_W - 4] = CHAIR
 
 
 # =====================================================================
@@ -242,6 +250,9 @@ func _process(delta: float) -> void:
 	else:
 		anim_i = 0
 		anim_t = 0.0
+
+	# camera follows the player up/down the room
+	cam.position = player_pos
 
 	# interaction zones
 	near_counter = counter_zone.has_point(player_pos)
@@ -354,7 +365,7 @@ func _draw_ground(tx: int, ty: int) -> void:
 	# dressing: bowls along the counter, lanterns hung on the kitchen wall
 	if t == COUNTER and tx % 3 == 1 and tex.has("bowl"):
 		draw_texture_rect(tex["bowl"], Rect2(px, py - 2, TILE, TILE), false)
-	if t == KITCHEN and (tx == 4 or tx == 11 or tx == 18) and tex.has("lantern"):
+	if t == KITCHEN and (tx == 3 or tx == 7) and tex.has("lantern"):
 		draw_texture_rect(tex["lantern"], Rect2(px, py - 5, TILE, TILE), false)
 
 

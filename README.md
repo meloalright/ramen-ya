@@ -23,9 +23,10 @@ Walk the chef around the map — grass, flowers, trees, a pond, a dirt road. Fin
 > handy on the Web build.
 
 ### Shop interior (`scenes/Shop.tscn`)
-Stepping through the door drops you into a walkable rectangular room — wooden floor,
-dining **tables + chairs**, and a service **counter (档口)** along the back. Walk around
-freely, then step up to the counter to start cooking, or back to the door to leave.
+Stepping through the door drops you into a walkable **tall, narrow room** — wooden floor,
+**booths down both walls** with a central aisle, a service **counter (档口)** at the top and
+the exit door at the bottom. The camera scrolls vertically as you walk its length. Step up
+to the counter to start cooking, or back to the door to leave.
 
 | Action | Control |
 |---|---|
