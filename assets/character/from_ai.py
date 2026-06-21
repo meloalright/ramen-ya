@@ -54,7 +54,7 @@ def cut(im, bright, r, c):
     w, h = cell.size
     nw = max(1, round(w * CHAR_H / h))
     cell = cell.resize((nw, CHAR_H), Image.LANCZOS)
-    cell = cell.filter(ImageFilter.UnsharpMask(radius=1.2, percent=110, threshold=2))
+    cell = cell.filter(ImageFilter.UnsharpMask(radius=1.0, percent=35, threshold=3))
     frame = Image.new("RGBA", (FW, FH), (0, 0, 0, 0))
     frame.alpha_composite(cell, ((FW - nw) // 2, FH - CHAR_H))
     return frame
