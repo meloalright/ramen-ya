@@ -176,13 +176,23 @@ func _build_room() -> void:
 
 
 func _make_booth(ry: int, t_outer: int, t_inner: int, chair_x: int) -> void:
-	map[ry][t_outer] = TABLE
-	map[ry][t_inner] = TABLE
-	map[ry][chair_x] = CHAIR
-	# seat a customer in most booths → bowl on the table in front of them
+	# some booths are a long two-seat table (spanning an extra row)
+	var two_seat: bool = randi() % 100 < 40
+	var rows := [ry]
+	if two_seat:
+		rows.append(ry + 1)
+	for r in rows:
+		map[r][t_outer] = TABLE
+		map[r][t_inner] = TABLE
+		map[r][chair_x] = CHAIR
+	# seat diners → bowl on the table in front of each
 	if randi() % 100 < 60:
 		seated[Vector2i(chair_x, ry)] = randi() % 4
 		bowl_tables[Vector2i(t_inner, ry)] = true
+		# a companion on the second seat most of the time
+		if two_seat and randi() % 100 < 75:
+			seated[Vector2i(chair_x, ry + 1)] = randi() % 4
+			bowl_tables[Vector2i(t_inner, ry + 1)] = true
 
 
 # =====================================================================
