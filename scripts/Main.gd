@@ -8,19 +8,19 @@ extends Node2D
 #  cares whether to add 蔥花 / 香菜 / 辣椒.  Match their order and serve.
 # =====================================================================
 
-# ---- screen (portrait) ---------------------------------------------
-const W := 270
-const H := 480
+# ---- screen ---------------------------------------------------------
+const W := 480
+const H := 270
 
 # on-screen "back to shop" button (also bound to ESC / M)
-const BACK_RECT := Rect2(W - 58, 3, 54, 16)
+const BACK_RECT := Rect2(W - 58, 25, 54, 16)
 
 # action buttons
-const CLEAR_RECT := Rect2(24, 440, 108, 26)
-const SERVE_RECT := Rect2(140, 440, 108, 26)
+const CLEAR_RECT := Rect2(148, 247, 88, 18)
+const SERVE_RECT := Rect2(244, 247, 88, 18)
 
 # the assembly bowl (click target to drop a held ingredient)
-const BOWL_RECT := Rect2(90, 172, 90, 56)
+const BOWL_RECT := Rect2(196, 112, 88, 56)
 
 # ---- game states ----------------------------------------------------
 enum State { TITLE, PLAY, OVER }
@@ -68,7 +68,7 @@ var reputation: int = 3
 var day_time: float = 120.0
 
 const SEATS := 3
-var seat_x := [46, 135, 224]
+var seat_x := [96, 240, 384]
 var customers: Array = []
 var selected_seat: int = 0
 
@@ -151,18 +151,15 @@ func _build_stations() -> void:
 		["soup", "湯鍋"], ["noodles", "麵鍋"], ["beef", "牛肉片"],
 		["scallion", "蔥花"], ["cilantro", "香菜"], ["chili", "辣椒"],
 	]
-	# 2 rows of 3 in the portrait counter
-	var spots := [Vector2(48, 252), Vector2(135, 252), Vector2(222, 252),
-		Vector2(48, 312), Vector2(135, 312), Vector2(222, 312)]
-	var ww := 80
-	var hh := 52
+	var centers := [52, 128, 204, 280, 356, 432]
+	var ww := 64
+	var hh := 46
 	for i in defs.size():
-		var cx: float = spots[i].x
 		stations.append({
 			"item": defs[i][0],
 			"name": defs[i][1],
-			"rect": Rect2(cx - ww / 2.0, spots[i].y, ww, hh),
-			"cx": cx,
+			"rect": Rect2(centers[i] - ww / 2.0, 178, ww, hh),
+			"cx": centers[i],
 		})
 
 
@@ -218,7 +215,7 @@ func _update_play(delta: float) -> void:
 			continue
 		c.patience -= delta
 		if c.patience <= 0.0:
-			_spawn_float(Vector2(seat_x[i], 84), "生氣走了！", COL_RED)
+			_spawn_float(Vector2(seat_x[i], 70), "生氣走了！", COL_RED)
 			customers[i] = null
 			reputation -= 1
 			flash = 0.25
@@ -279,7 +276,7 @@ func _handle_click(p: Vector2) -> void:
 
 	# seat selection
 	for i in SEATS:
-		if Rect2(seat_x[i] - 42, 60, 84, 84).has_point(p) and customers[i] != null:
+		if Rect2(seat_x[i] - 40, 24, 80, 80).has_point(p) and customers[i] != null:
 			selected_seat = i
 			return
 
@@ -289,7 +286,7 @@ func _handle_click(p: Vector2) -> void:
 		return
 	if CLEAR_RECT.has_point(p):
 		_reset_bowl()
-		_spawn_float(Vector2(135, 232), "倒掉了", COL_YELLOW)
+		_spawn_float(Vector2(240, 150), "倒掉了", COL_YELLOW)
 		return
 
 	# drop a held ingredient into the assembly bowl
@@ -306,24 +303,24 @@ func _handle_click(p: Vector2) -> void:
 
 func _place_into_bowl() -> void:
 	if held == "":
-		_spawn_float(Vector2(135, 232), "先點材料提起", COL_YELLOW)
+		_spawn_float(Vector2(240, 150), "先點材料提起", COL_YELLOW)
 		return
 	if bowl[held]:
-		_spawn_float(Vector2(135, 210), "已經放過了", COL_YELLOW)
+		_spawn_float(Vector2(240, 130), "已經放過了", COL_YELLOW)
 	else:
 		bowl[held] = true
 		var label := _item_name(held)
-		_spawn_float(Vector2(135, 206), "放入 " + label, COL_GREEN)
+		_spawn_float(Vector2(240, 126), "放入 " + label, COL_GREEN)
 	held = ""
 
 
 func _serve() -> void:
 	var c = customers[selected_seat]
 	if c == null:
-		_spawn_float(Vector2(135, 232), "沒有客人", COL_YELLOW)
+		_spawn_float(Vector2(240, 150), "沒有客人", COL_YELLOW)
 		return
 	if not _base_ok():
-		_spawn_float(Vector2(135, 232), "還沒做好！", COL_YELLOW)
+		_spawn_float(Vector2(240, 150), "還沒做好！", COL_YELLOW)
 		return
 
 	if _matches(c):
@@ -334,13 +331,13 @@ func _serve() -> void:
 		var tip: int = 60 + int(round(c.patience / c.max_patience * 50.0)) + 12 * want_n
 		money += tip
 		served += 1
-		_spawn_float(Vector2(seat_x[selected_seat], 84), "+" + str(tip), COL_GREEN)
+		_spawn_float(Vector2(seat_x[selected_seat], 60), "+" + str(tip), COL_GREEN)
 		flash = 0.2
 		flash_col = COL_GREEN
 	else:
 		money = max(0, money - 30)
 		reputation -= 1
-		_spawn_float(Vector2(seat_x[selected_seat], 84), "錯了！ -30", COL_RED)
+		_spawn_float(Vector2(seat_x[selected_seat], 60), "錯了！ -30", COL_RED)
 		flash = 0.25
 		flash_col = COL_RED
 
@@ -422,24 +419,24 @@ func _draw() -> void:
 
 func _draw_title() -> void:
 	if stall_tex != null:
-		var sw := 262.0
+		var sw := 472.0
 		var sh := sw * stall_tex.get_height() / float(stall_tex.get_width())
-		draw_texture_rect(stall_tex, Rect2((W - sw) / 2.0, 18, sw, sh), false)
-	_draw_chef(Vector2(60, 360), 130)
-	draw_rect(Rect2(0, 372, W, H - 372), Color(0.07, 0.06, 0.09, 0.82))
-	_title_text("拉 麵 屋", Vector2(135, 400), 24, COL_YELLOW)
-	_title_text("2D 像素拉麵店  試玩版", Vector2(135, 424), 10, COL_WHITE)
-	_title_text("[ 點擊或空白鍵 開始 ]", Vector2(135, 450), 10,
+		draw_texture_rect(stall_tex, Rect2((W - sw) / 2.0, 4, sw, sh), false)
+	_draw_chef(Vector2(64, 262), 118)
+	draw_rect(Rect2(0, 224, W, 46), Color(0.07, 0.06, 0.09, 0.8))
+	_title_text("拉 麵 屋", Vector2(244, 242), 20, COL_YELLOW)
+	_title_text("2D 像素拉麵店  試玩版", Vector2(242, 256), 10, COL_WHITE)
+	_title_text("[ 點擊或空白鍵 開始 ]   [ ESC 返回店內 ]", Vector2(242, 267), 9,
 		COL_GREEN if _blink() else COL_WHITE)
-	_title_text("[ ESC 返回店內 ]", Vector2(135, 466), 9, COL_WHITE)
 
 
 func _draw_play() -> void:
-	# kitchen wall (behind customers) + wooden counter
-	draw_rect(Rect2(0, 26, W, 136), COL_WALL)
-	draw_rect(Rect2(0, 26, W, 3), COL_WALL_HI)
-	draw_rect(Rect2(0, 162, W, H - 162), COL_COUNTER)
-	draw_rect(Rect2(0, 162, W, 3), Color(1, 1, 1, 0.18))
+	# kitchen wall + wooden counter
+	draw_rect(Rect2(0, 22, W, 90), COL_WALL)
+	draw_rect(Rect2(0, 22, W, 3), COL_WALL_HI)
+	draw_rect(Rect2(0, 112, W, H - 112), COL_COUNTER)
+	draw_rect(Rect2(0, 112, W, 3), Color(1, 1, 1, 0.18))
+	draw_rect(Rect2(0, 168, W, 2), COL_COUNTER_D)
 
 	# customers behind the counter
 	for i in SEATS:
@@ -450,8 +447,8 @@ func _draw_play() -> void:
 		_draw_station(s)
 
 	# assembly bowl
-	_draw_assembly(Vector2(135, 200))
-	_text("組裝中", Vector2(135, 166), 9, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	_draw_assembly(Vector2(240, 140))
+	_text("組裝中", Vector2(240, 106), 9, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 
 	# action buttons
 	_draw_button(CLEAR_RECT, "倒掉", COL_RED)
@@ -466,15 +463,17 @@ func _draw_play() -> void:
 
 func _draw_hud() -> void:
 	draw_rect(Rect2(0, 0, W, 22), COL_INK)
-	_text("￥ " + str(money), Vector2(6, 16), 12, COL_YELLOW)
-	_text("賣出 " + str(served), Vector2(74, 16), 10, COL_WHITE)
+	_text("￥ " + str(money), Vector2(8, 16), 13, COL_YELLOW)
+	_text("賣出 " + str(served), Vector2(150, 16), 11, COL_WHITE)
+	_text("信譽", Vector2(250, 16), 11, COL_WHITE)
 	for i in 3:
 		var c := COL_RED if i < reputation else Color("44333a")
-		draw_rect(Rect2(150 + i * 14, 5, 11, 11), c)
-	# day timer: full-width thin bar under the HUD
-	draw_rect(Rect2(0, 22, W, 4), COL_PANEL)
+		draw_rect(Rect2(286 + i * 14, 5, 11, 11), c)
+	_text("時間", Vector2(338, 16), 10, COL_WHITE)
+	var bw := 110
+	draw_rect(Rect2(372, 6, bw, 10), COL_PANEL)
 	var frac: float = clamp(day_time / 120.0, 0.0, 1.0)
-	draw_rect(Rect2(0, 22, int(W * frac), 4), COL_GREEN)
+	draw_rect(Rect2(372, 6, int(bw * frac), 10), COL_GREEN)
 
 
 func _draw_seat(i: int) -> void:
@@ -483,22 +482,22 @@ func _draw_seat(i: int) -> void:
 	if c == null:
 		return
 	if i == selected_seat:
-		draw_rect(Rect2(cx - 42, 60, 84, 84), Color(1, 1, 1, 0.10))
-		draw_rect(Rect2(cx - 26, 142, 52, 3), COL_YELLOW)
+		draw_rect(Rect2(cx - 40, 24, 80, 80), Color(1, 1, 1, 0.10))
+		draw_rect(Rect2(cx - 26, 100, 52, 3), COL_YELLOW)
 
-	_draw_customer(Vector2(cx, 118), c.face)
+	_draw_customer(Vector2(cx, 86), c.face)
 
 	# patience bar
-	var pw := 74
+	var pw := 70
 	var px: int = cx - pw / 2
-	draw_rect(Rect2(px, 144, pw, 5), COL_INK)
+	draw_rect(Rect2(px, 102, pw, 5), COL_INK)
 	var pf: float = clamp(c.patience / c.max_patience, 0.0, 1.0)
 	var pcol := COL_GREEN
 	if pf < 0.5: pcol = COL_YELLOW
 	if pf < 0.25: pcol = COL_RED
-	draw_rect(Rect2(px, 144, int(pw * pf), 5), pcol)
+	draw_rect(Rect2(px, 102, int(pw * pf), 5), pcol)
 
-	_draw_order_bubble(Vector2(cx, 36), c)
+	_draw_order_bubble(Vector2(cx, 30), c)
 
 
 func _draw_order_bubble(anchor: Vector2, c: Dictionary) -> void:
@@ -506,28 +505,29 @@ func _draw_order_bubble(anchor: Vector2, c: Dictionary) -> void:
 	for k in TOP_ORDER:
 		if c.wants[k]:
 			wants.append(k)
-	var bw := 82
+	var bw := 92
 	var bx := int(anchor.x) - bw / 2
 	var by := int(anchor.y)
-	draw_rect(Rect2(bx, by, bw, 28), COL_WHITE)
-	draw_rect(Rect2(bx, by, bw, 28), COL_INK, false, 1.0)
-	draw_rect(Rect2(int(anchor.x) - 3, by + 28, 6, 5), COL_WHITE)
+	draw_rect(Rect2(bx, by, bw, 30), COL_WHITE)
+	draw_rect(Rect2(bx, by, bw, 30), COL_INK, false, 1.0)
+	draw_rect(Rect2(int(anchor.x) - 3, by + 30, 6, 5), COL_WHITE)
 	# beef-ramen base icon
 	if ctex.has("bowl_mini"):
 		var mb: Texture2D = ctex["bowl_mini"]
-		draw_texture_rect(mb, Rect2(bx + 12 - mb.get_width() / 2.0, by + 14 - mb.get_height() / 2.0,
+		draw_texture_rect(mb, Rect2(bx + 13 - mb.get_width() / 2.0, by + 15 - mb.get_height() / 2.0,
 			mb.get_width(), mb.get_height()), false)
 	else:
-		_mini_bowl(Vector2(bx + 12, by + 14))
+		_mini_bowl(Vector2(bx + 13, by + 15))
+	_text("牛肉麵", Vector2(bx + 24, by + 11), 8, COL_INK)
 	# wanted toppings (or 原味)
 	if wants.is_empty():
-		_text("原味", Vector2(bx + 46, by + 18), 9, COL_INK, HORIZONTAL_ALIGNMENT_CENTER)
+		_text("原味", Vector2(bx + 40, by + 24), 9, COL_INK)
 	else:
 		var ix := bx + 24
 		for k in wants:
-			draw_rect(Rect2(ix, by + 10, 10, 10), TOPPING[k].col)
-			draw_rect(Rect2(ix, by + 10, 10, 10), COL_INK, false, 1.0)
-			ix += 14
+			draw_rect(Rect2(ix, by + 17, 9, 9), TOPPING[k].col)
+			draw_rect(Rect2(ix, by + 17, 9, 9), COL_INK, false, 1.0)
+			ix += 12
 
 
 func _mini_bowl(center: Vector2) -> void:
@@ -696,17 +696,17 @@ func _draw_back_button() -> void:
 	draw_rect(BACK_RECT, Color(0, 0, 0, 0.6))
 	draw_rect(BACK_RECT, COL_YELLOW, false, 1.0)
 	_text("← 店內", Vector2(BACK_RECT.position.x + BACK_RECT.size.x / 2, BACK_RECT.position.y + 12),
-		8, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+		9, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 func _draw_over() -> void:
 	draw_rect(Rect2(0, 0, W, H), Color(0, 0, 0, 0.7))
 	var won := reputation > 0
 	var title := "打烊—今日結束！" if won else "遊戲結束"
-	_text(title, Vector2(135, 180), 20, (COL_GREEN if won else COL_RED), HORIZONTAL_ALIGNMENT_CENTER)
-	_text("今日收入  ￥" + str(money), Vector2(135, 230), 14, COL_YELLOW, HORIZONTAL_ALIGNMENT_CENTER)
-	_text("賣出拉麵  " + str(served), Vector2(135, 258), 12, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
-	_text("[ 點擊或按 R 再玩一次 ]", Vector2(135, 330), 11, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	_text(title, Vector2(240, 90), 22, (COL_GREEN if won else COL_RED), HORIZONTAL_ALIGNMENT_CENTER)
+	_text("今日收入  ￥" + str(money), Vector2(240, 130), 15, COL_YELLOW, HORIZONTAL_ALIGNMENT_CENTER)
+	_text("賣出拉麵  " + str(served), Vector2(240, 156), 12, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	_text("[ 點擊或按 R 再玩一次 ]", Vector2(240, 205), 12, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 func _draw_chef(center_bottom: Vector2, h: float) -> void:

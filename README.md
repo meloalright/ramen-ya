@@ -122,8 +122,8 @@ python3 -m http.server 8000
 
 ## 🛠️ Tech notes
 - Renderer: **GL Compatibility** (OpenGL ES 3 / WebGL2) — the most reliable choice for Web.
-- Display: **portrait 270×480** base canvas, `canvas_items` stretch with `keep` aspect →
-  crisp pixels (built for a tall phone screen).
+- Display: **landscape 480×270** base canvas, `canvas_items` stretch with `keep` aspect →
+  crisp pixels.
 - All in-game text is **Traditional Chinese (繁體中文)**, rendered with the pixel font
   **Zpix / 最像素** (`assets/fonts/zpix.ttf`, antialiasing off). The font is **subset** to
   only the glyphs the game uses (~33 KB instead of 7 MB) to keep the Web build small.
