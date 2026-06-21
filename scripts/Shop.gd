@@ -19,6 +19,10 @@ var map: Array = []
 var counter_zone: Rect2          # floor strip right in front of the counter
 var door_cell := Vector2i(-1, -1)
 
+# decorative seated customers (no interaction, just to look busy)
+var seated := {}                 # chair Vector2i -> face int
+var bowl_tables := {}            # table Vector2i -> true (a ramen bowl sits here)
+
 # remembers where to drop the player when (re)entering this scene
 static var entry := "door"       # "door" (from overworld) | "counter" (from cooking)
 
@@ -162,16 +166,23 @@ func _build_room() -> void:
 	map[MAP_H - 1][dx] = DOOR
 	door_cell = Vector2i(dx, MAP_H - 1)
 
-	# booths down both walls, with a clear central aisle (x4,5,6)
+	# booths down both walls (clear central aisle), some with seated diners
+	seed(771)
+	seated.clear()
+	bowl_tables.clear()
 	for ry in [6, 10, 14, 18, 22, 26]:
-		# left booth: table against the wall, chair facing the aisle
-		map[ry][1] = TABLE
-		map[ry][2] = TABLE
-		map[ry][3] = CHAIR
-		# right booth
-		map[ry][MAP_W - 2] = TABLE
-		map[ry][MAP_W - 3] = TABLE
-		map[ry][MAP_W - 4] = CHAIR
+		_make_booth(ry, 1, 2, 3)                              # left
+		_make_booth(ry, MAP_W - 2, MAP_W - 3, MAP_W - 4)     # right
+
+
+func _make_booth(ry: int, t_outer: int, t_inner: int, chair_x: int) -> void:
+	map[ry][t_outer] = TABLE
+	map[ry][t_inner] = TABLE
+	map[ry][chair_x] = CHAIR
+	# seat a customer in most booths → bowl on the table in front of them
+	if randi() % 100 < 60:
+		seated[Vector2i(chair_x, ry)] = randi() % 4
+		bowl_tables[Vector2i(t_inner, ry)] = true
 
 
 # =====================================================================
@@ -408,15 +419,17 @@ func _draw_ground_fallback(tx: int, ty: int) -> void:
 func _draw_table(tx: int, ty: int) -> void:
 	var px := tx * TILE
 	var py := ty * TILE
+	var has_bowl: bool = bowl_tables.has(Vector2i(tx, ty))
 	if tex.has("table"):
 		draw_texture_rect(tex["table"], Rect2(px, py, TILE, TILE), false)
-		if tex.has("bowl"):
+		if has_bowl and tex.has("bowl"):
 			draw_texture_rect(tex["bowl"], Rect2(px, py - 3, TILE, TILE), false)
 	else:
 		draw_rect(Rect2(px, py + 3, TILE, TILE - 4), C_TABLE)
 		draw_rect(Rect2(px, py + 3, TILE, 3), C_TABLE_HI)
-		draw_rect(Rect2(px + 4, py + 6, 9, 5), C_BOWL)
-		draw_rect(Rect2(px + 4, py + 6, 9, 2), C_DOOR)
+		if has_bowl:
+			draw_rect(Rect2(px + 4, py + 6, 9, 5), C_BOWL)
+			draw_rect(Rect2(px + 4, py + 6, 9, 2), C_DOOR)
 
 
 func _draw_chair(tx: int, ty: int) -> void:
@@ -427,6 +440,32 @@ func _draw_chair(tx: int, ty: int) -> void:
 	else:
 		draw_rect(Rect2(px + 3, py + 6, TILE - 6, TILE - 8), C_CHAIR)
 		draw_rect(Rect2(px + 3, py + 4, TILE - 6, 3), C_TABLE_HI)
+	# a seated diner on this chair?
+	var cell := Vector2i(tx, ty)
+	if seated.has(cell):
+		_draw_diner(tx, ty, int(seated[cell]))
+
+
+func _draw_diner(tx: int, ty: int, face: int) -> void:
+	var skins := [Color("e8b98c"), Color("c98a5a"), Color("f0cba0"), Color("d9a06a")]
+	var cloths := [Color("4e6fae"), Color("ae4e6f"), Color("4eae8a"), Color("9a6fae")]
+	var skin: Color = skins[face % 4]
+	var cloth: Color = cloths[face % 4]
+	var cx := tx * TILE + TILE / 2.0
+	var cy := ty * TILE + TILE / 2.0
+	var left := tx < MAP_W / 2          # diner faces their table (toward the wall)
+	# body + head sitting at the table
+	draw_rect(Rect2(cx - 6, cy - 1, 12, 11), cloth)
+	draw_rect(Rect2(cx - 6, cy - 1, 12, 2), Color(1, 1, 1, 0.12))
+	draw_rect(Rect2(cx - 5, cy - 11, 10, 11), skin)
+	draw_rect(Rect2(cx - 6, cy - 12, 12, 4), C_INK)
+	# eyes toward the facing side
+	if left:
+		draw_rect(Rect2(cx - 5, cy - 6, 2, 2), C_INK)
+		draw_rect(Rect2(cx - 1, cy - 6, 2, 2), C_INK)
+	else:
+		draw_rect(Rect2(cx - 1, cy - 6, 2, 2), C_INK)
+		draw_rect(Rect2(cx + 3, cy - 6, 2, 2), C_INK)
 
 
 func _draw_player() -> void:
