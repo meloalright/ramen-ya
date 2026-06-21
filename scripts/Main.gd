@@ -66,6 +66,7 @@ var money: int = 0
 var served: int = 0
 var reputation: int = 3
 var day_time: float = 120.0
+var day_len: float = 120.0
 
 const SEATS := 3
 var seat_x := [96, 240, 384]
@@ -242,7 +243,7 @@ func _make_order() -> Dictionary:
 	var wants := {}
 	for k in TOP_ORDER:
 		wants[k] = (randi() % 2 == 0)
-	var pat := 22.0
+	var pat := 22.0 + Game.up_patience * 5.0
 	return { "wants": wants, "patience": pat, "max_patience": pat, "face": randi() % 4 }
 
 
@@ -329,6 +330,7 @@ func _serve() -> void:
 			if c.wants[k]:
 				want_n += 1
 		var tip: int = 60 + int(round(c.patience / c.max_patience * 50.0)) + 12 * want_n
+		tip = int(round(tip * (1.0 + Game.up_tip * 0.15)))
 		money += tip
 		served += 1
 		Game.add_coins(tip)                 # bank into the persistent wallet
@@ -378,7 +380,8 @@ func _start_game() -> void:
 	money = 0
 	served = 0
 	reputation = 3
-	day_time = 120.0
+	day_len = 120.0 + Game.up_day * 20.0
+	day_time = day_len
 	spawn_timer = 0.8
 	spawn_interval = 4.0
 	selected_seat = 0
@@ -474,7 +477,7 @@ func _draw_hud() -> void:
 	_text("時間", Vector2(338, 16), 10, COL_WHITE)
 	var bw := 110
 	draw_rect(Rect2(372, 6, bw, 10), COL_PANEL)
-	var frac: float = clamp(day_time / 120.0, 0.0, 1.0)
+	var frac: float = clamp(day_time / day_len, 0.0, 1.0)
 	draw_rect(Rect2(372, 6, int(bw * frac), 10), COL_GREEN)
 
 

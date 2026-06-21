@@ -35,6 +35,7 @@ enum {
 var map: Array = []           # MAP_H rows of MAP_W ints
 var door_cell := Vector2i(-1, -1)     # ramen shop entrance
 var tower_cell := Vector2i(-1, -1)    # 紫金大廈 entrance
+var store_cell := Vector2i(-1, -1)    # 升級商店 entrance
 var buildings: Array = []     # {x, ft, tex, kind} — storefronts along the street
 
 # ---- palette --------------------------------------------------------
@@ -88,6 +89,7 @@ const ROW_UP := 2
 # ---- interaction ----------------------------------------------------
 var near_door := false       # near the ramen shop door
 var near_tower := false      # near the 紫金大廈 gate
+var near_store := false      # near the 升級商店
 var font: Font
 var hint_blink := 0.0
 
@@ -182,6 +184,7 @@ func _build_map() -> void:
 	var variants := ["bldg1", "bldg2", "bldg3", "bldg2", "bldg3", "bldg1"]
 	var ramen_slot := 2
 	var tower_slot := 3                       # the 紫金大廈, right of the ramen shop
+	var store_slot := 1                       # the 升級商店, left of the ramen shop
 	for i in slots.size():
 		var sx: int = slots[i]
 		for yy in range(ft, ft + 4):
@@ -198,6 +201,10 @@ func _build_map() -> void:
 			map[dy][dx] = T_DOOR
 			tower_cell = Vector2i(dx, dy)
 			buildings.append({"x": sx, "ft": ft, "tex": "tower_ext", "kind": "tower"})
+		elif i == store_slot:
+			map[dy][dx] = T_DOOR
+			store_cell = Vector2i(dx, dy)
+			buildings.append({"x": sx, "ft": ft, "tex": variants[i], "kind": "store"})
 		else:
 			buildings.append({"x": sx, "ft": ft, "tex": variants[i], "kind": "deco"})
 
@@ -324,6 +331,7 @@ func _process(delta: float) -> void:
 	# --- entrance proximity ---
 	near_door = door_cell.x >= 0 and player_pos.distance_to(_cell_front(door_cell)) < 26.0
 	near_tower = tower_cell.x >= 0 and player_pos.distance_to(_cell_front(tower_cell)) < 26.0
+	near_store = store_cell.x >= 0 and player_pos.distance_to(_cell_front(store_cell)) < 26.0
 
 	# walked up to an entrance after tapping it → step inside
 	if pending_enter == "shop" and near_door:
@@ -331,6 +339,9 @@ func _process(delta: float) -> void:
 		return
 	if pending_enter == "tower" and near_tower:
 		_enter_tower()
+		return
+	if pending_enter == "store" and near_store:
+		_enter_store()
 		return
 
 	queue_redraw()
@@ -347,6 +358,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_enter_shop()
 			elif near_tower:
 				_enter_tower()
+			elif near_store:
+				_enter_store()
 		elif event.keycode == KEY_ESCAPE:
 			Game.remember_pos(player_pos)
 			get_tree().change_scene_to_file("res://scenes/Menu.tscn")
@@ -364,6 +377,10 @@ func _on_pointer(world_pos: Vector2) -> void:
 	if tower_cell.x >= 0 and _cell_rect(tower_cell).has_point(world_pos):
 		if near_tower: _enter_tower()
 		else: _walk_to_enter(tower_cell, "tower")
+		return
+	if store_cell.x >= 0 and _cell_rect(store_cell).has_point(world_pos):
+		if near_store: _enter_store()
+		else: _walk_to_enter(store_cell, "store")
 		return
 	# otherwise just walk toward the tapped point
 	move_target = world_pos
@@ -389,6 +406,11 @@ func _enter_shop() -> void:
 func _enter_tower() -> void:
 	Game.remember_pos(player_pos)
 	get_tree().change_scene_to_file("res://scenes/Tower.tscn")
+
+
+func _enter_store() -> void:
+	Game.remember_pos(player_pos)
+	get_tree().change_scene_to_file("res://scenes/UpgradeShop.tscn")
 
 
 # =====================================================================
@@ -432,6 +454,8 @@ func _draw() -> void:
 		_draw_hint("[E] 進店")
 	elif near_tower:
 		_draw_hint("[E] 進入")
+	elif near_store:
+		_draw_hint("[E] 升級")
 
 	# screen-space HUD pinned to the top-left of the view
 	var vtl: Vector2 = cam.position - get_viewport_rect().size / (2.0 * cam.zoom)
@@ -541,6 +565,9 @@ func _draw_building(b: Dictionary) -> void:
 			_wtext("拉麵", Vector2(mid, oy + 134), 9, C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 		elif b.kind == "tower":
 			_wtext("紫金", Vector2(mid, oy + 130), 9, C_YELLOW, HORIZONTAL_ALIGNMENT_CENTER)
+		elif b.kind == "store":
+			# the bldg sprites' dark sign plate sits ~50px up from the bottom
+			_wtext("升級", Vector2(mid, oy + s.get_height() - 49), 9, C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 		return
 	# fallback box
 	draw_rect(Rect2(sx * TILE, ft * TILE, 6 * TILE, 4 * TILE), C_WALL)
