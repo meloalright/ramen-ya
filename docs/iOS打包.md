@@ -9,10 +9,13 @@
 - ✅ 横屏锁定(`window/handheld/orientation="landscape"`)
 - ✅ 触屏:鼠标点击/拖拽逻辑会自动响应触摸(`emulate_touch_from_mouse`)
 - ✅ App 图标:`assets/icon/icon_1024.png`(1024×1024 不透明,符合 App Store 要求)
-- ✅ iOS 导出预设:`export_presets.cfg` 里的 `[preset.1] iOS`(Bundle ID `com.melo.ramenya`、横屏、图标已配)
+- ✅ iOS 导出预设:`export_presets.cfg` 里的 `[preset.1] iOS`(横屏、图标已配)
 - ✅ 渲染用 GL Compatibility(iOS 走 OpenGL ES,轻量)
 
-**还差**:在 `export_presets.cfg` 里把 `application/app_store_team_id` 填上你的 Team ID。
+## App Store Connect 信息(已登记)
+- **Team ID(Seed ID)**:`9TGD35M5GT` —— 已填入导出预设
+- **Bundle ID**:`meloalright.ramen-ya`(名称 RAMEN-YA,ID `6HS4YW98L8`)—— 已在开发者门户注册,已填入导出预设
+- **App 记录**:⏳ 待创建。Apple 官方 API **不支持创建 App**,只能用 App Store Connect 网页(或 `asc web apps create` 的网页会话登录)。需要你的 Apple ID 登录(密码 + 双重验证)。
 
 ## 三种出包方式
 
