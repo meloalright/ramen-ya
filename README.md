@@ -10,7 +10,14 @@ so the project is tiny and exports cleanly to the **Web (HTML5)**.
 
 ## 🎮 How to play
 
-### Overworld (`scenes/World.tscn` — the main scene)
+### Main menu (`scenes/Menu.tscn` — the entry scene)
+**新遊戲 (New Game)** starts fresh; **繼續遊戲 (Continue)** loads your save (only if one
+exists). A `Game` autoload persists a coin wallet (grows as you cook) and your last
+overworld position to `user://ramenya_save.json`. In the overworld, `ESC` returns to the
+menu (saving first).
+
+### Overworld (`scenes/World.tscn`)
+Walk the chef along a **commercial street (商业街)** — a paved road with sidewalks, lined
 Walk the chef along a **commercial street (商业街)** — a paved road with sidewalks, lined
 with a row of tall buildings whose ground floors are shops. The **ramen shop** is one of
 them: the storefront (底商) with a red-and-white awning and the 拉麵 sign. Walk up to its

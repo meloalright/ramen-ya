@@ -107,8 +107,10 @@ func _ready() -> void:
 		chef_tex = load("res://assets/chef_sheet.png")
 	_load_world_tiles()
 	_build_map()
-	# spawn on the path just south of the shop door
-	if door_cell.x >= 0:
+	# spawn: saved position (Continue) or just south of the shop door (new)
+	if Game.has_pos:
+		player_pos = Game.world_pos
+	elif door_cell.x >= 0:
 		player_pos = Vector2(door_cell.x * TILE + TILE / 2.0, (door_cell.y + 3) * TILE)
 	else:
 		player_pos = Vector2(MAP_W * TILE / 2.0, MAP_H * TILE / 2.0)
@@ -345,6 +347,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				_enter_shop()
 			elif near_tower:
 				_enter_tower()
+		elif event.keycode == KEY_ESCAPE:
+			Game.remember_pos(player_pos)
+			get_tree().change_scene_to_file("res://scenes/Menu.tscn")
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		# (touch is delivered as a mouse button too — emulate_mouse_from_touch)
 		_on_pointer(get_global_mouse_position())
@@ -377,10 +382,12 @@ func _cell_rect(cell: Vector2i) -> Rect2:
 
 
 func _enter_shop() -> void:
+	Game.remember_pos(player_pos)
 	get_tree().change_scene_to_file("res://scenes/Shop.tscn")
 
 
 func _enter_tower() -> void:
+	Game.remember_pos(player_pos)
 	get_tree().change_scene_to_file("res://scenes/Tower.tscn")
 
 
@@ -425,6 +432,12 @@ func _draw() -> void:
 		_draw_hint("[E] 進店")
 	elif near_tower:
 		_draw_hint("[E] 進入")
+
+	# screen-space HUD pinned to the top-left of the view
+	var vtl: Vector2 = cam.position - get_viewport_rect().size / (2.0 * cam.zoom)
+	draw_rect(Rect2(vtl.x + 4, vtl.y + 4, 62, 16), Color(0, 0, 0, 0.55))
+	_wtext("￥ " + str(Game.coins), vtl + Vector2(9, 16), 9, C_YELLOW)
+	_wtext("[ESC] 菜單", vtl + Vector2(get_viewport_rect().size.x / cam.zoom.x - 50, 16), 8, Color(1, 1, 1, 0.7))
 
 
 func _visible_tile_rect() -> Rect2i:

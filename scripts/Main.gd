@@ -331,12 +331,14 @@ func _serve() -> void:
 		var tip: int = 60 + int(round(c.patience / c.max_patience * 50.0)) + 12 * want_n
 		money += tip
 		served += 1
+		Game.add_coins(tip)                 # bank into the persistent wallet
 		_spawn_float(Vector2(seat_x[selected_seat], 60), "+" + str(tip), COL_GREEN)
 		flash = 0.2
 		flash_col = COL_GREEN
 	else:
 		money = max(0, money - 30)
 		reputation -= 1
+		Game.add_coins(-30)
 		_spawn_float(Vector2(seat_x[selected_seat], 60), "錯了！ -30", COL_RED)
 		flash = 0.25
 		flash_col = COL_RED
