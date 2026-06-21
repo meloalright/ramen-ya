@@ -70,10 +70,23 @@ var buttons: Array = []              # {id, rect, label, kind}
 var flash: float = 0.0               # screen feedback timer
 var flash_col: Color = COL_GREEN
 
+# ---- chef character sprite (3 cols x 3 rows walk sheet) -------------
+var chef_tex: Texture2D
+const CHEF_FW := 200                 # source frame width  (assets/chef_sheet.png)
+const CHEF_FH := 301                 # source frame height
+const CHEF_DOWN := 0                 # row indices
+const CHEF_SIDE := 1
+const CHEF_UP := 2
+const CHEF_SEQ := [0, 1, 0, 2]       # gentle step cycle
+var chef_anim: float = 0.0
+var chef_idx: int = 0
+
 
 func _ready() -> void:
 	randomize()
 	font = ThemeDB.fallback_font
+	if ResourceLoader.exists("res://assets/chef_sheet.png"):
+		chef_tex = load("res://assets/chef_sheet.png")
 	_build_buttons()
 	set_process(true)
 
@@ -114,6 +127,12 @@ func _add_btn(id: String, x: int, y: int, w: int, h: int, label: String, kind: S
 func _process(delta: float) -> void:
 	if flash > 0.0:
 		flash = max(0.0, flash - delta)
+
+	# chef step animation
+	chef_anim += delta
+	if chef_anim > 0.22:
+		chef_anim -= 0.22
+		chef_idx = (chef_idx + 1) % CHEF_SEQ.size()
 
 	# advance float texts
 	for ft in float_texts:
@@ -357,9 +376,9 @@ func _draw_title() -> void:
 	_text("R A M E N - Y A", Vector2(240, 145), 22, COL_YELLOW, HORIZONTAL_ALIGNMENT_CENTER)
 	_text("2D Pixel Ramen-Shop Manager  (DEMO)", Vector2(240, 172), 11, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 
-	# a couple of decorative bowls
-	_draw_bowl(Vector2(70, 200), "shoyu", ["egg", "nori"], 1.6)
-	_draw_bowl(Vector2(390, 200), "miso", ["chashu", "negi"], 1.6)
+	# the chef + a decorative bowl on the counter
+	_draw_chef(Vector2(95, 256), 150, CHEF_DOWN)
+	_draw_bowl(Vector2(390, 205), "miso", ["chashu", "negi", "egg"], 1.7)
 
 	if int(day_time * 2.0) % 2 == 0 or true:
 		_text("[ CLICK or press SPACE to start ]", Vector2(240, 235), 12,
@@ -384,6 +403,9 @@ func _draw_play() -> void:
 
 	# --- selected bowl-building area ---
 	_draw_build_area()
+
+	# --- the chef at his station (faces the counter) ---
+	_draw_chef(Vector2(454, 196), 52, CHEF_SIDE)
 
 	# --- buttons ---
 	for b in buttons:
@@ -572,6 +594,17 @@ func _draw_over() -> void:
 	_text("Earnings:  ￥ " + str(money), Vector2(240, 130), 16, COL_YELLOW, HORIZONTAL_ALIGNMENT_CENTER)
 	_text("Bowls served:  " + str(served), Vector2(240, 156), 13, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 	_text("[ CLICK or press R to play again ]", Vector2(240, 205), 12, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+
+
+# draws the chef sprite anchored at center-bottom, scaled to height h
+func _draw_chef(center_bottom: Vector2, h: float, row: int) -> void:
+	if chef_tex == null:
+		return
+	var col: int = CHEF_SEQ[chef_idx]
+	var src := Rect2(col * CHEF_FW, row * CHEF_FH, CHEF_FW, CHEF_FH)
+	var w := CHEF_FW / float(CHEF_FH) * h
+	var dst := Rect2(center_bottom.x - w / 2.0, center_bottom.y - h, w, h)
+	draw_texture_rect_region(chef_tex, dst, src)
 
 
 # ---- text helper ----------------------------------------------------
