@@ -286,6 +286,131 @@ def shop():
     return im
 
 
+def pavement():
+    base = (178, 178, 186, 255)
+    d = (150, 150, 160, 255)
+    hi = (198, 198, 206, 255)
+    seam = (132, 132, 142, 255)
+    im = img()
+    px = im.load()
+    for y in range(S):
+        for x in range(S):
+            c = base
+            v = nz(x, y, 71)
+            if v > 0.85:
+                c = hi
+            elif v < 0.18:
+                c = d
+            if x == 0 or y == 0:
+                c = seam                      # slab seams
+            px[x, y] = c
+    return im
+
+
+def road():
+    base = (66, 66, 74, 255)
+    d = (52, 52, 60, 255)
+    hi = (84, 84, 94, 255)
+    im = img()
+    px = im.load()
+    for y in range(S):
+        for x in range(S):
+            c = base
+            v = nz(x, y, 81)
+            if v > 0.88:
+                c = hi
+            elif v < 0.15:
+                c = d
+            px[x, y] = c
+    return im
+
+
+def gen_building(H, awn, awn_d, accent, tower, tower_hi, tower_d):
+    """a generic store-front building of total height H (storefront = bottom 54px)."""
+    W = 96
+    win = (250, 218, 138, 255)
+    win_off = (78, 92, 124, 255)
+    win_fr = (58, 58, 68, 255)
+    roof = (108, 108, 120, 255)
+    roof_d = (82, 82, 94, 255)
+    tank = (96, 96, 108, 255)
+    awn_w = (238, 232, 220, 255)
+    wall = (212, 202, 188, 255)
+    wall_d = (178, 168, 154, 255)
+    glass = (120, 150, 160, 255)
+    glass_lit = (236, 232, 214, 255)
+    door = (70, 70, 82, 255)
+    door_d = (46, 46, 56, 255)
+    store_top = H - 54
+    im = img(W, H)
+    px = im.load()
+    # tower body
+    for y in range(10, store_top + 2):
+        for x in range(3, W - 3):
+            c = tower
+            if x < 6:
+                c = tower_hi
+            elif x > W - 7:
+                c = tower_d
+            px[x, y] = c
+    # parapet + water tank
+    for y in range(6, 12):
+        for x in range(2, W - 2):
+            px[x, y] = roof if y > 7 else roof_d
+    for y in range(0, 7):
+        for x in range(58, 74):
+            px[x, y] = tank if y > 1 else roof_d
+    # floors of windows
+    wcols = [12, 41, 70]
+    fy = store_top - 12
+    fi = 0
+    while fy > 16:
+        for x in range(3, W - 3):
+            px[x, fy + 9] = tower_d
+        for ci, wx in enumerate(wcols):
+            lit = ((fi * 7 + ci * 5) % 3) != 0
+            col = win if lit else win_off
+            for y in range(fy, fy + 9):
+                for x in range(wx, wx + 14):
+                    px[x, y] = win_fr if (x == wx or x == wx + 13 or y == fy or y == fy + 8) else col
+                px[wx + 6, y] = win_fr
+        fy -= 20
+        fi += 1
+    # awning
+    ay = store_top
+    for y in range(ay, ay + 12):
+        for x in range(1, W - 1):
+            c = awn if (x // 6) % 2 == 0 else awn_w
+            if y >= ay + 9:
+                c = awn_d
+            px[x, y] = c
+    # accent sign plate
+    for y in range(ay + 1, ay + 9):
+        for x in range(34, 62):
+            px[x, y] = accent if (35 < x < 60) else awn_d
+    # storefront wall
+    for y in range(ay + 14, H):
+        for x in range(2, W - 2):
+            px[x, y] = wall_d if y >= H - 2 else wall
+    # display windows
+    for wx0, wx1 in ((6, 38), (58, 90)):
+        for y in range(ay + 18, H - 6):
+            for x in range(wx0, wx1):
+                if x == wx0 or x == wx1 - 1 or y == ay + 18 or y == H - 7:
+                    px[x, y] = win_fr
+                else:
+                    px[x, y] = glass_lit if y > ay + 30 else glass
+        for y in range(ay + 18, H - 6):
+            px[(wx0 + wx1) // 2, y] = win_fr
+    # glass door
+    for y in range(ay + 22, H):
+        for x in range(40, 56):
+            px[x, y] = door_d if (x == 40 or x == 55 or y >= H - 2) else door
+    for x in range(42, 54):
+        px[x, ay + 30] = accent                 # door handle bar
+    return im
+
+
 def main():
     save(grass(False), "grass.png")
     save(grass(True), "grass2.png")
@@ -294,6 +419,15 @@ def main():
     save(water(), "water.png")
     save(tree(), "tree.png")
     save(shop(), "shop.png")
+    save(pavement(), "pavement.png")
+    save(road(), "road.png")
+    # decorative neighbours along the commercial street
+    save(gen_building(128, (74, 120, 198, 255), (52, 86, 150, 255), (120, 170, 230, 255),
+                      (158, 150, 138, 255), (182, 174, 162, 255), (132, 124, 112, 255)), "bldg1.png")
+    save(gen_building(150, (70, 160, 96, 255), (48, 120, 70, 255), (120, 210, 150, 255),
+                      (150, 154, 160, 255), (178, 182, 188, 255), (122, 126, 132, 255)), "bldg2.png")
+    save(gen_building(106, (224, 140, 56, 255), (180, 104, 40, 255), (248, 196, 120, 255),
+                      (170, 160, 150, 255), (192, 184, 174, 255), (142, 132, 122, 255)), "bldg3.png")
 
 
 if __name__ == "__main__":

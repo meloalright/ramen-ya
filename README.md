@@ -11,9 +11,10 @@ so the project is tiny and exports cleanly to the **Web (HTML5)**.
 ## 🎮 How to play
 
 ### Overworld (`scenes/World.tscn` — the main scene)
-Walk the chef around the map — grass, flowers, trees, a pond, a dirt road. Find the
-**ramen shop** — the ground-floor storefront (底商) of a tall building, with a red-and-white
-awning and the 拉麵 sign — and walk up to its door.
+Walk the chef along a **commercial street (商业街)** — a paved road with sidewalks, lined
+with a row of tall buildings whose ground floors are shops. The **ramen shop** is one of
+them: the storefront (底商) with a red-and-white awning and the 拉麵 sign. Walk up to its
+door (the neighbouring shops are just for scenery).
 
 | Action | Control |
 |---|---|

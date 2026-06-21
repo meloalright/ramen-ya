@@ -27,10 +27,15 @@ enum {
 	T_WALL,         # 6  blocked (shop wall)
 	T_ROOF,         # 7  blocked (shop roof)
 	T_DOOR,         # 8  walkable — shop entrance trigger
+	T_ROAD,         # 9  walkable (asphalt street)
+	T_PAVE,         # 10 walkable (sidewalk)
+	T_BLD,          # 11 blocked (a neighbour building's footprint)
 }
 
 var map: Array = []           # MAP_H rows of MAP_W ints
 var door_cell := Vector2i(-1, -1)
+var buildings: Array = []     # {x, ft, tex, ramen} — storefronts along the street
+var street_center_y: float = 0.0
 
 # ---- palette --------------------------------------------------------
 const C_GRASS    := Color("4e8a3c")
@@ -136,7 +141,8 @@ func _make_font() -> Font:
 
 
 func _load_world_tiles() -> void:
-	for key in ["grass", "grass2", "path", "sand", "water", "tree", "shop"]:
+	for key in ["grass", "grass2", "path", "sand", "water", "tree", "shop",
+			"pavement", "road", "bldg1", "bldg2", "bldg3"]:
 		var p := "res://assets/world/%s.png" % key
 		if ResourceLoader.exists(p):
 			wtex[key] = load(p)
@@ -151,78 +157,59 @@ func _build_map() -> void:
 	for y in MAP_H:
 		var row := []
 		for x in MAP_W:
-			# base grass, occasionally flowery
-			row.append(T_GRASS2 if randi() % 7 == 0 else T_GRASS)
+			row.append(T_GRASS2 if randi() % 8 == 0 else T_GRASS)
 		map.append(row)
 
-	# --- a pond in the north-west ---
-	_blob(Vector2i(11, 8), 5, T_WATER)
-	# --- a beach/sand strip along the south edge ---
-	for x in MAP_W:
-		var depth := 2 + (randi() % 2)
-		for d in depth:
-			map[MAP_H - 1 - d][x] = T_SAND
+	# --- the commercial street: a horizontal road with sidewalks ---
+	var street_y := 22                       # top row of the asphalt band
+	street_center_y = (street_y + 2) * TILE
+	for y in range(street_y, street_y + 4):  # asphalt
+		for x in MAP_W:
+			map[y][x] = T_ROAD
+	for y in range(street_y - 3, street_y):  # north sidewalk
+		for x in MAP_W:
+			map[y][x] = T_PAVE
+	for y in range(street_y + 4, street_y + 6):  # south sidewalk
+		for x in MAP_W:
+			map[y][x] = T_PAVE
 
-	# --- main dirt road: vertical spine + a branch ---
-	var rx := MAP_W / 2
-	for y in range(MAP_H - 4):
-		map[y][rx] = T_PATH
-		map[y][rx + 1] = T_PATH
-	for x in range(8, rx + 2):
-		map[18][x] = T_PATH
+	# --- a row of storefronts along the north side ---
+	buildings.clear()
+	var ft := street_y - 7                   # footprint top (4 rows tall)
+	var slots := [2, 11, 20, 29, 38, 47]
+	var variants := ["bldg1", "bldg2", "bldg3", "bldg2", "bldg3", "bldg1"]
+	var ramen_slot := 2
+	for i in slots.size():
+		var sx: int = slots[i]
+		var is_ramen: bool = i == ramen_slot
+		for yy in range(ft, ft + 4):
+			for xx in range(sx, sx + 6):
+				if xx < MAP_W and yy < MAP_H:
+					map[yy][xx] = T_BLD
+		if is_ramen:
+			var dx := sx + 3
+			var dy := ft + 3
+			map[dy][dx] = T_DOOR
+			door_cell = Vector2i(dx, dy)
+			buildings.append({"x": sx, "ft": ft, "tex": "shop", "ramen": true})
+		else:
+			buildings.append({"x": sx, "ft": ft, "tex": variants[i], "ramen": false})
 
-	# --- tree line / scattered woods (avoid road, water, sand) ---
-	for i in 90:
-		var tx := randi() % MAP_W
-		var ty := randi() % (MAP_H - 4)
-		if _walkable_for_tree(tx, ty):
+	# --- ambience: trees behind the block and along the far sidewalk ---
+	for i in 30:
+		var tx: int = randi() % MAP_W
+		var ty: int = street_y + 7 + randi() % int(max(1, MAP_H - street_y - 9))
+		if ty < MAP_H - 1 and map[ty][tx] == T_GRASS:
 			map[ty][tx] = T_TREE
-
-	# --- the ramen shop: ground floor of a tall building ---
-	_place_shop(rx - 4, 11)
-
-
-func _walkable_for_tree(x: int, y: int) -> bool:
-	if x < 1 or y < 1 or x >= MAP_W - 1 or y >= MAP_H - 1:
-		return false
-	var t: int = map[y][x]
-	if t == T_PATH or t == T_WATER or t == T_SAND:
-		return false
-	# keep trees off the road shoulders so the path stays open
-	if abs(x - MAP_W / 2) <= 2 and y < MAP_H - 4:
-		return false
-	return true
+	for i in 16:
+		var tx2: int = randi() % MAP_W
+		var ty2: int = 1 + randi() % int(max(1, ft - 2))
+		if map[ty2][tx2] == T_GRASS:
+			map[ty2][tx2] = T_TREE
 
 
-func _blob(center: Vector2i, r: int, tile: int) -> void:
-	for y in range(center.y - r, center.y + r + 1):
-		for x in range(center.x - r, center.x + r + 1):
-			if x < 0 or y < 0 or x >= MAP_W or y >= MAP_H:
-				continue
-			var dx := float(x - center.x)
-			var dy := float(y - center.y) * 1.25
-			if dx * dx + dy * dy <= r * r + (randi() % 3):
-				map[y][x] = tile
-
-
-func _place_shop(left: int, top: int) -> void:
-	var w := 6
-	var h := 4
-	# clear footprint
-	for y in range(top, top + h):
-		for x in range(left, left + w):
-			if x < 0 or y < 0 or x >= MAP_W or y >= MAP_H:
-				continue
-			map[y][x] = T_ROOF if y < top + h - 1 else T_WALL
-	# door in the bottom wall, centered
-	var dx := left + w / 2
-	var dy := top + h - 1
-	map[dy][dx] = T_DOOR
-	door_cell = Vector2i(dx, dy)
-	# little plaza of path in front of the door
-	for yy in range(dy + 1, dy + 3):
-		map[yy][dx] = T_PATH
-		map[yy][dx - 1] = T_PATH
+func _shop_door_front() -> Vector2:
+	return Vector2(door_cell.x * TILE + TILE / 2.0, (door_cell.y + 3) * TILE)
 
 
 # =====================================================================
@@ -237,7 +224,7 @@ func _tile_at(wx: float, wy: float) -> int:
 
 
 func _blocked(tile: int) -> bool:
-	return tile == T_WATER or tile == T_TREE or tile == T_WALL or tile == T_ROOF
+	return tile == T_WATER or tile == T_TREE or tile == T_WALL or tile == T_ROOF or tile == T_BLD
 
 
 # can the feet-box centered at (cx, feet_y) occupy this spot?
@@ -379,15 +366,18 @@ func _draw() -> void:
 	for ty in range(view.position.y, view.end.y):
 		for tx in range(view.position.x, view.end.x):
 			_draw_ground_tile(tx, ty)
-	# object pass (trees, shop, player) sorted by Y so things overlap right
+	# street centre line over the asphalt
+	_draw_street_line(view)
+	# object pass (trees, buildings, player) sorted by Y so things overlap right
 	var objs: Array = []
 	for ty in range(view.position.y, view.end.y):
 		for tx in range(view.position.x, view.end.x):
 			var t: int = map[ty][tx]
 			if t == T_TREE:
 				objs.append({"y": ty * TILE + TILE, "kind": "tree", "x": tx, "ty": ty})
-	# shop is one tall object anchored at its base row
-	objs.append({"y": _shop_base_y(), "kind": "shop"})
+	# storefront buildings, each anchored at its base row
+	for b in buildings:
+		objs.append({"y": (int(b.ft) + 4) * TILE, "kind": "bld", "b": b})
 	# player
 	objs.append({"y": player_pos.y, "kind": "player"})
 	objs.sort_custom(func(a, b): return a.y < b.y)
@@ -395,8 +385,8 @@ func _draw() -> void:
 		match o.kind:
 			"tree":
 				_draw_tree(o.x, o.ty)
-			"shop":
-				_draw_shop()
+			"bld":
+				_draw_building(o.b)
 			"player":
 				_draw_player()
 
@@ -436,6 +426,9 @@ func _draw_ground_tile(tx: int, ty: int) -> void:
 		T_PATH:  nm = "path"
 		T_SAND:  nm = "sand"
 		T_GRASS2: nm = "grass2"
+		T_ROAD:  nm = "road"
+		T_PAVE:  nm = "pavement"
+		T_DOOR:  nm = "pavement"   # ground under the ramen door
 		_: nm = "grass"
 	if wtex.has(nm):
 		draw_texture_rect(wtex[nm], Rect2(px, py, TILE, TILE), false)
@@ -493,55 +486,30 @@ func _draw_tree(tx: int, ty: int) -> void:
 	draw_rect(Rect2(px + 3, base - 24, 3, 3), C_LEAF_HI)
 
 
-# the shop occupies its placed footprint; find it once
-func _shop_top_left() -> Vector2i:
-	# door is bottom-center; reconstruct footprint
-	if door_cell.x < 0:
-		return Vector2i(-1, -1)
-	return Vector2i(door_cell.x - 3, door_cell.y - 3)
-
-
-func _shop_base_y() -> float:
-	if door_cell.x < 0:
-		return -1.0
-	return (door_cell.y + 1) * TILE
-
-
-func _draw_shop() -> void:
-	var tl := _shop_top_left()
-	if tl.x < 0:
-		return
-	if wtex.has("shop"):
-		var s: Texture2D = wtex["shop"]
-		var ox := tl.x * TILE
-		# bottom-align the tall building to the footprint (4 tiles tall)
-		var oy := (tl.y + 4) * TILE - s.get_height()
+func _draw_building(b: Dictionary) -> void:
+	var sx: int = b.x
+	var ft: int = b.ft
+	var bottom := (ft + 4) * TILE                 # footprint bottom edge (px)
+	if wtex.has(b.tex):
+		var s: Texture2D = wtex[b.tex]
+		var ox := sx * TILE
+		var oy := bottom - s.get_height()         # bottom-aligned
 		draw_texture_rect(s, Rect2(ox, oy, s.get_width(), s.get_height()), false)
-		# shop name on the storefront awning sign (SHOP_SIGN_Y in generate.py)
-		_wtext("拉麵", Vector2(ox + s.get_width() / 2.0, oy + 134), 9, C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+		if b.ramen:
+			_wtext("拉麵", Vector2(ox + s.get_width() / 2.0, oy + 134), 9, C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 		return
-	var w := 6
-	var h := 4
-	var px := tl.x * TILE
-	var py := tl.y * TILE
-	var pw := w * TILE
-	# wall body (bottom row)
-	var wall_y := py + (h - 1) * TILE
-	draw_rect(Rect2(px, wall_y, pw, TILE), C_WALL)
-	draw_rect(Rect2(px, wall_y, pw, 3), C_WALL_D)
-	# roof (upper rows) as a red slab with eaves + ridge shading
-	draw_rect(Rect2(px - 3, py, pw + 6, (h - 1) * TILE), C_ROOF)
-	draw_rect(Rect2(px - 3, py, pw + 6, 4), C_ROOF_D)
-	for i in range(0, w + 1):
-		draw_rect(Rect2(px + i * TILE - 1, py, 1, (h - 1) * TILE), C_ROOF_D)
-	# noren / signboard
-	draw_rect(Rect2(px + pw / 2.0 - 22, py - 6, 44, 12), C_INK)
-	_wtext("拉麵", Vector2(px + pw / 2.0, py + 3), 9, C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
-	# door
-	var dpx := door_cell.x * TILE
-	var dpy := door_cell.y * TILE
-	draw_rect(Rect2(dpx + 2, dpy + 1, TILE - 4, TILE - 1), C_DOOR)
-	draw_rect(Rect2(dpx + 2, dpy + 1, TILE - 4, 2), C_INK)
+	# fallback box
+	draw_rect(Rect2(sx * TILE, ft * TILE, 6 * TILE, 4 * TILE), C_WALL)
+
+
+func _draw_street_line(view: Rect2i) -> void:
+	# dashed centre line down the asphalt
+	var y := street_center_y
+	var x := view.position.x * TILE
+	var end := view.end.x * TILE
+	while x < end:
+		draw_rect(Rect2(x, y - 1, 10, 2), C_YELLOW)
+		x += 22
 
 
 func _draw_player() -> void:
