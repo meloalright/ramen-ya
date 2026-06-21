@@ -90,11 +90,11 @@ func _continue() -> void:
 # =====================================================================
 func _draw() -> void:
 	draw_rect(Rect2(0, 0, W, H), COL_BG)
-	# stall art as a faint backdrop strip
+	# stall art as a faint full-width backdrop
 	if stall_tex != null:
-		var sw := 472.0
+		var sw := float(W)
 		var sh := sw * stall_tex.get_height() / float(stall_tex.get_width())
-		draw_texture_rect(stall_tex, Rect2((W - sw) / 2.0, 2, sw, sh), false, Color(1, 1, 1, 0.4))
+		draw_texture_rect(stall_tex, Rect2(0, (H - sh) / 2.0, sw, sh), false, Color(1, 1, 1, 0.4))
 	draw_rect(Rect2(0, 0, W, H), Color(0.07, 0.06, 0.09, 0.62))
 
 	# title

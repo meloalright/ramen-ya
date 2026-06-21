@@ -598,8 +598,9 @@ func _draw() -> void:
 
 func _draw_title() -> void:
 	if stall_tex != null:
-		var sw := 472.0
-		var sh := sw * stall_tex.get_height() / float(stall_tex.get_width())
+		# fit the whole counter into the area above the title bar
+		var sh := 218.0
+		var sw := sh * stall_tex.get_width() / float(stall_tex.get_height())
 		draw_texture_rect(stall_tex, Rect2((W - sw) / 2.0, 4, sw, sh), false)
 	_draw_chef(Vector2(64, 262), 118)
 	draw_rect(Rect2(0, 224, W, 46), Color(0.07, 0.06, 0.09, 0.8))
