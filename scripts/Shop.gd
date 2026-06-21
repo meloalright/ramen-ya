@@ -85,7 +85,7 @@ const GROUND_NAME := {
 
 # =====================================================================
 func _ready() -> void:
-	font = ThemeDB.fallback_font
+	font = _make_font()
 	if ResourceLoader.exists("res://assets/chef_sheet.png"):
 		chef_tex = load("res://assets/chef_sheet.png")
 	_load_tileset()
@@ -100,6 +100,18 @@ func _ready() -> void:
 	entry = "door"              # default for the next overworld entry
 	_setup_camera()
 	set_process(true)
+
+
+# crisp pixel Traditional-Chinese font (Zpix), antialiasing off
+func _make_font() -> Font:
+	if ResourceLoader.exists("res://assets/fonts/zpix.ttf"):
+		var f = load("res://assets/fonts/zpix.ttf")
+		if f is FontFile:
+			f.antialiasing = TextServer.FONT_ANTIALIASING_NONE
+			f.hinting = TextServer.HINTING_NONE
+			f.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_DISABLED
+		return f
+	return ThemeDB.fallback_font
 
 
 func _load_tileset() -> void:
@@ -322,9 +334,9 @@ func _draw() -> void:
 
 	# interaction prompts
 	if near_counter:
-		_draw_prompt("[E] 制作 COOK")
+		_draw_prompt("[E] 煮拉麵")
 	elif near_exit:
-		_draw_prompt("[E] 外へ EXIT")
+		_draw_prompt("[E] 離開")
 
 	if has_target:
 		_draw_target()

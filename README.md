@@ -111,7 +111,14 @@ python3 -m http.server 8000
 ## 🛠️ Tech notes
 - Renderer: **GL Compatibility** (OpenGL ES 3 / WebGL2) — the most reliable choice for Web.
 - Display: 480×270 base canvas, `canvas_items` stretch with `keep` aspect → crisp pixels.
-- Single-file game logic lives in `scripts/Main.gd`.
+- All in-game text is **Traditional Chinese (繁體中文)**, rendered with the pixel font
+  **Zpix / 最像素** (`assets/fonts/zpix.ttf`, antialiasing off). The font is **subset** to
+  only the glyphs the game uses (~33 KB instead of 7 MB) to keep the Web build small.
+
+## 🎨 Credits
+- UI font: **Zpix（最像素）** by SolidZORO — https://github.com/SolidZORO/zpix-pixel-font
+- All other art is procedurally generated pixel-art (`assets/world/generate.py`,
+  `assets/shop/generate.py`) plus the chef walk spritesheet.
 
 ---
 Demo scaffold — extend it with new recipes, day/night cycles, upgrades, sound, etc. 🍜

@@ -96,7 +96,7 @@ var enter_on_arrive := false
 
 # =====================================================================
 func _ready() -> void:
-	font = ThemeDB.fallback_font
+	font = _make_font()
 	if ResourceLoader.exists("res://assets/chef_sheet.png"):
 		chef_tex = load("res://assets/chef_sheet.png")
 	_load_world_tiles()
@@ -121,6 +121,18 @@ func _setup_camera() -> void:
 	cam.limit_bottom = MAP_H * TILE
 	cam.position = player_pos
 	cam.reset_smoothing()
+
+
+# crisp pixel Traditional-Chinese font (Zpix), antialiasing off
+func _make_font() -> Font:
+	if ResourceLoader.exists("res://assets/fonts/zpix.ttf"):
+		var f = load("res://assets/fonts/zpix.ttf")
+		if f is FontFile:
+			f.antialiasing = TextServer.FONT_ANTIALIASING_NONE
+			f.hinting = TextServer.HINTING_NONE
+			f.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_DISABLED
+		return f
+	return ThemeDB.fallback_font
 
 
 func _load_world_tiles() -> void:
@@ -505,7 +517,7 @@ func _draw_shop() -> void:
 		var oy := tl.y * TILE - 20            # sprite reserves 20px above the footprint
 		draw_texture_rect(s, Rect2(ox, oy, s.get_width(), s.get_height()), false)
 		# shop name on the signboard baked into the sprite
-		_wtext("らーめん", Vector2(ox + s.get_width() / 2.0, oy + 12), 8, C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+		_wtext("拉麵", Vector2(ox + s.get_width() / 2.0, oy + 12), 9, C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 		return
 	var w := 6
 	var h := 4
@@ -523,7 +535,7 @@ func _draw_shop() -> void:
 		draw_rect(Rect2(px + i * TILE - 1, py, 1, (h - 1) * TILE), C_ROOF_D)
 	# noren / signboard
 	draw_rect(Rect2(px + pw / 2.0 - 22, py - 6, 44, 12), C_INK)
-	_wtext("らーめん", Vector2(px + pw / 2.0, py + 3), 9, C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	_wtext("拉麵", Vector2(px + pw / 2.0, py + 3), 9, C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 	# door
 	var dpx := door_cell.x * TILE
 	var dpy := door_cell.y * TILE
@@ -558,7 +570,7 @@ func _draw_hint() -> void:
 	var hx := player_pos.x
 	var hy := player_pos.y - PLAYER_H - 8
 	if int(hint_blink * 2.0) % 2 == 0:
-		var label := "[E] 入店 ENTER"
+		var label := "[E] 進店"
 		var fs := 8
 		var tw: float = font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		draw_rect(Rect2(hx - tw / 2.0 - 4, hy - fs, tw + 8, fs + 4), Color(0, 0, 0, 0.72))

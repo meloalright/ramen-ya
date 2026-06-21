@@ -37,14 +37,14 @@ const BROTH := {
 	"shoyu": Color("7a4a22"),
 	"miso":  Color("c47a2e"),
 }
-const BROTH_NAME := { "shoyu": "醤油 Shoyu", "miso": "味噌 Miso" }
+const BROTH_NAME := { "shoyu": "醬油", "miso": "味噌" }
 
 # topping colors / short labels
 const TOP := {
-	"egg":    { "col": Color("f2a64e"), "lbl": "玉" },
+	"egg":    { "col": Color("f2a64e"), "lbl": "蛋" },
 	"nori":   { "col": Color("2f4a3a"), "lbl": "海" },
-	"chashu": { "col": Color("d98a8a"), "lbl": "焼" },
-	"negi":   { "col": Color("8fd24e"), "lbl": "葱" },
+	"chashu": { "col": Color("d98a8a"), "lbl": "燒" },
+	"negi":   { "col": Color("8fd24e"), "lbl": "蔥" },
 }
 const TOP_KEYS := ["egg", "nori", "chashu", "negi"]
 
@@ -90,13 +90,25 @@ var stall_tex: Texture2D
 
 func _ready() -> void:
 	randomize()
-	font = ThemeDB.fallback_font
+	font = _make_font()
 	if ResourceLoader.exists("res://assets/chef_sheet.png"):
 		chef_tex = load("res://assets/chef_sheet.png")
 	if ResourceLoader.exists("res://assets/env/ramen_stall.png"):
 		stall_tex = load("res://assets/env/ramen_stall.png")
 	_build_buttons()
 	set_process(true)
+
+
+# crisp pixel Traditional-Chinese font (Zpix), antialiasing off
+func _make_font() -> Font:
+	if ResourceLoader.exists("res://assets/fonts/zpix.ttf"):
+		var f = load("res://assets/fonts/zpix.ttf")
+		if f is FontFile:
+			f.antialiasing = TextServer.FONT_ANTIALIASING_NONE
+			f.hinting = TextServer.HINTING_NONE
+			f.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_DISABLED
+		return f
+	return ThemeDB.fallback_font
 
 
 # =====================================================================
@@ -107,17 +119,17 @@ func _build_buttons() -> void:
 	var w := 76
 	var h := 22
 	# row 1 : base + first topping
-	_add_btn("noodles", 6,   198, w, h, "麺 Noodle", "ing")
-	_add_btn("shoyu",   86,  198, w, h, "醤油",       "ing")
+	_add_btn("noodles", 6,   198, w, h, "麵條", "ing")
+	_add_btn("shoyu",   86,  198, w, h, "醬油",       "ing")
 	_add_btn("miso",    166, 198, w, h, "味噌",       "ing")
-	_add_btn("egg",     246, 198, w, h, "玉子 Egg",   "ing")
+	_add_btn("egg",     246, 198, w, h, "雞蛋",   "ing")
 	# row 2 : toppings
 	_add_btn("nori",    6,   224, w, h, "海苔",       "ing")
-	_add_btn("chashu",  86,  224, w, h, "叉焼",       "ing")
-	_add_btn("negi",    166, 224, w, h, "葱 Negi",    "ing")
+	_add_btn("chashu",  86,  224, w, h, "叉燒",       "ing")
+	_add_btn("negi",    166, 224, w, h, "青蔥",    "ing")
 	# actions
-	_add_btn("serve",   336, 198, 138, 22, "出す SERVE", "serve")
-	_add_btn("clear",   336, 224, 138, 22, "捨てる CLEAR", "clear")
+	_add_btn("serve",   336, 198, 138, 22, "上菜", "serve")
+	_add_btn("clear",   336, 224, 138, 22, "倒掉", "clear")
 
 
 func _add_btn(id: String, x: int, y: int, w: int, h: int, label: String, kind: String) -> void:
@@ -177,7 +189,7 @@ func _update_play(delta: float) -> void:
 		c.patience -= delta
 		if c.patience <= 0.0:
 			# customer leaves angry
-			_spawn_float(Vector2(seat_x[i], 70), "怒 ANGRY!", COL_RED)
+			_spawn_float(Vector2(seat_x[i], 70), "生氣走了！", COL_RED)
 			customers[i] = null
 			reputation -= 1
 			flash = 0.25
@@ -294,10 +306,10 @@ func _add_ingredient(id: String) -> void:
 func _serve() -> void:
 	var c = customers[selected_seat]
 	if c == null:
-		_spawn_float(Vector2(240, 150), "no customer", COL_YELLOW)
+		_spawn_float(Vector2(240, 150), "沒有客人", COL_YELLOW)
 		return
 	if not bowl.noodles or bowl.broth == "":
-		_spawn_float(Vector2(240, 150), "未完成 incomplete!", COL_YELLOW)
+		_spawn_float(Vector2(240, 150), "還沒做好！", COL_YELLOW)
 		return
 
 	var ok: bool = (bowl.broth == c.broth) and _same(bowl.toppings, c.toppings)
@@ -311,7 +323,7 @@ func _serve() -> void:
 	else:
 		money = max(0, money - 30)
 		reputation -= 1
-		_spawn_float(Vector2(seat_x[selected_seat], 60), "違う！ wrong  -30", COL_RED)
+		_spawn_float(Vector2(seat_x[selected_seat], 60), "錯了！ -30", COL_RED)
 		flash = 0.25
 		flash_col = COL_RED
 
@@ -392,16 +404,16 @@ func _draw_title() -> void:
 	else:
 		# fallback if the asset is missing
 		draw_rect(Rect2(120, 40, 240, 70), COL_BOWL_RIM)
-		_text("らーめん", Vector2(240, 92), 40, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+		_text("拉麵", Vector2(240, 92), 40, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 
 	# the chef stands in front of the stall
 	_draw_chef(Vector2(64, 262), 118, CHEF_DOWN)
 
 	# --- title text on a dark strip for legibility ---
 	draw_rect(Rect2(0, 224, W, 46), Color(0.07, 0.06, 0.09, 0.78))
-	_title_text("R A M E N - Y A", Vector2(244, 240), 20, COL_YELLOW)
-	_title_text("2D Pixel Ramen-Shop Manager  (DEMO)", Vector2(242, 254), 10, COL_WHITE)
-	_title_text("[ CLICK or SPACE to start ]   [ ESC = 店内へ / back to shop ]", Vector2(242, 267), 9,
+	_title_text("拉 麵 屋", Vector2(244, 240), 20, COL_YELLOW)
+	_title_text("2D 像素拉麵店  試玩版", Vector2(242, 254), 10, COL_WHITE)
+	_title_text("[ 點擊或空白鍵 開始 ]   [ ESC 返回店內 ]", Vector2(242, 267), 9,
 		COL_GREEN if Time_blink() else COL_WHITE)
 
 
@@ -448,16 +460,16 @@ func _draw_play() -> void:
 func _draw_hud() -> void:
 	draw_rect(Rect2(0, 0, W, 22), COL_INK)
 	_text("￥ " + str(money), Vector2(8, 16), 13, COL_YELLOW)
-	_text("Served: " + str(served), Vector2(150, 16), 11, COL_WHITE)
+	_text("賣出 " + str(served), Vector2(150, 16), 11, COL_WHITE)
 
 	# reputation hearts
-	_text("Rep:", Vector2(250, 16), 11, COL_WHITE)
+	_text("信譽", Vector2(250, 16), 11, COL_WHITE)
 	for i in 3:
 		var c := COL_RED if i < reputation else Color("44333a")
 		draw_rect(Rect2(286 + i * 14, 5, 11, 11), c)
 
 	# day timer bar
-	_text("Day", Vector2(338, 16), 10, COL_WHITE)
+	_text("時間", Vector2(338, 16), 10, COL_WHITE)
 	var bw := 110
 	draw_rect(Rect2(362, 6, bw, 10), COL_PANEL)
 	var frac: float = clamp(day_time / 120.0, 0.0, 1.0)
@@ -538,18 +550,18 @@ func _draw_customer(center: Vector2, face: int) -> void:
 func _draw_build_area() -> void:
 	# label
 	var occ: bool = customers[selected_seat] != null
-	_text("Seat #" + str(selected_seat + 1) + (" — building:" if occ else " — empty"),
+	_text("座位 " + str(selected_seat + 1) + ("：製作中" if occ else "：空"),
 		Vector2(8, 184), 10, COL_WHITE)
 	# the bowl preview
 	_draw_bowl(Vector2(176, 186), bowl.broth, bowl.toppings, 1.2)
 	# noodles indicator
 	var nood_col := COL_YELLOW if bowl.noodles else Color(1, 1, 1, 0.25)
-	_text("麺", Vector2(214, 190), 12, nood_col)
-	_text(("OK" if bowl.noodles else "—"), Vector2(228, 190), 9, nood_col)
+	_text("麵", Vector2(214, 190), 12, nood_col)
+	_text(("好" if bowl.noodles else "—"), Vector2(228, 190), 9, nood_col)
 	# compact reference of the selected customer's required order
 	if occ:
 		var c = customers[selected_seat]
-		_text("wants:", Vector2(252, 178), 9, Color(1, 1, 1, 0.7))
+		_text("需要", Vector2(252, 178), 9, Color(1, 1, 1, 0.7))
 		var ix := 252
 		draw_rect(Rect2(ix, 182, 13, 13), BROTH[c.broth])
 		draw_rect(Rect2(ix, 182, 13, 13), COL_INK, false, 1.0)
@@ -632,11 +644,11 @@ func _draw_button(b: Dictionary) -> void:
 func _draw_over() -> void:
 	draw_rect(Rect2(0, 0, W, H), Color(0, 0, 0, 0.7))
 	var won := reputation > 0
-	var title := "閉店 — DAY COMPLETE!" if won else "GAME OVER"
+	var title := "打烊—今日結束！" if won else "遊戲結束"
 	_text(title, Vector2(240, 90), 24, (COL_GREEN if won else COL_RED), HORIZONTAL_ALIGNMENT_CENTER)
-	_text("Earnings:  ￥ " + str(money), Vector2(240, 130), 16, COL_YELLOW, HORIZONTAL_ALIGNMENT_CENTER)
-	_text("Bowls served:  " + str(served), Vector2(240, 156), 13, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
-	_text("[ CLICK or press R to play again ]", Vector2(240, 205), 12, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	_text("今日收入  ￥" + str(money), Vector2(240, 130), 16, COL_YELLOW, HORIZONTAL_ALIGNMENT_CENTER)
+	_text("賣出拉麵  " + str(served), Vector2(240, 156), 13, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	_text("[ 點擊或按 R 再玩一次 ]", Vector2(240, 205), 12, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 # draws the chef sprite anchored at center-bottom, scaled to height h
@@ -653,7 +665,7 @@ func _draw_chef(center_bottom: Vector2, h: float, row: int) -> void:
 func _draw_back_button() -> void:
 	draw_rect(BACK_RECT, Color(0, 0, 0, 0.6))
 	draw_rect(BACK_RECT, COL_YELLOW, false, 1.0)
-	_text("← 店内", Vector2(BACK_RECT.position.x + BACK_RECT.size.x / 2, BACK_RECT.position.y + 12),
+	_text("← 店內", Vector2(BACK_RECT.position.x + BACK_RECT.size.x / 2, BACK_RECT.position.y + 12),
 		9, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 
 
