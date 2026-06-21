@@ -17,7 +17,7 @@ SRC = os.path.join(HERE, "ai_source.jpg")
 OUT = os.path.normpath(os.path.join(HERE, "..", "chef_sheet.png"))
 
 # source grid: 4x4 cells.  AI rows: 0=DOWN, 1=UP(back), 2=LEFT, 3=RIGHT
-X0, Y0, CW, CH = 85, 40, 158, 179
+X0, Y0, CW, CH = 81, 40, 159, 179
 TH = 78                       # brightness (r+g+b) below this = black background
 
 FW, FH = 22, 28               # output frame cell
