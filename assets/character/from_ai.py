@@ -7,7 +7,7 @@ So we build the game sheet as DOWN / SIDE-left / UP, reusing the front
 frames for UP (the AI gave no back view). Background (black) is removed by
 flood-fill from each cell's border, preserving dark hair/eyes inside.
 """
-from PIL import Image
+from PIL import Image, ImageFilter
 from collections import deque
 import numpy as np
 import os
@@ -20,8 +20,9 @@ OUT = os.path.normpath(os.path.join(HERE, "..", "chef_sheet.png"))
 X0, Y0, CW, CH = 81, 40, 159, 179
 TH = 78                       # brightness (r+g+b) below this = black background
 
-FW, FH = 22, 28               # output frame cell
-CHAR_H = 26                   # scale each character to this height
+# keep the frames near the on-screen size (avoids a blurry shrink-then-upscale)
+FW, FH = 52, 68               # output frame cell
+CHAR_H = 64                   # scale each character to this height
 
 
 def cut(im, bright, r, c):
@@ -53,6 +54,7 @@ def cut(im, bright, r, c):
     w, h = cell.size
     nw = max(1, round(w * CHAR_H / h))
     cell = cell.resize((nw, CHAR_H), Image.LANCZOS)
+    cell = cell.filter(ImageFilter.UnsharpMask(radius=1.2, percent=110, threshold=2))
     frame = Image.new("RGBA", (FW, FH), (0, 0, 0, 0))
     frame.alpha_composite(cell, ((FW - nw) // 2, FH - CHAR_H))
     return frame

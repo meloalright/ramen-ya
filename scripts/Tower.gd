@@ -50,8 +50,8 @@ const SWING_T := 0.2
 var sfx: AudioStreamPlayer
 
 var chef_tex: Texture2D
-const CHEF_FW := 22
-const CHEF_FH := 28
+const CHEF_FW := 52
+const CHEF_FH := 68
 const ROW_DOWN := 0
 const ROW_SIDE := 1
 const ROW_UP := 2
