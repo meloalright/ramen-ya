@@ -59,8 +59,8 @@ var anim_i := 0
 const STEP_SEQ := [0, 1, 0, 2]
 
 var chef_tex: Texture2D
-const CHEF_FW := 200
-const CHEF_FH := 301
+const CHEF_FW := 20
+const CHEF_FH := 26
 const ROW_DOWN := 0
 const ROW_SIDE := 1
 const ROW_UP := 2

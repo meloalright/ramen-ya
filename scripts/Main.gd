@@ -92,8 +92,8 @@ var flash_col: Color = COL_GREEN
 
 # ---- chef sprite (title screen only) --------------------------------
 var chef_tex: Texture2D
-const CHEF_FW := 200
-const CHEF_FH := 301
+const CHEF_FW := 20
+const CHEF_FH := 26
 const CHEF_SEQ := [0, 1, 0, 2]
 var chef_anim: float = 0.0
 var chef_idx: int = 0
