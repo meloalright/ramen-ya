@@ -82,8 +82,8 @@ var blink := 0.0
 # generated pixel-art tileset (assets/shop/*.png); empty → procedural fallback
 var tex := {}
 const GROUND_NAME := {
-	FLOOR: "floor", WALL: "wall", COUNTER: "counter",
-	KITCHEN: "kitchen", DOOR: "door", TABLE: "floor", CHAIR: "floor",
+	FLOOR: "floor", WALL: "wall", COUNTER: "floor",
+	KITCHEN: "floor", DOOR: "floor", TABLE: "floor", CHAIR: "floor",
 }
 
 
@@ -344,10 +344,13 @@ func _exit() -> void:
 #  DRAWING
 # =====================================================================
 func _draw() -> void:
-	# floor + static tiles (counter/kitchen/walls/door)
+	# floor + static tiles (walls/door)
 	for ty in MAP_H:
 		for tx in MAP_W:
 			_draw_ground(tx, ty)
+
+	# the back cooking station (stoves + service counter + lanterns)
+	_draw_back_station()
 
 	# Y-sorted objects: furniture + player so overlaps look right
 	var objs: Array = []
@@ -385,11 +388,11 @@ func _draw_ground(tx: int, ty: int) -> void:
 		draw_texture_rect(tex[nm], Rect2(px, py, TILE, TILE), false)
 	else:
 		_draw_ground_fallback(tx, ty)
-	# dressing: bowls along the counter, lanterns hung on the kitchen wall
-	if t == COUNTER and tx % 3 == 1 and tex.has("bowl"):
-		draw_texture_rect(tex["bowl"], Rect2(px, py - 2, TILE, TILE), false)
-	if t == KITCHEN and (tx == 3 or tx == 7) and tex.has("lantern"):
-		draw_texture_rect(tex["lantern"], Rect2(px, py - 5, TILE, TILE), false)
+	# the exit door, bottom-anchored a touch larger
+	if t == DOOR and tex.has("door"):
+		var d: Texture2D = tex["door"]
+		draw_texture_rect(d, Rect2(px + TILE / 2.0 - d.get_width() / 2.0,
+			py + TILE - d.get_height(), d.get_width(), d.get_height()), false)
 
 
 func _draw_ground_fallback(tx: int, ty: int) -> void:
@@ -428,30 +431,58 @@ func _draw_ground_fallback(tx: int, ty: int) -> void:
 				draw_rect(Rect2(px + TILE - 1, py, 1, TILE), C_FLOOR_D)
 
 
+func _draw_back_station() -> void:
+	var x0 := TILE
+	var x1 := (MAP_W - 1) * TILE
+	# stoves behind (their tops peek above the counter)
+	if tex.has("kitchen"):
+		var k: Texture2D = tex["kitchen"]
+		var x := float(x0)
+		while x < x1:
+			draw_texture_rect(k, Rect2(x, 40 - k.get_height(), k.get_width(), k.get_height()), false)
+			x += k.get_width() - 4
+	# service counter in front
+	if tex.has("counter"):
+		var c: Texture2D = tex["counter"]
+		var x := float(x0)
+		while x < x1:
+			draw_texture_rect(c, Rect2(x, 52 - c.get_height(), c.get_width(), c.get_height()), false)
+			x += c.get_width() - 4
+	# lanterns hung over the counter
+	if tex.has("lantern"):
+		var l: Texture2D = tex["lantern"]
+		for lx in [float(x0) + 18.0, float(x1) - 18.0]:
+			draw_texture_rect(l, Rect2(lx - l.get_width() / 2.0, 2, l.get_width(), l.get_height()), false)
+
+
 func _draw_table(tx: int, ty: int) -> void:
-	var px := tx * TILE
-	var py := ty * TILE
+	var cx := tx * TILE + TILE / 2.0
+	var by := ty * TILE + TILE                # tile bottom
 	var has_bowl: bool = bowl_tables.has(Vector2i(tx, ty))
 	if tex.has("table"):
-		draw_texture_rect(tex["table"], Rect2(px, py, TILE, TILE), false)
+		var t: Texture2D = tex["table"]
+		draw_texture_rect(t, Rect2(cx - t.get_width() / 2.0, by - t.get_height(), t.get_width(), t.get_height()), false)
 		if has_bowl and tex.has("bowl"):
-			draw_texture_rect(tex["bowl"], Rect2(px, py - 3, TILE, TILE), false)
+			var b: Texture2D = tex["bowl"]
+			draw_texture_rect(b, Rect2(cx - b.get_width() / 2.0, by - t.get_height() + 2,
+				b.get_width(), b.get_height()), false)
 	else:
+		var px := tx * TILE
+		var py := ty * TILE
 		draw_rect(Rect2(px, py + 3, TILE, TILE - 4), C_TABLE)
 		draw_rect(Rect2(px, py + 3, TILE, 3), C_TABLE_HI)
-		if has_bowl:
-			draw_rect(Rect2(px + 4, py + 6, 9, 5), C_BOWL)
-			draw_rect(Rect2(px + 4, py + 6, 9, 2), C_DOOR)
 
 
 func _draw_chair(tx: int, ty: int) -> void:
-	var px := tx * TILE
-	var py := ty * TILE
+	var cx := tx * TILE + TILE / 2.0
+	var by := ty * TILE + TILE
 	if tex.has("chair"):
-		draw_texture_rect(tex["chair"], Rect2(px, py, TILE, TILE), false)
+		var ch: Texture2D = tex["chair"]
+		draw_texture_rect(ch, Rect2(cx - ch.get_width() / 2.0, by - ch.get_height(), ch.get_width(), ch.get_height()), false)
 	else:
+		var px := tx * TILE
+		var py := ty * TILE
 		draw_rect(Rect2(px + 3, py + 6, TILE - 6, TILE - 8), C_CHAIR)
-		draw_rect(Rect2(px + 3, py + 4, TILE - 6, 3), C_TABLE_HI)
 	# a seated diner on this chair?
 	var cell := Vector2i(tx, ty)
 	if seated.has(cell):
