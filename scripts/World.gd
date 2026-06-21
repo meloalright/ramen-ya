@@ -195,17 +195,21 @@ func _build_map() -> void:
 		else:
 			buildings.append({"x": sx, "ft": ft, "tex": variants[i], "ramen": false})
 
-	# --- ambience: trees behind the block and along the far sidewalk ---
-	for i in 30:
+	# --- street trees: one in each gap between storefronts (right by the kerb) ---
+	for i in range(slots.size() - 1):
+		var ax: int = slots[i] + 7
+		if ax < MAP_W and map[ft + 3][ax] == T_GRASS:
+			map[ft + 3][ax] = T_TREE
+	# --- a leafy row lining the far (south) side of the street ---
+	for x in range(4, MAP_W - 2, 5):
+		if map[street_y + 6][x] == T_GRASS:
+			map[street_y + 6][x] = T_TREE
+	# --- scattered background trees for depth ---
+	for i in 16:
 		var tx: int = randi() % MAP_W
-		var ty: int = street_y + 7 + randi() % int(max(1, MAP_H - street_y - 9))
+		var ty: int = street_y + 9 + randi() % int(max(1, MAP_H - street_y - 11))
 		if ty < MAP_H - 1 and map[ty][tx] == T_GRASS:
 			map[ty][tx] = T_TREE
-	for i in 16:
-		var tx2: int = randi() % MAP_W
-		var ty2: int = 1 + randi() % int(max(1, ft - 2))
-		if map[ty2][tx2] == T_GRASS:
-			map[ty2][tx2] = T_TREE
 
 
 func _shop_door_front() -> Vector2:

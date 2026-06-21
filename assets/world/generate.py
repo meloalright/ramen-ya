@@ -248,7 +248,8 @@ def shop():
 
     # ===== ground-floor storefront (y 122..176) =====
     # awning: red/white stripes projecting over the shop front
-    for y in range(120, 132):
+    # (runs down to where the storefront wall begins — no transparent gap)
+    for y in range(120, 136):
         for x in range(1, W - 1):
             c = awn if (x // 6) % 2 == 0 else awn_w
             if y >= 129:
@@ -388,8 +389,8 @@ def gen_building(H, awn, awn_d, accent, tower, tower_hi, tower_d):
     for y in range(ay + 1, ay + 9):
         for x in range(34, 62):
             px[x, y] = accent if (35 < x < 60) else awn_d
-    # storefront wall
-    for y in range(ay + 14, H):
+    # storefront wall (starts right where the awning ends — no gap)
+    for y in range(ay + 12, H):
         for x in range(2, W - 2):
             px[x, y] = wall_d if y >= H - 2 else wall
     # display windows
