@@ -142,51 +142,64 @@ def td_beef(S=128):
 
 
 def td_pot(liquid, hi, basket=False, S=64):
-    im = img(S); px = im.load(); c = S / 2
-    R = S / 2 - 3
-
-    def sh(dx, dy, t):
-        if t > 0.8:
-            col = METAL
-            if dx + dy < -R * 0.3:
-                col = METAL_HI
-            elif dx + dy > R * 0.3:
-                col = METAL_D
-            return col
-        col = liquid
-        if dx < 0 and dy < 0 and t < 0.6:
-            col = hi
-        return col
-    disc(px, c, c, R, sh)
+    # slight 3/4 tilt: elliptical mouth high up, metal wall showing below
+    im = img(S); px = im.load()
+    cx = S / 2.0; oy = 26.0; rx = 29.0; ry = 22.0; ry2 = ry + 13.0
+    for y in range(S):
+        for x in range(S):
+            dx = x - cx; dy = y - oy
+            t = math.sqrt((dx / rx) ** 2 + (dy / ry) ** 2)
+            if t <= 1.0:
+                if t > 0.82:                          # metal rim
+                    col = METAL
+                    if dx < 0 and dy < 0:
+                        col = METAL_HI
+                    elif dy > 0:
+                        col = METAL_D
+                    px[x, y] = col
+                else:
+                    col = liquid
+                    if dx < 0 and dy < 0 and t < 0.6:
+                        col = hi
+                    px[x, y] = col
+            elif dy > 0 and (dx / rx) ** 2 + (dy / ry2) ** 2 <= 1.0:
+                px[x, y] = METAL_D if dy / ry2 > 0.55 else METAL
+    # side handles at rim height
+    for sgn in (-1, 1):
+        hx = int(cx + sgn * (rx + 1))
+        for yy in range(int(oy - 3), int(oy + 3)):
+            if 0 <= hx < S and 0 <= yy < S:
+                px[hx, yy] = METAL_D
     if basket:
-        # a noodle strainer ring dipped in
-        for ang in range(0, 360, 6):
+        for ang in range(0, 360, 8):
             a = math.radians(ang)
-            x = c + math.cos(a) * (R - 8)
-            y = c + math.sin(a) * (R - 8)
-            px[int(x), int(y)] = METAL_D
+            bx = int(cx + math.cos(a) * (rx - 8))
+            by = int(oy + math.sin(a) * (ry - 6))
+            if 0 <= bx < S and 0 <= by < S:
+                px[bx, by] = METAL_D
     return outline(im)
 
 
 def td_box(fill, hi, S=48):
-    im = img(S); px = im.load(); c = S / 2
-    R = S / 2 - 3
-    # square-ish container with a rounded look
-    for y in range(2, S - 2):
-        for x in range(2, S - 2):
-            edge = x <= 4 or y <= 4 or x >= S - 5 or y >= S - 5
-            d = math.hypot(x - c, y - c)
-            if edge and d < R + 3:
-                px[x, y] = WOOD_D
-            elif d < R - 1:
-                col = fill
-                if (x + y) % 7 == 0:
-                    col = hi
-                if x - c < 0 and y - c < 0 and d < R * 0.6:
-                    col = hi
-                px[x, y] = col
-            elif d < R + 1:
-                px[x, y] = WOOD
+    # slight 3/4 tilt: elliptical mouth, wood wall showing below
+    im = img(S); px = im.load()
+    cx = S / 2.0; oy = 19.0; rx = 20.0; ry = 15.0; ry2 = ry + 10.0
+    for y in range(S):
+        for x in range(S):
+            dx = x - cx; dy = y - oy
+            t = math.sqrt((dx / rx) ** 2 + (dy / ry) ** 2)
+            if t <= 1.0:
+                if t > 0.8:                           # wood rim
+                    px[x, y] = WOOD_D if dy > 0 else WOOD
+                else:
+                    col = fill
+                    if dx < 0 and dy < 0 and t < 0.6:
+                        col = hi
+                    elif (x + y) % 7 == 0:
+                        col = hi
+                    px[x, y] = col
+            elif dy > 0 and (dx / rx) ** 2 + (dy / ry2) ** 2 <= 1.0:
+                px[x, y] = WOOD_D if dy / ry2 > 0.5 else WOOD
     return outline(im)
 
 
