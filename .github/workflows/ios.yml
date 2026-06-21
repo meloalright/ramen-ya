@@ -13,10 +13,20 @@ env:
 jobs:
   testflight:
     name: Export, sign & upload
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Select newest Xcode (App Store requires iOS 26 SDK / Xcode 26+)
+        run: |
+          set -eo pipefail
+          ls -d /Applications/Xcode_*.app 2>/dev/null || true
+          LATEST=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sed 's#.*/Xcode_##;s#.app##' | sort -V | tail -1)
+          echo "Selecting Xcode $LATEST"
+          sudo xcode-select -s "/Applications/Xcode_${LATEST}.app/Contents/Developer"
+          xcodebuild -version
+          xcodebuild -showsdks | grep -i iphoneos || true
 
       - name: Install Godot ${{ env.GODOT_VERSION }} + iOS export templates
         run: |
@@ -85,8 +95,6 @@ jobs:
           echo "$ASC_API_KEY_P8" > "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
           IPA=$(find build/ios -name "*.ipa" | head -1)
           echo "Uploading $IPA"
-          xcrun altool --validate-app -f "$IPA" -t ios \
-            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" || true
           xcrun altool --upload-app -f "$IPA" -t ios \
             --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
           rm -f "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
