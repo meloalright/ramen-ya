@@ -16,8 +16,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "ai_source.jpg")
 OUT = os.path.normpath(os.path.join(HERE, "..", "chef_sheet.png"))
 
-# source grid (content bbox x100..700, y58..580 → 4x3 cells of 150x174)
-X0, Y0, CW, CH = 100, 58, 150, 174
+# source grid: 4x4 cells.  AI rows: 0=DOWN, 1=UP(back), 2=LEFT, 3=RIGHT
+X0, Y0, CW, CH = 85, 40, 158, 179
 TH = 78                       # brightness (r+g+b) below this = black background
 
 FW, FH = 22, 28               # output frame cell
@@ -61,13 +61,12 @@ def cut(im, bright, r, c):
 def main():
     im = Image.open(SRC).convert("RGB")
     bright = np.asarray(im).astype(int).sum(2)
+    # game sheet rows: 0=DOWN, 1=SIDE-left, 2=UP — right is mirrored in code
     sheet = Image.new("RGBA", (FW * 4, FH * 3), (0, 0, 0, 0))
     for c in range(4):
-        down = cut(im, bright, 0, c)
-        side = cut(im, bright, 1, c)
-        sheet.alpha_composite(down, (c * FW, 0 * FH))   # row0 down
-        sheet.alpha_composite(side, (c * FW, 1 * FH))   # row1 side-left
-        sheet.alpha_composite(down, (c * FW, 2 * FH))   # row2 up (reuse front)
+        sheet.alpha_composite(cut(im, bright, 0, c), (c * FW, 0 * FH))   # DOWN  ← AI row0
+        sheet.alpha_composite(cut(im, bright, 2, c), (c * FW, 1 * FH))   # LEFT  ← AI row2
+        sheet.alpha_composite(cut(im, bright, 1, c), (c * FW, 2 * FH))   # UP    ← AI row1 (back)
     sheet.save(OUT)
     print("wrote", OUT, sheet.size)
 
