@@ -75,12 +75,20 @@ var blink := 0.0
 
 @onready var cam: Camera2D = $Camera
 
+# generated pixel-art tileset (assets/shop/*.png); empty → procedural fallback
+var tex := {}
+const GROUND_NAME := {
+	FLOOR: "floor", WALL: "wall", COUNTER: "counter",
+	KITCHEN: "kitchen", DOOR: "door", TABLE: "floor", CHAIR: "floor",
+}
+
 
 # =====================================================================
 func _ready() -> void:
 	font = ThemeDB.fallback_font
 	if ResourceLoader.exists("res://assets/chef_sheet.png"):
 		chef_tex = load("res://assets/chef_sheet.png")
+	_load_tileset()
 	_build_room()
 	# spawn point depends on how we got here
 	if entry == "counter":
@@ -92,6 +100,13 @@ func _ready() -> void:
 	entry = "door"              # default for the next overworld entry
 	_setup_camera()
 	set_process(true)
+
+
+func _load_tileset() -> void:
+	for key in ["floor", "wall", "counter", "kitchen", "table", "chair", "bowl", "door", "lantern"]:
+		var p := "res://assets/shop/%s.png" % key
+		if ResourceLoader.exists(p):
+			tex[key] = load(p)
 
 
 func _setup_camera() -> void:
@@ -318,6 +333,22 @@ func _draw() -> void:
 func _draw_ground(tx: int, ty: int) -> void:
 	var px := tx * TILE
 	var py := ty * TILE
+	var t: int = map[ty][tx]
+	var nm: String = GROUND_NAME.get(t, "floor")
+	if tex.has(nm):
+		draw_texture_rect(tex[nm], Rect2(px, py, TILE, TILE), false)
+	else:
+		_draw_ground_fallback(tx, ty)
+	# dressing: bowls along the counter, lanterns hung on the kitchen wall
+	if t == COUNTER and tx % 3 == 1 and tex.has("bowl"):
+		draw_texture_rect(tex["bowl"], Rect2(px, py - 2, TILE, TILE), false)
+	if t == KITCHEN and (tx == 4 or tx == 11 or tx == 18) and tex.has("lantern"):
+		draw_texture_rect(tex["lantern"], Rect2(px, py - 5, TILE, TILE), false)
+
+
+func _draw_ground_fallback(tx: int, ty: int) -> void:
+	var px := tx * TILE
+	var py := ty * TILE
 	var r := Rect2(px, py, TILE, TILE)
 	var t: int = map[ty][tx]
 	match t:
@@ -354,18 +385,25 @@ func _draw_ground(tx: int, ty: int) -> void:
 func _draw_table(tx: int, ty: int) -> void:
 	var px := tx * TILE
 	var py := ty * TILE
-	draw_rect(Rect2(px, py + 3, TILE, TILE - 4), C_TABLE)
-	draw_rect(Rect2(px, py + 3, TILE, 3), C_TABLE_HI)
-	# a steaming bowl on the table
-	draw_rect(Rect2(px + 4, py + 6, 9, 5), C_BOWL)
-	draw_rect(Rect2(px + 4, py + 6, 9, 2), C_DOOR)
+	if tex.has("table"):
+		draw_texture_rect(tex["table"], Rect2(px, py, TILE, TILE), false)
+		if tex.has("bowl"):
+			draw_texture_rect(tex["bowl"], Rect2(px, py - 3, TILE, TILE), false)
+	else:
+		draw_rect(Rect2(px, py + 3, TILE, TILE - 4), C_TABLE)
+		draw_rect(Rect2(px, py + 3, TILE, 3), C_TABLE_HI)
+		draw_rect(Rect2(px + 4, py + 6, 9, 5), C_BOWL)
+		draw_rect(Rect2(px + 4, py + 6, 9, 2), C_DOOR)
 
 
 func _draw_chair(tx: int, ty: int) -> void:
 	var px := tx * TILE
 	var py := ty * TILE
-	draw_rect(Rect2(px + 3, py + 6, TILE - 6, TILE - 8), C_CHAIR)
-	draw_rect(Rect2(px + 3, py + 4, TILE - 6, 3), C_TABLE_HI)
+	if tex.has("chair"):
+		draw_texture_rect(tex["chair"], Rect2(px, py, TILE, TILE), false)
+	else:
+		draw_rect(Rect2(px + 3, py + 6, TILE - 6, TILE - 8), C_CHAIR)
+		draw_rect(Rect2(px + 3, py + 4, TILE - 6, 3), C_TABLE_HI)
 
 
 func _draw_player() -> void:
