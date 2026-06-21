@@ -35,7 +35,6 @@ enum {
 var map: Array = []           # MAP_H rows of MAP_W ints
 var door_cell := Vector2i(-1, -1)
 var buildings: Array = []     # {x, ft, tex, ramen} — storefronts along the street
-var street_center_y: float = 0.0
 
 # ---- palette --------------------------------------------------------
 const C_GRASS    := Color("4e8a3c")
@@ -161,9 +160,8 @@ func _build_map() -> void:
 		map.append(row)
 
 	# --- the commercial street: a horizontal road with sidewalks ---
-	var street_y := 22                       # top row of the asphalt band
-	street_center_y = (street_y + 2) * TILE
-	for y in range(street_y, street_y + 4):  # asphalt
+	var street_y := 22                       # top row of the cobbled street
+	for y in range(street_y, street_y + 4):  # cobblestones
 		for x in MAP_W:
 			map[y][x] = T_ROAD
 	for y in range(street_y - 3, street_y):  # north sidewalk
@@ -370,8 +368,6 @@ func _draw() -> void:
 	for ty in range(view.position.y, view.end.y):
 		for tx in range(view.position.x, view.end.x):
 			_draw_ground_tile(tx, ty)
-	# street centre line over the asphalt
-	_draw_street_line(view)
 	# object pass (trees, buildings, player) sorted by Y so things overlap right
 	var objs: Array = []
 	for ty in range(view.position.y, view.end.y):
@@ -504,16 +500,6 @@ func _draw_building(b: Dictionary) -> void:
 		return
 	# fallback box
 	draw_rect(Rect2(sx * TILE, ft * TILE, 6 * TILE, 4 * TILE), C_WALL)
-
-
-func _draw_street_line(view: Rect2i) -> void:
-	# dashed centre line down the asphalt
-	var y := street_center_y
-	var x := view.position.x * TILE
-	var end := view.end.x * TILE
-	while x < end:
-		draw_rect(Rect2(x, y - 1, 10, 2), C_YELLOW)
-		x += 22
 
 
 func _draw_player() -> void:

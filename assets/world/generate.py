@@ -309,19 +309,34 @@ def pavement():
 
 
 def road():
-    base = (66, 66, 74, 255)
-    d = (52, 52, 60, 255)
-    hi = (84, 84, 94, 255)
+    # a small cobblestone / flagstone street (no asphalt)
+    mortar = (118, 110, 98, 255)
+    shades = [(168, 158, 142, 255), (180, 170, 152, 255),
+              (156, 146, 130, 255), (174, 162, 144, 255)]
+    hi = (196, 186, 168, 255)
+    sh = (132, 122, 108, 255)
     im = img()
     px = im.load()
     for y in range(S):
+        row = y // 8
+        ox = 4 if (row % 2) else 0          # offset every other course (running bond)
         for x in range(S):
-            c = base
-            v = nz(x, y, 81)
+            cellx = (x + ox) % 8
+            celly = y % 8
+            if cellx == 0 or celly == 0:    # mortar joints between stones
+                px[x, y] = mortar
+                continue
+            sid = ((x + ox) // 8 * 3 + row * 7) % len(shades)
+            c = shades[sid]
+            if cellx <= 1 or celly <= 1:     # rounded top-left sheen
+                c = hi
+            elif cellx >= 6 or celly >= 6:   # bottom-right shade
+                c = sh
+            v = nz(x, y, 91)
             if v > 0.88:
                 c = hi
-            elif v < 0.15:
-                c = d
+            elif v < 0.12:
+                c = sh
             px[x, y] = c
     return im
 
