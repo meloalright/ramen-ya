@@ -203,9 +203,11 @@ func _process(delta: float) -> void:
 	moving = dir != Vector2.ZERO
 	if moving:
 		dir = dir.normalized()
-		if abs(dir.x) > abs(dir.y):
+		# deadband: only switch facing when one axis clearly dominates, so
+		# near-diagonal / near-target jitter doesn't flicker the sprite
+		if abs(dir.x) - abs(dir.y) > 0.34:
 			facing = 1 if dir.x < 0.0 else 2
-		else:
+		elif abs(dir.y) - abs(dir.x) > 0.34:
 			facing = 3 if dir.y < 0.0 else 0
 	var step := dir * PLAYER_SPEED * delta
 	if _can_stand(player_pos.x + step.x, player_pos.y):

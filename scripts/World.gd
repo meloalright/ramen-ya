@@ -281,9 +281,11 @@ func _process(delta: float) -> void:
 	if moving:
 		dir = dir.normalized()
 		# face the dominant axis
-		if abs(dir.x) > abs(dir.y):
+		# deadband: only switch facing when one axis clearly dominates, so
+		# near-diagonal / near-target jitter doesn't flicker the sprite
+		if abs(dir.x) - abs(dir.y) > 0.34:
 			facing = 1 if dir.x < 0.0 else 2
-		else:
+		elif abs(dir.y) - abs(dir.x) > 0.34:
 			facing = 3 if dir.y < 0.0 else 0
 
 	# --- move with axis-separated collision (slide along walls) ---
