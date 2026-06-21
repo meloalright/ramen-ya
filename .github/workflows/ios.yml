@@ -58,50 +58,21 @@ jobs:
 
       - name: Set Team ID in iOS preset
         run: |
+          # Team ID (from secret) + unique build number (CFBundleVersion = run number)
           sed -i '' "s#application/app_store_team_id=\"[^\"]*\"#application/app_store_team_id=\"${{ secrets.IOS_TEAM_ID }}\"#" export_presets.cfg
+          sed -i '' "s#application/version=\"[^\"]*\"#application/version=\"${{ github.run_number }}\"#" export_presets.cfg
+          grep -E 'version|team|provisioning' export_presets.cfg
 
-      - name: Import project & export iOS Xcode project
+      - name: Export & build signed .ipa (Godot drives xcodebuild)
         run: |
           set -eo pipefail
           "$GODOT_BIN" --headless --import || true
           mkdir -p build/ios
+          # On macOS, Godot generates the Xcode project AND runs xcodebuild to
+          # produce a signed .ipa (manual signing via the profile UUID in the preset).
           "$GODOT_BIN" --headless --verbose --export-release "iOS" build/ios/ramenya.ipa
-          echo "--- generated project ---"; ls -la build/ios
-
-      - name: Archive & export signed .ipa
-        run: |
-          set -eo pipefail
-          cd build/ios
-          PROJ=$(ls -d *.xcodeproj | head -1)
-          SCHEME=$(xcodebuild -project "$PROJ" -list | awk '/Schemes:/{f=1;next} f&&NF{print $1; exit}')
-          echo "Project=$PROJ Scheme=$SCHEME"
-          xcodebuild -project "$PROJ" -scheme "$SCHEME" \
-            -configuration Release -sdk iphoneos \
-            -archivePath "$PWD/app.xcarchive" \
-            MARKETING_VERSION=1.0 CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
-            DEVELOPMENT_TEAM="${{ secrets.IOS_TEAM_ID }}" \
-            CODE_SIGN_STYLE=Manual \
-            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
-            CODE_SIGN_IDENTITY="$SIGN_IDENTITY" \
-            clean archive
-          cat > ExportOptions.plist <<EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0"><dict>
-            <key>method</key><string>app-store</string>
-            <key>teamID</key><string>${{ secrets.IOS_TEAM_ID }}</string>
-            <key>signingStyle</key><string>manual</string>
-            <key>signingCertificate</key><string>$SIGN_IDENTITY</string>
-            <key>provisioningProfiles</key><dict>
-              <key>$BUNDLE_ID</key><string>$PROFILE_NAME</string>
-            </dict>
-            <key>uploadSymbols</key><false/>
-            <key>stripSwiftSymbols</key><true/>
-          </dict></plist>
-          EOF
-          xcodebuild -exportArchive -archivePath "$PWD/app.xcarchive" \
-            -exportOptionsPlist ExportOptions.plist -exportPath "$PWD/export"
-          echo "--- exported ---"; ls -la export
+          echo "--- build/ios ---"; ls -la build/ios
+          find build/ios -name "*.ipa"
 
       - name: Upload to TestFlight
         env:
@@ -112,8 +83,10 @@ jobs:
           set -eo pipefail
           mkdir -p "$HOME/.appstoreconnect/private_keys"
           echo "$ASC_API_KEY_P8" > "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
-          IPA=$(ls build/ios/export/*.ipa | head -1)
+          IPA=$(find build/ios -name "*.ipa" | head -1)
           echo "Uploading $IPA"
+          xcrun altool --validate-app -f "$IPA" -t ios \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" || true
           xcrun altool --upload-app -f "$IPA" -t ios \
             --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
           rm -f "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
@@ -123,5 +96,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ramenya-ipa
-          path: build/ios/export/*.ipa
+          path: build/ios/**/*.ipa
           if-no-files-found: warn
