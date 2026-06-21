@@ -378,11 +378,26 @@ func _handle_click(p: Vector2) -> void:
 		if s.rect.has_point(p):
 			if s.item == "noodles":
 				_noodle_pot_click(s.cx)
+			elif held == s.item:
+				_put_down()                     # click the same station to put it back
 			else:
 				held = s.item
 				held_q = ""
 				_sfx("pick")
 			return
+
+	# clicked empty counter — put down whatever you're holding
+	if held != "":
+		_put_down()
+
+
+func _put_down() -> void:
+	if held == "":
+		return
+	_sfx("plop")
+	_spawn_float(mouse_pos, "放下了", COL_YELLOW)
+	held = ""
+	held_q = ""
 
 
 func _noodle_pot_click(cx: float) -> void:
@@ -881,10 +896,20 @@ func _draw_held(p: Vector2) -> void:
 		draw_rect(Rect2(p.x - 9, p.y - 9, 18, 12), COL_BOWL)
 		draw_rect(Rect2(p.x - 9, p.y - 10, 18, 3), COL_BOWL_RIM)
 		draw_rect(Rect2(p.x - 6, p.y - 7, 12, 7), col)
-	# label tag
-	var tw: float = font.get_string_size("提起 " + label, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x
-	draw_rect(Rect2(p.x - tw / 2 - 3, p.y + 5, tw + 6, 11), Color(0, 0, 0, 0.72))
-	_text("提起 " + label, Vector2(p.x, p.y + 14), 8, COL_YELLOW, HORIZONTAL_ALIGNMENT_CENTER)
+	# label tag + how-to / put-down hint
+	var hint := "點碗放入"
+	if held in TOP_ORDER:
+		hint = "在碗上撒"
+	elif held == "soup":
+		hint = "點碗倒湯"
+	hint += " · 點空台放下"
+	var l1 := "提起 " + label
+	var w1: float = font.get_string_size(l1, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x
+	var w2: float = font.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x
+	var tw: float = max(w1, w2)
+	draw_rect(Rect2(p.x - tw / 2 - 3, p.y + 5, tw + 6, 21), Color(0, 0, 0, 0.72))
+	_text(l1, Vector2(p.x, p.y + 14), 8, COL_YELLOW, HORIZONTAL_ALIGNMENT_CENTER)
+	_text(hint, Vector2(p.x, p.y + 23), 8, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 # --- buttons ---------------------------------------------------------
