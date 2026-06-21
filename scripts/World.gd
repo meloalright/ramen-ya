@@ -551,9 +551,13 @@ func _draw_player() -> void:
 	var col: int = STEP_SEQ[anim_i] if moving else 0
 	var src := Rect2(col * CHEF_FW, row * CHEF_FH, CHEF_FW, CHEF_FH)
 	if flip:
-		src.position.x += CHEF_FW
-		src.size.x = -CHEF_FW
-	draw_texture_rect_region(chef_tex, dst, src)
+		# mirror via a transform (clean per-frame sampling, no boundary bleed)
+		var cx := dst.position.x + dst.size.x / 2.0
+		draw_set_transform(Vector2(cx * 2.0, 0.0), 0.0, Vector2(-1.0, 1.0))
+		draw_texture_rect_region(chef_tex, dst, src)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	else:
+		draw_texture_rect_region(chef_tex, dst, src)
 
 
 func _draw_hint(label: String) -> void:
