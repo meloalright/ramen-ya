@@ -113,11 +113,82 @@ def sfx_hit():
     return (mix * 32767).astype("<i2")
 
 
-HIT_OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "hit.wav")
-_hit = sfx_hit()
-with wave.open(HIT_OUT, "wb") as w:
-    w.setnchannels(1)
-    w.setsampwidth(2)
-    w.setframerate(SR)
-    w.writeframes(_hit.tobytes())
-print("wrote", HIT_OUT, "dur: %.2fs" % (len(_hit) / SR))
+def _finalize(arr, gain=0.9):
+    arr = arr / (np.max(np.abs(arr)) + 1e-6) * gain
+    return (np.clip(arr, -1, 1) * 32767).astype("<i2")
+
+
+def _save(arr, name):
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), name)
+    with wave.open(p, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(SR)
+        w.writeframes(arr.tobytes())
+    print("wrote", name, "dur: %.2fs" % (len(arr) / SR))
+
+
+def _tone(freq0, freq1, dur, vol, duty=0.5, decay=18.0):
+    n = int(SR * dur)
+    t = np.arange(n) / SR
+    f = np.linspace(freq0, freq1, n)
+    ph = (np.cumsum(f) / SR) % 1.0
+    sq = np.where(ph < duty, 1.0, -1.0)
+    return sq * vol * np.exp(-decay * t)
+
+
+def _noise(dur, vol, decay):
+    n = int(SR * dur)
+    t = np.arange(n) / SR
+    return (np.random.rand(n) * 2 - 1) * vol * np.exp(-decay * t)
+
+
+# cooking SFX --------------------------------------------------------
+def sfx_pick():        # lift / pick up — soft pop
+    return _finalize(_tone(720, 540, 0.07, 0.5, 0.5, 34.0), 0.7)
+
+
+def sfx_plop():        # drop an ingredient into the bowl
+    a = _tone(420, 150, 0.10, 0.5, 0.5, 30.0)
+    nz = _noise(0.05, 0.3, 60.0)
+    a[:len(nz)] += nz
+    return _finalize(a, 0.8)
+
+
+def sfx_pour():        # ladle broth — watery pour
+    dur = 0.30
+    nn = int(SR * dur)
+    t = np.arange(nn) / SR
+    env = np.minimum(t / 0.03, 1.0) * np.exp(-6.0 * t)
+    ripple = 0.6 + 0.4 * np.sin(2 * np.pi * 18 * t)
+    return _finalize((np.random.rand(nn) * 2 - 1) * env * ripple, 0.7)
+
+
+def sfx_boil():        # noodles into the pot — sizzle
+    dur = 0.34
+    nn = int(SR * dur)
+    t = np.arange(nn) / SR
+    env = np.minimum(t / 0.02, 1.0) * np.exp(-5.0 * t)
+    return _finalize((np.random.rand(nn) * 2 - 1) * env, 0.6)
+
+
+def sfx_serve():       # served! — bright rising arpeggio
+    a = np.concatenate([
+        _tone(523, 523, 0.08, 0.4, 0.5, 8.0),
+        _tone(659, 659, 0.08, 0.4, 0.5, 8.0),
+        _tone(784, 784, 0.16, 0.4, 0.5, 6.0),
+    ])
+    return _finalize(a, 0.8)
+
+
+def sfx_no():          # not ready / wrong — low blip
+    return _finalize(_tone(300, 150, 0.16, 0.45, 0.5, 9.0), 0.7)
+
+
+_save(sfx_hit(), "hit.wav")
+_save(sfx_pick(), "pick.wav")
+_save(sfx_plop(), "plop.wav")
+_save(sfx_pour(), "pour.wav")
+_save(sfx_boil(), "boil.wav")
+_save(sfx_serve(), "serve.wav")
+_save(sfx_no(), "no.wav")

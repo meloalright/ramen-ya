@@ -99,6 +99,11 @@ var stations: Array = []
 # refined round-bowl sprites (assets/cook/*.png); empty → procedural fallback
 var ctex := {}
 
+# cooking SFX players + steam particles (juice)
+var sfx := {}
+var steam: Array = []              # {pos, vx, ttl, ph}
+var steam_t := 0.0
+
 var float_texts: Array = []
 var flash: float = 0.0
 var flash_col: Color = COL_GREEN
@@ -122,8 +127,26 @@ func _ready() -> void:
 		stall_tex = load("res://assets/env/ramen_stall.png")
 	_build_stations()
 	_load_cook()
+	_load_sfx()
 	_reset_bowl()
 	set_process(true)
+
+
+func _load_sfx() -> void:
+	for k in ["pick", "plop", "pour", "boil", "serve", "no"]:
+		var p := "res://assets/audio/%s.wav" % k
+		if ResourceLoader.exists(p):
+			var pl := AudioStreamPlayer.new()
+			pl.stream = load(p)
+			pl.bus = "Master"
+			pl.volume_db = -5.0
+			add_child(pl)
+			sfx[k] = pl
+
+
+func _sfx(k: String) -> void:
+	if sfx.has(k):
+		sfx[k].play()
 
 
 func _load_cook() -> void:
@@ -196,6 +219,22 @@ func _process(delta: float) -> void:
 
 	if noodle_state == "cooking":
 		noodle_t = min(8.0, noodle_t + delta)
+
+	# rising steam from hot things (juice)
+	for p in steam:
+		p.pos.y -= 16.0 * delta
+		p.pos.x += sin(p.ph + p.ttl * 6.0) * 8.0 * delta
+		p.ttl -= delta
+	steam = steam.filter(func(s): return s.ttl > 0.0)
+	if state == State.PLAY:
+		steam_t -= delta
+		if steam_t <= 0.0:
+			steam_t = 0.16
+			if _base_ok() or soup_fill > 0.0 or bowl.noodles:
+				_puff(240, 120)                       # the assembled bowl
+			_puff(52, 166)                            # 湯鍋
+			if noodle_state == "cooking":
+				_puff(128, 166)                       # 麵鍋 while boiling
 
 	chef_anim += delta
 	if chef_anim > 0.22:
@@ -310,6 +349,7 @@ func _handle_click(p: Vector2) -> void:
 			else:
 				held = s.item
 				held_q = ""
+				_sfx("pick")
 			return
 
 
@@ -322,6 +362,7 @@ func _noodle_pot_click(cx: float) -> void:
 	if noodle_state == "empty":
 		noodle_state = "cooking"
 		noodle_t = 0.0
+		_sfx("boil")
 		_spawn_float(Vector2(cx, 168), "下麵煮！", COL_GREEN)
 	else:
 		# lift the noodles — quality depends on the timing
@@ -329,6 +370,7 @@ func _noodle_pot_click(cx: float) -> void:
 		held_q = _noodle_quality()
 		noodle_state = "empty"
 		noodle_t = 0.0
+		_sfx("pick")
 		var msg := "剛剛好！" if held_q == "ok" else ("還太生" if held_q == "raw" else "煮過頭")
 		_spawn_float(Vector2(cx, 156), "提起 " + msg, COL_GREEN if held_q == "ok" else COL_YELLOW)
 
@@ -350,6 +392,7 @@ func _place_into_bowl() -> void:
 			_spawn_float(Vector2(240, 128), "湯要溢出來了", COL_YELLOW)
 		else:
 			soup_fill = min(1.1, soup_fill + SOUP_LADLE)
+			_sfx("pour")
 			_spawn_float(Vector2(240, 128), "湯滿了！" if soup_fill >= 0.9 else "+1 勺", COL_GREEN)
 		held = ""
 		held_q = ""
@@ -360,6 +403,7 @@ func _place_into_bowl() -> void:
 		bowl[held] = true
 		if held == "noodles":
 			bowl_nq = held_q
+		_sfx("plop")
 		var label := _item_name(held)
 		_spawn_float(Vector2(240, 126), "放入 " + label, COL_GREEN)
 	held = ""
@@ -370,14 +414,17 @@ func _serve() -> void:
 	var c = customers[selected_seat]
 	if c == null:
 		_spawn_float(Vector2(240, 150), "沒有客人", COL_YELLOW)
+		_sfx("no")
 		return
 	if not _base_ok():
 		_spawn_float(Vector2(240, 150), "還沒做好！", COL_YELLOW)
+		_sfx("no")
 		return
 
 	if not _matches(c):
 		# wrong toppings — let the player try again, no penalty
 		_spawn_float(Vector2(seat_x[selected_seat], 60), "配料不對…", COL_YELLOW)
+		_sfx("no")
 		flash = 0.18
 		flash_col = COL_YELLOW
 		return
@@ -391,6 +438,7 @@ func _serve() -> void:
 		_spawn_float(Vector2(sx, 56), "好吃，但麵有點生", COL_YELLOW)
 	else:
 		_spawn_float(Vector2(sx, 56), "好吃,下次麵別煮太久", COL_YELLOW)
+	_sfx("serve")
 	flash = 0.2
 	flash_col = COL_GREEN
 	customers[selected_seat] = null
@@ -498,6 +546,11 @@ func _draw_play() -> void:
 	_draw_assembly(Vector2(240, 140))
 	_text("組裝中", Vector2(240, 106), 9, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 
+	# rising steam
+	for p in steam:
+		var a: float = clamp(p.ttl, 0.0, 1.0) * 0.42
+		draw_rect(Rect2(p.pos.x - 2, p.pos.y - 2, 4, 4), Color(1, 1, 1, a))
+
 	# action buttons
 	_draw_button(CLEAR_RECT, "倒掉", COL_RED)
 	_draw_button(SERVE_RECT, "上菜", COL_GREEN)
@@ -507,6 +560,11 @@ func _draw_play() -> void:
 	# held ingredient follows the cursor
 	if held != "":
 		_draw_held(mouse_pos)
+
+
+func _puff(x: float, y: float) -> void:
+	steam.append({"pos": Vector2(x + randf_range(-5, 5), y), "vx": 0.0,
+		"ttl": 0.9 + randf() * 0.4, "ph": randf() * TAU})
 
 
 func _draw_hud() -> void:
