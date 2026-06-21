@@ -112,3 +112,68 @@ background, no text. Clean, recognizable at small size. Opaque (no transparency)
 
 ## 生成顺序建议(从影响最大到最小)
 1. 档口背景(已换 ✅) → 2. 主角精灵 → 3. 档口做面物件 → 4. 拉面店 + 紫金大廈 → 5. 树/普通楼 → 6. 店内 tiles → 7. App 图标 → (地块按需)
+
+---
+
+# 地面 / 地块 · 可平铺纹理(seamless tiles)
+> ⚠️ 关键:**无缝拼接**。每个都**单独**生成一张正方形纹理,我会降采样到 16×16 并检查接缝(有缝我手修)。
+> 每个提示词同样先加【统一风格】,再加下面这段【平铺约束】:
+
+## 【平铺约束】(粘在每个地块提示词)
+```
+a SEAMLESS TILEABLE top-down ground texture, the pattern repeats perfectly and
+the edges wrap on all four sides (no visible seam when tiled), uniform flat
+lighting, no objects, no props, no shadows, fills the entire square frame,
+512x512.
+```
+
+## 室外地块（对应 `world/`）
+- **草地 `grass`**
+```
+<统一风格> <平铺约束>
+lush short green grass, subtle blade texture, gentle color variation.
+```
+- **草地·花点 `grass2`**
+```
+<统一风格> <平铺约束>
+green grass with a few tiny scattered flowers, slightly lighter than plain grass.
+```
+- **泥土小路 `path`**
+```
+<统一风格> <平铺约束>
+packed dirt / fine gravel path, warm earthy brown, small pebbles.
+```
+- **沙地 `sand`**
+```
+<统一风格> <平铺约束>
+fine pale sand, soft granular texture.
+```
+- **水面 `water`**
+```
+<统一风格> <平铺约束>
+calm shallow water, gentle ripples, soft teal-blue, subtle highlights.
+```
+- **人行道石板 `pavement`**
+```
+<统一风格> <平铺约束>
+neat light-grey stone paving slabs, clean grout lines, walkable sidewalk.
+```
+- **石板街道 `road`**
+```
+<统一风格> <平铺约束>
+old cobblestone street, rounded grey stones with mortar gaps, slightly worn.
+```
+
+## 室内地面 / 墙面（对应 `shop/`）
+- **木地板 `floor`**
+```
+<统一风格> <平铺约束>
+warm wooden plank floor, top-down, cozy ramen-shop interior.
+```
+- **墙面 `wall`**
+```
+<统一风格> <平铺约束>
+plain plaster interior wall with a thin lower wood wainscot line, warm neutral tone.
+```
+
+> 备选(更省事):把以上 9 个做成**一张 3x3 的网格大图**,每格一个材质——但**每一格自身必须无缝**(不是格子之间无缝)。单张分开生成通常拼接更干净。
