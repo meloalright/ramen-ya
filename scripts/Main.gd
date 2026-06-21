@@ -83,6 +83,9 @@ var mouse_pos := Vector2(W / 2.0, H / 2.0)
 # stations: {item, name, rect, cx}
 var stations: Array = []
 
+# refined round-bowl sprites (assets/cook/*.png); empty → procedural fallback
+var ctex := {}
+
 var float_texts: Array = []
 var flash: float = 0.0
 var flash_col: Color = COL_GREEN
@@ -105,8 +108,29 @@ func _ready() -> void:
 	if ResourceLoader.exists("res://assets/env/ramen_stall.png"):
 		stall_tex = load("res://assets/env/ramen_stall.png")
 	_build_stations()
+	_load_cook()
 	_reset_bowl()
 	set_process(true)
+
+
+func _load_cook() -> void:
+	for key in ["bowl_big", "b_broth", "b_noodles", "b_beef", "b_scallion", "b_cilantro",
+			"b_chili", "sbowl_beef", "sbowl_scallion", "sbowl_cilantro", "sbowl_chili",
+			"pot_soup", "pot_noodle", "bowl_mini"]:
+		var p := "res://assets/cook/%s.png" % key
+		if ResourceLoader.exists(p):
+			ctex[key] = load(p)
+
+
+func _item_sprite(item: String) -> String:
+	match item:
+		"soup": return "pot_soup"
+		"noodles": return "pot_noodle"
+		"beef": return "sbowl_beef"
+		"scallion": return "sbowl_scallion"
+		"cilantro": return "sbowl_cilantro"
+		"chili": return "sbowl_chili"
+	return ""
 
 
 # crisp pixel Traditional-Chinese font (Zpix), antialiasing off
@@ -488,7 +512,12 @@ func _draw_order_bubble(anchor: Vector2, c: Dictionary) -> void:
 	draw_rect(Rect2(bx, by, bw, 30), COL_INK, false, 1.0)
 	draw_rect(Rect2(int(anchor.x) - 3, by + 30, 6, 5), COL_WHITE)
 	# beef-ramen base icon
-	_mini_bowl(Vector2(bx + 13, by + 15))
+	if ctex.has("bowl_mini"):
+		var mb: Texture2D = ctex["bowl_mini"]
+		draw_texture_rect(mb, Rect2(bx + 13 - mb.get_width() / 2.0, by + 15 - mb.get_height() / 2.0,
+			mb.get_width(), mb.get_height()), false)
+	else:
+		_mini_bowl(Vector2(bx + 13, by + 15))
 	_text("牛肉麵", Vector2(bx + 24, by + 11), 8, COL_INK)
 	# wanted toppings (or 原味)
 	if wants.is_empty():
@@ -533,18 +562,22 @@ func _draw_station(s: Dictionary) -> void:
 	if picked:
 		draw_rect(r, COL_YELLOW, false, 2.0)
 	var top := r.position.y + 6
-	match s.item:
-		"soup":
-			_draw_pot(Vector2(cx, top + 14), C_SOUP, true)
-		"noodles":
-			_draw_pot(Vector2(cx, top + 14), Color("d8d2c0"), true)
-			# noodle basket hint
-			draw_rect(Rect2(cx - 6, top + 6, 12, 9), Color("caa45a"))
-			draw_rect(Rect2(cx - 6, top + 6, 12, 9), COL_INK, false, 1.0)
-		"beef":
-			_draw_ing_bowl(Vector2(cx, top + 14), C_BEEF, C_BEEF_HI)
-		_:
-			_draw_ing_bowl(Vector2(cx, top + 14), TOPPING[s.item].col, TOPPING[s.item].col.lightened(0.25))
+	var spr := _item_sprite(s.item)
+	if ctex.has(spr):
+		var t: Texture2D = ctex[spr]
+		draw_texture_rect(t, Rect2(cx - t.get_width() / 2.0, top, t.get_width(), t.get_height()), false)
+	else:
+		match s.item:
+			"soup":
+				_draw_pot(Vector2(cx, top + 14), C_SOUP, true)
+			"noodles":
+				_draw_pot(Vector2(cx, top + 14), Color("d8d2c0"), true)
+				draw_rect(Rect2(cx - 6, top + 6, 12, 9), Color("caa45a"))
+				draw_rect(Rect2(cx - 6, top + 6, 12, 9), COL_INK, false, 1.0)
+			"beef":
+				_draw_ing_bowl(Vector2(cx, top + 14), C_BEEF, C_BEEF_HI)
+			_:
+				_draw_ing_bowl(Vector2(cx, top + 14), TOPPING[s.item].col, TOPPING[s.item].col.lightened(0.25))
 	_text(s.name, Vector2(cx, r.position.y + r.size.y - 3), 9, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 
 
@@ -579,6 +612,23 @@ func _draw_assembly(center: Vector2) -> void:
 	if held != "":
 		draw_rect(BOWL_RECT, Color(1, 1, 0.4, 0.12))
 		draw_rect(BOWL_RECT, COL_YELLOW, false, 1.0)
+
+	if ctex.has("bowl_big"):
+		var big: Texture2D = ctex["bowl_big"]
+		var o := Vector2(center.x - big.get_width() / 2.0, center.y - big.get_height() / 2.0)
+		var dst := Rect2(o, Vector2(big.get_width(), big.get_height()))
+		draw_texture_rect(big, dst, false)
+		if bowl.soup and ctex.has("b_broth"):
+			draw_texture_rect(ctex["b_broth"], dst, false)
+		if bowl.noodles and ctex.has("b_noodles"):
+			draw_texture_rect(ctex["b_noodles"], dst, false)
+		if bowl.beef and ctex.has("b_beef"):
+			draw_texture_rect(ctex["b_beef"], dst, false)
+		for k in TOP_ORDER:
+			if bowl[k] and ctex.has("b_" + k):
+				draw_texture_rect(ctex["b_" + k], dst, false)
+		return
+
 	var cx := center.x
 	var cy := center.y
 	var w := 80.0
@@ -612,16 +662,21 @@ func _draw_assembly(center: Vector2) -> void:
 # --- held ingredient on the cursor -----------------------------------
 func _draw_held(p: Vector2) -> void:
 	var label := _item_name(held)
-	var col := C_SOUP
-	match held:
-		"soup": col = C_SOUP
-		"noodles": col = C_NOODLE
-		"beef": col = C_BEEF
-		_: col = TOPPING[held].col
-	# a little scoop/pinch icon
-	draw_rect(Rect2(p.x - 9, p.y - 9, 18, 12), COL_BOWL)
-	draw_rect(Rect2(p.x - 9, p.y - 10, 18, 3), COL_BOWL_RIM)
-	draw_rect(Rect2(p.x - 6, p.y - 7, 12, 7), col)
+	var spr := _item_sprite(held)
+	if ctex.has(spr):
+		var t: Texture2D = ctex[spr]
+		draw_texture_rect(t, Rect2(p.x - t.get_width() / 2.0, p.y - t.get_height() / 2.0,
+			t.get_width(), t.get_height()), false)
+	else:
+		var col := C_SOUP
+		match held:
+			"soup": col = C_SOUP
+			"noodles": col = C_NOODLE
+			"beef": col = C_BEEF
+			_: col = TOPPING[held].col
+		draw_rect(Rect2(p.x - 9, p.y - 9, 18, 12), COL_BOWL)
+		draw_rect(Rect2(p.x - 9, p.y - 10, 18, 3), COL_BOWL_RIM)
+		draw_rect(Rect2(p.x - 6, p.y - 7, 12, 7), col)
 	# label tag
 	var tw: float = font.get_string_size("提起 " + label, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x
 	draw_rect(Rect2(p.x - tw / 2 - 3, p.y + 5, tw + 6, 11), Color(0, 0, 0, 0.72))
