@@ -18,9 +18,9 @@ door (the neighbouring shops are just for scenery). Right next to it stands the 
 (Purple-Gold Tower) — walk into its open black gate (`E` / tap) for a little side room.
 
 ### Inside 紫金大廈 (`scenes/Tower.tscn`)
-A walkable hall where small monsters (小怪) roam. **Click a monster to attack it — two hits
-defeats it** (it shows 2 HP pips). Walk with `WASD` / click-to-move; leave by the door
-(`E` / tap / `ESC`).
+A walkable hall where small monsters (小怪) roam. **Click a monster to attack it — the chef
+swings a sword (with an 8-bit hit sound) and two hits defeats it** (it shows 2 HP pips).
+Walk with `WASD` / click-to-move; leave by the door (`E` / tap / `ESC`).
 
 | Action | Control |
 |---|---|

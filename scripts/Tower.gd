@@ -43,6 +43,12 @@ var anim_t := 0.0
 var anim_i := 0
 const STEP_SEQ := [0, 1, 0, 2]
 
+# sword swing
+var swing := 0.0
+var swing_ang := 0.0
+const SWING_T := 0.2
+var sfx: AudioStreamPlayer
+
 var chef_tex: Texture2D
 const CHEF_FW := 200
 const CHEF_FH := 301
@@ -72,6 +78,12 @@ func _ready() -> void:
 	font = _make_font()
 	if ResourceLoader.exists("res://assets/chef_sheet.png"):
 		chef_tex = load("res://assets/chef_sheet.png")
+	sfx = AudioStreamPlayer.new()
+	sfx.bus = "Master"
+	sfx.volume_db = -3.0
+	add_child(sfx)
+	if ResourceLoader.exists("res://assets/audio/hit.wav"):
+		sfx.stream = load("res://assets/audio/hit.wav")
 	_build_room()
 	_spawn_monsters(6)
 	player_pos = Vector2(door_cell.x * TILE + TILE / 2.0, (door_cell.y - 1) * TILE + 12)
@@ -164,6 +176,8 @@ func _can_stand(cx: float, feet_y: float) -> bool:
 # =====================================================================
 func _process(delta: float) -> void:
 	blink += delta
+	if swing > 0.0:
+		swing = max(0.0, swing - delta)
 
 	var dir := Vector2.ZERO
 	if Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT):
@@ -260,6 +274,16 @@ func _on_pointer(p: Vector2) -> void:
 
 
 func _attack(m: Dictionary) -> void:
+	# face the monster and swing the sword
+	var d: Vector2 = m.pos - player_pos
+	if abs(d.x) > abs(d.y):
+		facing = 1 if d.x < 0.0 else 2
+	else:
+		facing = 3 if d.y < 0.0 else 0
+	swing_ang = d.angle()
+	swing = SWING_T
+	if sfx != null and sfx.stream != null:
+		sfx.play()
 	m.hp -= 1
 	m.hurt = 0.22
 	# knock the monster a little away from the player
@@ -300,12 +324,33 @@ func _draw() -> void:
 			"mon": _draw_monster(o.m)
 			"player": _draw_player()
 
+	if swing > 0.0:
+		_draw_swing()
+
 	if has_target:
 		_draw_target()
 	if near_exit:
 		_draw_prompt("[E] 離開")
 
 	_draw_hud()
+
+
+func _draw_swing() -> void:
+	var hand := Vector2(player_pos.x, player_pos.y - PLAYER_H / 2.0 + 2)
+	var p: float = 1.0 - swing / SWING_T          # 0 → 1 across the swing
+	var a0 := swing_ang - 1.0
+	var cur := a0 + 2.0 * p
+	var fwd := Vector2(cos(cur), sin(cur))
+	# slash trail
+	draw_arc(hand, 15.0, a0, cur, 16, Color(1, 1, 1, 0.55 * (1.0 - p) + 0.15), 3.0)
+	# blade
+	var tip := hand + fwd * 19.0
+	draw_line(hand, tip, Color("e8e8f2"), 2.0)
+	draw_line(hand, hand + fwd * 16.0, Color("ffffff"), 1.0)
+	# gold crossguard
+	var perp := Vector2(-sin(cur), cos(cur)) * 3.0
+	var guard := hand + fwd * 5.0
+	draw_line(guard - perp, guard + perp, C_GOLD, 2.0)
 
 
 func _draw_ground(tx: int, ty: int) -> void:

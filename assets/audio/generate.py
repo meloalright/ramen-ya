@@ -96,3 +96,28 @@ with wave.open(OUT, "wb") as w:
     w.writeframes(pcm.tobytes())
 
 print("wrote", OUT, "frames:", L, "dur: %.2fs" % (L / SR), "size: %.0fKB" % (len(pcm) * 2 / 1024))
+
+
+# ---- one-shot 8-bit sword-hit SFX (assets/audio/hit.wav) ------------
+def sfx_hit():
+    dur = 0.16
+    n = int(SR * dur)
+    t = np.arange(n) / SR
+    # slash: noise burst with a fast decay
+    noise = (np.random.rand(n) * 2 - 1) * np.exp(-34.0 * t) * 0.55
+    # clang: square blip falling in pitch
+    freq = np.linspace(680.0, 170.0, n)
+    sq = np.sign(np.sin(2 * np.pi * np.cumsum(freq) / SR)) * np.exp(-26.0 * t) * 0.4
+    mix = noise + sq
+    mix = mix / (np.max(np.abs(mix)) + 1e-6) * 0.92
+    return (mix * 32767).astype("<i2")
+
+
+HIT_OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "hit.wav")
+_hit = sfx_hit()
+with wave.open(HIT_OUT, "wb") as w:
+    w.setnchannels(1)
+    w.setsampwidth(2)
+    w.setframerate(SR)
+    w.writeframes(_hit.tobytes())
+print("wrote", HIT_OUT, "dur: %.2fs" % (len(_hit) / SR))
