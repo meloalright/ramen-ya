@@ -89,6 +89,10 @@ var noodle_t := 0.0
 const COOK_READY := 3.0            # perfect window opens
 const COOK_OVER := 4.8             # ... and closes (after this it's overcooked)
 
+# 湯: ladle a few scoops to fill the bowl (broth rises as you pour)
+var soup_fill := 0.0
+const SOUP_LADLE := 0.34           # ~3 ladles to fill
+
 # stations: {item, name, rect, cx}
 var stations: Array = []
 
@@ -180,6 +184,7 @@ func _reset_bowl() -> void:
 	held = ""
 	held_q = ""
 	bowl_nq = ""
+	soup_fill = 0.0
 
 
 # =====================================================================
@@ -340,6 +345,15 @@ func _place_into_bowl() -> void:
 	if held == "":
 		_spawn_float(Vector2(240, 150), "先點材料提起", COL_YELLOW)
 		return
+	if held == "soup":
+		if soup_fill >= 1.05:
+			_spawn_float(Vector2(240, 128), "湯要溢出來了", COL_YELLOW)
+		else:
+			soup_fill = min(1.1, soup_fill + SOUP_LADLE)
+			_spawn_float(Vector2(240, 128), "湯滿了！" if soup_fill >= 0.9 else "+1 勺", COL_GREEN)
+		held = ""
+		held_q = ""
+		return
 	if bowl[held]:
 		_spawn_float(Vector2(240, 130), "已經放過了", COL_YELLOW)
 	else:
@@ -384,7 +398,7 @@ func _serve() -> void:
 
 
 func _base_ok() -> bool:
-	return bowl.soup and bowl.noodles and bowl.beef
+	return soup_fill >= 0.9 and bowl.noodles and bowl.beef
 
 
 func _matches(c: Dictionary) -> bool:
@@ -663,8 +677,15 @@ func _draw_assembly(center: Vector2) -> void:
 		var o := Vector2(center.x - big.get_width() / 2.0, center.y - big.get_height() / 2.0)
 		var dst := Rect2(o, Vector2(big.get_width(), big.get_height()))
 		draw_texture_rect(big, dst, false)
-		if bowl.soup and ctex.has("b_broth"):
-			draw_texture_rect(ctex["b_broth"], dst, false)
+		if soup_fill > 0.0 and ctex.has("b_broth"):
+			# broth rises as you ladle (reveal the bottom of the broth band)
+			var bt: Texture2D = ctex["b_broth"]
+			var band_top := 12.0
+			var band_bot := 27.0
+			var shown: float = (band_bot - band_top) * clamp(soup_fill, 0.0, 1.0)
+			var sy: float = band_bot - shown
+			draw_texture_rect_region(bt, Rect2(o.x, o.y + sy, bt.get_width(), shown),
+				Rect2(0, sy, bt.get_width(), shown))
 		if bowl.noodles and ctex.has("b_noodles"):
 			draw_texture_rect(ctex["b_noodles"], dst, false)
 		if bowl.beef and ctex.has("b_beef"):
@@ -683,8 +704,8 @@ func _draw_assembly(center: Vector2) -> void:
 	draw_rect(Rect2(cx - w / 2, cy - h / 2, w, h), COL_BOWL)
 	draw_rect(Rect2(cx - w / 2 + 6, cy + h / 2, w - 12, 6), COL_BOWL_RIM)
 	# contents
-	if bowl.soup:
-		draw_rect(Rect2(cx - w / 2 + 5, cy - h / 2 + 4, w - 10, h - 10), C_SOUP)
+	if soup_fill > 0.0:
+		draw_rect(Rect2(cx - w / 2 + 5, cy - h / 2 + 4, w - 10, int((h - 10) * clamp(soup_fill, 0, 1))), C_SOUP)
 	if bowl.noodles:
 		for n in 6:
 			draw_rect(Rect2(cx - w / 2 + 10 + n * (w - 20) / 6.0, cy - h / 2 + 6, 3, h - 16), C_NOODLE)
