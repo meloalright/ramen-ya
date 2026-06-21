@@ -1,21 +1,18 @@
-name: Build iOS (.ipa)
+name: Build iOS & upload to TestFlight
 
-# iOS builds require macOS + Xcode, so this runs on a macOS runner.
-# Manual trigger only — macOS CI minutes are billed at a higher rate.
+# iOS builds need macOS + Xcode. Manual trigger only (macOS minutes are billed higher).
 on:
   workflow_dispatch:
-    inputs:
-      signed:
-        description: "Produce a signed device build (needs IOS_TEAM_ID + signing secrets). Off = unsigned artifact."
-        type: boolean
-        default: false
 
 env:
   GODOT_VERSION: "4.3"
+  BUNDLE_ID: "meloalright.ramen-ya"
+  PROFILE_NAME: "RAMEN-YA AppStore"
+  SIGN_IDENTITY: "iPhone Distribution"
 
 jobs:
-  build-ios:
-    name: Export & build iOS
+  testflight:
+    name: Export, sign & upload
     runs-on: macos-14
     steps:
       - name: Checkout
@@ -23,59 +20,119 @@ jobs:
 
       - name: Install Godot ${{ env.GODOT_VERSION }} + iOS export templates
         run: |
-          set -e
+          set -eo pipefail
           BASE="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
-          curl -L -o godot.zip   "$BASE/Godot_v${GODOT_VERSION}-stable_macos.universal.zip"
-          curl -L -o templates.tpz "$BASE/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          curl -fL -o godot.zip      "$BASE/Godot_v${GODOT_VERSION}-stable_macos.universal.zip"
+          curl -fL -o templates.tpz  "$BASE/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
           unzip -q godot.zip
+          xattr -dr com.apple.quarantine Godot.app || true
           GODOT_BIN="$PWD/Godot.app/Contents/MacOS/Godot"
           chmod +x "$GODOT_BIN"
           echo "GODOT_BIN=$GODOT_BIN" >> "$GITHUB_ENV"
-          TPL_DIR="$HOME/Library/Application Support/Godot/export_templates/${GODOT_VERSION}.stable"
-          mkdir -p "$TPL_DIR"
-          unzip -q templates.tpz -d templates
-          mv templates/templates/* "$TPL_DIR"/
+          TPL="$HOME/Library/Application Support/Godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$TPL"
+          unzip -q templates.tpz -d tpl
+          mv tpl/templates/* "$TPL"/
+          "$GODOT_BIN" --version
 
-      - name: Set Apple Team ID in the iOS preset
+      - name: Import signing certificate & provisioning profile
+        env:
+          P12: ${{ secrets.IOS_DIST_CERT_P12 }}
+          P12_PASS: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          PROFILE: ${{ secrets.IOS_PROVISION_PROFILE }}
         run: |
-          # Godot's iOS export validation requires a non-empty Team ID even for
-          # an unsigned build. Use the repo variable if present, else a placeholder.
-          TEAM_ID="${{ vars.IOS_TEAM_ID }}"
-          [ -z "$TEAM_ID" ] && TEAM_ID="ABCDE12345"
-          sed -i '' "s#application/app_store_team_id=\"[^\"]*\"#application/app_store_team_id=\"$TEAM_ID\"#" export_presets.cfg
+          set -eo pipefail
+          echo "$P12" | base64 --decode > /tmp/dist.p12
+          KCHAIN="$RUNNER_TEMP/build.keychain"
+          security create-keychain -p actions "$KCHAIN"
+          security set-keychain-settings -lut 21600 "$KCHAIN"
+          security unlock-keychain -p actions "$KCHAIN"
+          security import /tmp/dist.p12 -k "$KCHAIN" -P "$P12_PASS" -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k actions "$KCHAIN" >/dev/null
+          security list-keychains -d user -s "$KCHAIN" $(security list-keychains -d user | tr -d '"')
+          security find-identity -v -p codesigning "$KCHAIN"
+          PROF_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROF_DIR"
+          echo "$PROFILE" | base64 --decode > "$PROF_DIR/ramenya.mobileprovision"
+          rm -f /tmp/dist.p12
 
-      - name: Import project
+      - name: Set Team ID in iOS preset
         run: |
+          sed -i '' "s#application/app_store_team_id=\"[^\"]*\"#application/app_store_team_id=\"${{ secrets.IOS_TEAM_ID }}\"#" export_presets.cfg
+
+      - name: Import project & export iOS Xcode project
+        run: |
+          set -eo pipefail
           "$GODOT_BIN" --headless --import || true
-
-      - name: Export iOS Xcode project
-        run: |
           mkdir -p build/ios
-          "$GODOT_BIN" --headless --verbose --export-debug "iOS" build/ios/ramenya.ipa
-          echo "--- generated ---"
-          ls -la build/ios
+          "$GODOT_BIN" --headless --verbose --export-release "iOS" build/ios/ramenya.ipa
+          echo "--- generated project ---"; ls -la build/ios
 
-      - name: Build unsigned .ipa with Xcode
-        if: ${{ !inputs.signed }}
+      - name: Stamp build number
         run: |
-          set -e
-          cd build/ios
-          SCHEME=$(xcodebuild -project ramenya.xcodeproj -list | awk '/Schemes:/{f=1;next} f&&NF{print $1; exit}')
-          echo "Scheme: $SCHEME"
-          xcodebuild -project ramenya.xcodeproj -scheme "$SCHEME" \
-            -configuration Release -sdk iphoneos -derivedDataPath dd \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
-          APP=$(find dd/Build/Products -name "*.app" -maxdepth 3 | head -1)
-          echo "App: $APP"
-          mkdir -p Payload
-          cp -R "$APP" Payload/
-          zip -qr ../../ramenya-unsigned.ipa Payload
+          set -eo pipefail
+          BN="${{ github.run_number }}"
+          while IFS= read -r plist; do
+            if /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$plist" 2>/dev/null | grep -q "$BUNDLE_ID"; then
+              /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BN" "$plist" || \
+              /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string $BN" "$plist"
+              echo "stamped $plist -> build $BN"
+            fi
+          done < <(find build/ios -name "Info.plist")
 
-      - name: Upload iOS artifact
+      - name: Archive & export signed .ipa
+        run: |
+          set -eo pipefail
+          cd build/ios
+          PROJ=$(ls -d *.xcodeproj | head -1)
+          SCHEME=$(xcodebuild -project "$PROJ" -list | awk '/Schemes:/{f=1;next} f&&NF{print $1; exit}')
+          echo "Project=$PROJ Scheme=$SCHEME"
+          xcodebuild -project "$PROJ" -scheme "$SCHEME" \
+            -configuration Release -sdk iphoneos \
+            -archivePath "$PWD/app.xcarchive" \
+            DEVELOPMENT_TEAM="${{ secrets.IOS_TEAM_ID }}" \
+            CODE_SIGN_STYLE=Manual \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+            CODE_SIGN_IDENTITY="$SIGN_IDENTITY" \
+            clean archive
+          cat > ExportOptions.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store</string>
+            <key>teamID</key><string>${{ secrets.IOS_TEAM_ID }}</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>signingCertificate</key><string>$SIGN_IDENTITY</string>
+            <key>provisioningProfiles</key><dict>
+              <key>$BUNDLE_ID</key><string>$PROFILE_NAME</string>
+            </dict>
+            <key>uploadSymbols</key><false/>
+            <key>stripSwiftSymbols</key><true/>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive -archivePath "$PWD/app.xcarchive" \
+            -exportOptionsPlist ExportOptions.plist -exportPath "$PWD/export"
+          echo "--- exported ---"; ls -la export
+
+      - name: Upload to TestFlight
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+        run: |
+          set -eo pipefail
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          echo "$ASC_API_KEY_P8" > "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          IPA=$(ls build/ios/export/*.ipa | head -1)
+          echo "Uploading $IPA"
+          xcrun altool --upload-app -f "$IPA" -t ios \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+          rm -f "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+
+      - name: Upload .ipa artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ramenya-ios
-          path: |
-            ramenya-unsigned.ipa
-            build/ios
+          name: ramenya-ipa
+          path: build/ios/export/*.ipa
           if-no-files-found: warn
