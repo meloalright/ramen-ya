@@ -180,6 +180,58 @@ def td_pot(liquid, hi, basket=False, S=64):
     return outline(im)
 
 
+def td_pot_big(S=116):
+    # one big boiling pot: golden broth (湯) on the left, a noodle basket (麵)
+    # on the right — both bubbling away in the same pot.
+    im = img(S); px = im.load()
+    cx = S / 2.0; oy = 46.0; rx = 54.0; ry = 42.0; ry2 = ry + 20.0
+    for y in range(S):
+        for x in range(S):
+            dx = x - cx; dy = y - oy
+            t = math.sqrt((dx / rx) ** 2 + (dy / ry) ** 2)
+            if t <= 1.0:
+                if t > 0.86:                              # metal rim
+                    col = METAL
+                    if dx < 0 and dy < 0:
+                        col = METAL_HI
+                    elif dy > 0:
+                        col = METAL_D
+                    px[x, y] = col
+                else:
+                    col = GOLD                            # broth
+                    if dx < 0 and dy < 0 and t < 0.6:
+                        col = GOLD_HI
+                    elif t > 0.82:
+                        col = GOLD_D
+                    px[x, y] = col
+            elif dy > 0 and (dx / rx) ** 2 + (dy / ry2) ** 2 <= 1.0:
+                px[x, y] = METAL_D if dy / ry2 > 0.55 else METAL
+    # noodle basket on the right half
+    bx, by, br = cx + 22, oy + 1, 19.0
+    for y in range(int(by - br - 1), int(by + br + 1)):
+        for x in range(int(bx - br - 1), int(bx + br + 1)):
+            d = math.hypot((x - bx), (y - by) / 0.82)
+            if d <= br:
+                if d > br - 2.0:
+                    px[int(x), int(y)] = METAL_D          # basket rim
+                else:
+                    px[int(x), int(y)] = NOODLE if (int(y) % 3) else NOODLE_D
+    # bubbles on the broth (left half)
+    for cxx, cyy, r in ((cx - 26, oy - 4, 4), (cx - 16, oy + 9, 3),
+                        (cx - 30, oy + 8, 3), (cx - 10, oy - 8, 3)):
+        for y in range(int(cyy - r), int(cyy + r)):
+            for x in range(int(cxx - r), int(cxx + r)):
+                if math.hypot(x - cxx, y - cyy) <= r:
+                    px[int(x), int(y)] = GOLD_HI
+    # side handles
+    for sgn in (-1, 1):
+        hx = int(cx + sgn * (rx + 1))
+        for yy in range(int(oy - 3), int(oy + 4)):
+            if 0 <= hx < S and 0 <= yy < S:
+                px[hx, yy] = METAL_D
+    return outline(im)
+
+
 def td_box(fill, hi, S=48):
     # slight 3/4 tilt: elliptical mouth, wood wall showing below
     im = img(S); px = im.load()
@@ -210,6 +262,7 @@ def main():
     save(td_beef(), "td_beef.png")
     save(td_pot(GOLD, GOLD_HI, False), "td_pot_soup.png")
     save(td_pot((210, 206, 188, 255), (234, 230, 214, 255), True), "td_pot_noodle.png")
+    save(td_pot_big(), "td_pot_big.png")
     save(td_box(BEEF, BEEF_HI), "td_box_beef.png")
     save(td_box((143, 210, 78, 255), (176, 232, 110, 255)), "td_box_scallion.png")
     save(td_box((63, 143, 74, 255), (96, 178, 104, 255)), "td_box_cilantro.png")

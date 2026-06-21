@@ -29,6 +29,9 @@ const BOWL_RY := 38.0
 const BOWL_HIT_RX := 56.0              # generous click radii (incl. rim)
 const BOWL_HIT_RY := 44.0
 
+# the shared 湯+麵 pot, drawn once behind its two click zones
+const BIGPOT_C := Vector2(78, 150)
+
 # ---- game states ----------------------------------------------------
 enum State { TITLE, PLAY, OVER }
 var state: int = State.TITLE
@@ -98,9 +101,9 @@ var noodle_t := 0.0
 const COOK_READY := 3.0            # perfect window opens
 const COOK_OVER := 4.8             # ... and closes (after this it's overcooked)
 
-# 湯: ladle a few scoops to fill the bowl (broth rises as you pour)
+# 湯: one ladle fills the bowl
 var soup_fill := 0.0
-const SOUP_LADLE := 0.34           # ~3 ladles to fill
+const SOUP_LADLE := 1.0            # a single scoop is enough
 
 # 撒料: shake a topping over the bowl — where & how much is up to you
 var sprinkles: Array = []          # {type, pos}
@@ -170,7 +173,7 @@ func _load_cook() -> void:
 			"b_chili", "sbowl_beef", "sbowl_scallion", "sbowl_cilantro", "sbowl_chili",
 			"pot_soup", "pot_noodle", "bowl_mini",
 			"td_bowl", "td_broth", "td_noodles", "td_beef", "td_pot_soup", "td_pot_noodle",
-			"td_box_beef", "td_box_scallion", "td_box_cilantro", "td_box_chili"]:
+			"td_pot_big", "td_box_beef", "td_box_scallion", "td_box_cilantro", "td_box_chili"]:
 		var p := "res://assets/cook/%s.png" % key
 		if ResourceLoader.exists(p):
 			ctex[key] = load(p)
@@ -200,11 +203,15 @@ func _make_font() -> Font:
 
 
 func _build_stations() -> void:
-	# top-down workspace: pots on the left, ingredient boxes on the right
+	# 湯 + 麵 share one big boiling pot on the left (split into two click zones);
+	# ingredient boxes down the right.
 	stations.clear()
+	# 湯 = the broth (left half of the pot), 麵 = the noodle basket (right half)
+	stations.append({"item": "soup", "name": "湯", "center": Vector2(54, 140), "r": 24,
+		"rect": Rect2(28, 110, 52, 58), "cx": 54})
+	stations.append({"item": "noodles", "name": "麵", "center": Vector2(104, 140), "r": 22,
+		"rect": Rect2(80, 110, 52, 58), "cx": 104})
 	var defs := [
-		["soup", "湯鍋", Vector2(52, 102), 32],
-		["noodles", "麵鍋", Vector2(52, 190), 32],
 		["beef", "牛肉", Vector2(434, 80), 22],
 		["scallion", "蔥花", Vector2(434, 126), 22],
 		["cilantro", "香菜", Vector2(434, 172), 22],
@@ -257,9 +264,9 @@ func _process(delta: float) -> void:
 			steam_t = 0.16
 			if _base_ok() or soup_fill > 0.0 or bowl.noodles:
 				_puff(BOWL_OPEN.x, BOWL_OPEN.y - 8)   # the assembled bowl
-			_puff(52, 80)                             # 湯鍋
+			_puff(58, 128)                            # broth side of the big pot
 			if noodle_state == "cooking":
-				_puff(52, 168)                        # 麵鍋 while boiling
+				_puff(102, 128)                       # noodle basket while boiling
 
 	chef_anim += delta
 	if chef_anim > 0.22:
@@ -465,12 +472,12 @@ func _place_into_bowl() -> void:
 		_spawn_float(Vector2(240, 150), "先點材料提起", COL_YELLOW)
 		return
 	if held == "soup":
-		if soup_fill >= 1.05:
-			_spawn_float(Vector2(240, 128), "湯要溢出來了", COL_YELLOW)
+		if soup_fill >= 0.9:
+			_spawn_float(Vector2(240, 128), "湯夠了", COL_YELLOW)
 		else:
-			soup_fill = min(1.1, soup_fill + SOUP_LADLE)
+			soup_fill = 1.0                       # one ladle fills the bowl
 			_sfx("pour")
-			_spawn_float(Vector2(240, 128), "湯滿了！" if soup_fill >= 0.9 else "+1 勺", COL_GREEN)
+			_spawn_float(Vector2(240, 128), "下湯！", COL_GREEN)
 		held = ""
 		held_q = ""
 		return
@@ -613,10 +620,16 @@ func _draw_play() -> void:
 	for i in SEATS:
 		_draw_ticket(i)
 
+	# the shared 湯+麵 pot (drawn once, behind its two click zones)
+	if ctex.has("td_pot_big"):
+		var bp: Texture2D = ctex["td_pot_big"]
+		draw_texture_rect(bp, Rect2(BIGPOT_C.x - bp.get_width() / 2.0,
+			BIGPOT_C.y - bp.get_height() / 2.0, bp.get_width(), bp.get_height()), false)
+
 	# the bowl (top-down) in the middle of the counter
 	_draw_assembly(BOWL_C)
 
-	# pots & ingredient boxes around it
+	# pot zones & ingredient boxes
 	for s in stations:
 		_draw_station(s)
 
@@ -779,6 +792,19 @@ func _draw_ticket(i: int) -> void:
 func _draw_station(s: Dictionary) -> void:
 	var c: Vector2 = s.center
 	var rr: int = s.r
+	# 湯 / 麵 are zones on the shared big pot (already drawn) — no separate sprite
+	if s.item == "soup" or s.item == "noodles":
+		var lit: bool = (s.item == "soup" and held == "soup") \
+			or (s.item == "noodles" and (held == "noodles" or noodle_state == "cooking"))
+		if lit:
+			_draw_ellipse_ring(c, rr, rr * 0.72, COL_YELLOW)
+		if s.item == "noodles" and noodle_state == "cooking":
+			_draw_boil_gauge(Vector2(138, 128))
+		# bold label on the broth / basket
+		_text(s.name, Vector2(c.x + 1, c.y + 5), 13, COL_INK, HORIZONTAL_ALIGNMENT_CENTER)
+		_text(s.name, Vector2(c.x, c.y + 4), 13, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+		return
+	# ingredient boxes on the right
 	var spr := _item_sprite(s.item)
 	if ctex.has(spr):
 		var t: Texture2D = ctex[spr]
@@ -786,30 +812,28 @@ func _draw_station(s: Dictionary) -> void:
 			t.get_width(), t.get_height()), false)
 	if held == s.item:
 		draw_arc(c, rr + 2, 0.0, TAU, 24, COL_YELLOW, 2.0)
-	# 麵鍋 boil gauge — green window = the moment to lift (to the right of the pot)
-	if s.item == "noodles" and noodle_state == "cooking":
-		var gw := 52.0
-		var gx := c.x + rr + 9
-		var gy := c.y - 2
-		draw_rect(Rect2(gx, gy, gw, 6), COL_INK)
-		var rx0 := gx + gw * (COOK_READY / 8.0)
-		var rx1 := gx + gw * (COOK_OVER / 8.0)
-		draw_rect(Rect2(rx0, gy, rx1 - rx0, 6), Color(0.37, 0.68, 0.37, 0.5))
-		var frac: float = clamp(noodle_t / 8.0, 0.0, 1.0)
-		var gc := COL_YELLOW
-		if noodle_t >= COOK_READY and noodle_t <= COOK_OVER:
-			gc = COL_GREEN
-		elif noodle_t > COOK_OVER:
-			gc = COL_RED
-		draw_rect(Rect2(gx, gy, gw * frac, 6), gc)
-		if noodle_t >= COOK_READY and int(Engine.get_frames_drawn() / 12) % 2 == 0:
-			_text("提起!", Vector2(gx + gw / 2, gy - 12), 9,
-				COL_GREEN if noodle_t <= COOK_OVER else COL_RED, HORIZONTAL_ALIGNMENT_CENTER)
-	# label: to the left for the right-hand boxes, below for the left-hand pots
-	if c.x > W * 0.6:
-		_text(s.name, Vector2(c.x - rr - 5, c.y + 4), 10, COL_WHITE, HORIZONTAL_ALIGNMENT_RIGHT)
-	else:
-		_text(s.name, Vector2(c.x, c.y + rr + 12), 10, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	_text(s.name, Vector2(c.x - rr - 5, c.y + 4), 10, COL_WHITE, HORIZONTAL_ALIGNMENT_RIGHT)
+
+
+func _draw_boil_gauge(at: Vector2) -> void:
+	# green window = the moment to lift the noodles
+	var gw := 36.0
+	var gx := at.x
+	var gy := at.y
+	draw_rect(Rect2(gx, gy, gw, 6), COL_INK)
+	var rx0 := gx + gw * (COOK_READY / 8.0)
+	var rx1 := gx + gw * (COOK_OVER / 8.0)
+	draw_rect(Rect2(rx0, gy, rx1 - rx0, 6), Color(0.37, 0.68, 0.37, 0.5))
+	var frac: float = clamp(noodle_t / 8.0, 0.0, 1.0)
+	var gc := COL_YELLOW
+	if noodle_t >= COOK_READY and noodle_t <= COOK_OVER:
+		gc = COL_GREEN
+	elif noodle_t > COOK_OVER:
+		gc = COL_RED
+	draw_rect(Rect2(gx, gy, gw * frac, 6), gc)
+	if noodle_t >= COOK_READY and int(Engine.get_frames_drawn() / 12) % 2 == 0:
+		_text("提起!", Vector2(gx + gw / 2, gy - 12), 9,
+			COL_GREEN if noodle_t <= COOK_OVER else COL_RED, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 func _draw_pot(center: Vector2, liquid: Color, steam: bool) -> void:
