@@ -99,7 +99,7 @@ func _draw() -> void:
 
 	# title
 	_ctext("拉 麵 屋", Vector2(240, 64), 30, COL_YELLOW)
-	_ctext("2D 像素拉麵 RPG", Vector2(240, 92), 11, COL_WHITE)
+	_ctext("2D 卡通拉麵 RPG", Vector2(240, 92), 11, COL_WHITE)
 
 	# walking chef on the left
 	_draw_chef(Vector2(78, 232), 92)

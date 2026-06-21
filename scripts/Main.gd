@@ -605,7 +605,7 @@ func _draw_title() -> void:
 	_draw_chef(Vector2(64, 262), 118)
 	draw_rect(Rect2(0, 224, W, 46), Color(0.07, 0.06, 0.09, 0.8))
 	_title_text("拉 麵 屋", Vector2(244, 242), 20, COL_YELLOW)
-	_title_text("2D 像素拉麵店  試玩版", Vector2(242, 256), 10, COL_WHITE)
+	_title_text("2D 卡通拉麵店  試玩版", Vector2(242, 256), 10, COL_WHITE)
 	_title_text("[ 點擊或空白鍵 開始 ]   [ ESC 返回店內 ]", Vector2(242, 267), 9,
 		COL_GREEN if _blink() else COL_WHITE)
 

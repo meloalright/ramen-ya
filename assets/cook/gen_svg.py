@@ -105,8 +105,24 @@ def tray(name, fill, fill_d, chunky):
     render(name, 48, 48, body)
 
 
+def ladle():
+    body = f'''
+    <rect x="22" y="2" width="5" height="30" rx="2.5" fill="#9a6a3a" stroke="{INK}" stroke-width="3"/>
+    <path d="M6 34 a18 12 0 0 0 36 0 Z" fill="#cfcab4" stroke="{INK}" stroke-width="3.5"/>
+    <ellipse cx="24" cy="34" rx="16" ry="6" fill="#eaa43e" stroke="{INK}" stroke-width="3"/>'''
+    render("td_pot_soup", 48, 48, body)
+
+
+def noodle_clump():
+    body = f'''
+    <ellipse cx="24" cy="26" rx="20" ry="16" fill="#f0dd92" stroke="{INK}" stroke-width="3.5"/>
+    <g fill="none" stroke="#d7bf68" stroke-width="2.4" stroke-linecap="round">
+     <path d="M8 22 q16 10 32 0"/><path d="M8 28 q16 10 32 0"/><path d="M10 34 q14 8 28 0"/></g>'''
+    render("td_pot_noodle", 48, 48, body)
+
+
 def main():
-    bowl_empty(); broth(); noodles(); beef()
+    bowl_empty(); broth(); noodles(); beef(); ladle(); noodle_clump()
     vat("td_vat_soup", "#eaa43e", "#d18b2c", "#f2bd5c", False)
     vat("td_vat_noodle", "#dfe3d2", "#c6ccb4", "#eef0e4", True)
     tray("td_box_beef", "#b06246", "#8a4a33", "beef")
