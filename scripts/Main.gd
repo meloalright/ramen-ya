@@ -228,6 +228,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _handle_key(key: int) -> void:
+	# leave the shop, back to the overworld
+	if key == KEY_ESCAPE or key == KEY_M:
+		get_tree().change_scene_to_file("res://scenes/World.tscn")
+		return
 	if state == State.TITLE and (key == KEY_SPACE or key == KEY_ENTER):
 		_start_game()
 	elif state == State.OVER and (key == KEY_R or key == KEY_SPACE or key == KEY_ENTER):
@@ -387,7 +391,7 @@ func _draw_title() -> void:
 	draw_rect(Rect2(0, 224, W, 46), Color(0.07, 0.06, 0.09, 0.78))
 	_title_text("R A M E N - Y A", Vector2(244, 240), 20, COL_YELLOW)
 	_title_text("2D Pixel Ramen-Shop Manager  (DEMO)", Vector2(242, 254), 10, COL_WHITE)
-	_title_text("[ CLICK or press SPACE to start ]", Vector2(242, 267), 11,
+	_title_text("[ CLICK or SPACE to start ]   [ ESC = 地図へ / back to map ]", Vector2(242, 267), 9,
 		COL_GREEN if Time_blink() else COL_WHITE)
 
 

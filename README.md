@@ -1,16 +1,28 @@
 # 🍜 RAMEN-YA / らーめん屋
 
-A small **2D pixel-art ramen-shop management** game **DEMO**, built with **Godot 4.x**.
-All graphics are drawn procedurally in code (no external art assets), so the project is
-tiny and exports cleanly to the **Web (HTML5)**.
+A small **2D pixel-art open-world** game **DEMO**, built with **Godot 4.x**, in the spirit
+of *Stardew Valley*: walk the chef freely around a procedurally-drawn tile map with a
+follow-camera, then step into the ramen shop to cook.
+All graphics are drawn procedurally in code (the only art asset is the chef spritesheet),
+so the project is tiny and exports cleanly to the **Web (HTML5)**.
 
 ![pixel ramen](icon.svg)
 
 ## 🎮 How to play
 
-You run the counter of a ramen shop. Customers sit down and order a bowl shown in their
-speech bubble (a **broth** + some **toppings**). Build the matching bowl and serve it
-before their patience runs out.
+### Overworld (`scenes/World.tscn` — the main scene)
+Walk the chef around the map — grass, flowers, trees, a pond, a dirt road. Find the
+**ramen shop** (red roof) and walk up to its door.
+
+| Action | Control |
+|---|---|
+| Move | `W A S D` / arrow keys |
+| Enter the shop | `E` (when the **[E] 入店 ENTER** prompt shows at the door) |
+
+### Inside the shop (the cooking minigame)
+You run the counter. Customers sit down and order a bowl shown in their speech bubble
+(a **broth** + some **toppings**). Build the matching bowl and serve it before their
+patience runs out.
 
 | Action | Control |
 |---|---|
@@ -19,6 +31,7 @@ before their patience runs out.
 | Add ingredient | click an ingredient button (toppings toggle on/off) |
 | Serve current bowl | **出す SERVE** button |
 | Trash current bowl | **捨てる CLEAR** button |
+| Back to the map | `ESC` / `M` |
 
 **Rules**
 - A valid bowl needs **noodles (麺)** + one **broth** (醤油 Shoyu / 味噌 Miso).
@@ -34,8 +47,11 @@ ramen-ya/
 ├── project.godot          # engine config (GL Compatibility renderer — best for Web)
 ├── export_presets.cfg     # ready-made "Web" export preset → build/index.html
 ├── icon.svg
-├── scenes/Main.tscn       # main scene
-├── scripts/Main.gd        # entire game (state machine + pixel rendering)
+├── scenes/World.tscn      # MAIN scene — open-world map (Node2D + follow Camera2D)
+├── scripts/World.gd       # tile map, player movement, collision, camera, shop trigger
+├── scenes/Main.tscn       # the ramen-shop interior (cooking minigame)
+├── scripts/Main.gd        # cooking state machine + pixel rendering
+├── assets/                # chef walk spritesheet (+ env art)
 └── build/                 # web export output goes here
 ```
 
