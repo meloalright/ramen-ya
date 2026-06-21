@@ -14,8 +14,14 @@
 
 ## App Store Connect 信息(已登记)
 - **Team ID(Seed ID)**:`9TGD35M5GT` —— 已填入导出预设
-- **Bundle ID**:`meloalright.ramen-ya`(名称 RAMEN-YA,ID `6HS4YW98L8`)—— 已在开发者门户注册,已填入导出预设
-- **App 记录**:⏳ 待创建。Apple 官方 API **不支持创建 App**,只能用 App Store Connect 网页(或 `asc web apps create` 的网页会话登录)。需要你的 Apple ID 登录(密码 + 双重验证)。
+- **Bundle ID**:`meloalright.ramen-ya`(名称 RAMEN-YA,ID `6HS4YW98L8`)—— 已注册,已填入导出预设
+- **App 记录**:✅ 已创建,**App ID `6782641107`**,主语言 `zh-Hant`
+- **待办**:商店显示名当前是 `meloalright.ramen-ya`,建议在 App Store Connect → 你的 App → **App 信息(App Information)→ 名称** 改成「拉麵屋」。
+
+## 下一步:把构建传到这个 App
+1. 在 Mac/CI 上导出 iOS 工程并打出 **已签名** 的 `.ipa`(签名要用上面的 Team ID `9TGD35M5GT` + 你的发布证书/描述文件)。
+2. 上传到 TestFlight:`xcrun altool` 或 **Transporter** App,目标就是 App ID `6782641107` / Bundle ID `meloalright.ramen-ya`。
+3. 在 App Store Connect 的 TestFlight 里就能看到构建,可内测;补齐元数据/截图后可提交审核上架。
 
 ## 三种出包方式
 
