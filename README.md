@@ -14,7 +14,13 @@ so the project is tiny and exports cleanly to the **Web (HTML5)**.
 Walk the chef along a **commercial street (商业街)** — a paved road with sidewalks, lined
 with a row of tall buildings whose ground floors are shops. The **ramen shop** is one of
 them: the storefront (底商) with a red-and-white awning and the 拉麵 sign. Walk up to its
-door (the neighbouring shops are just for scenery).
+door (the neighbouring shops are just for scenery). Right next to it stands the **紫金大廈**
+(Purple-Gold Tower) — walk into its open black gate (`E` / tap) for a little side room.
+
+### Inside 紫金大廈 (`scenes/Tower.tscn`)
+A walkable hall where small monsters (小怪) roam. **Click a monster to attack it — two hits
+defeats it** (it shows 2 HP pips). Walk with `WASD` / click-to-move; leave by the door
+(`E` / tap / `ESC`).
 
 | Action | Control |
 |---|---|

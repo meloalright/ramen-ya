@@ -427,6 +427,80 @@ def gen_building(H, awn, awn_d, accent, tower, tower_hi, tower_d):
     return im
 
 
+# the 紫金大廈 — a tall purple/gold tower with an OPEN black gate.
+# TOWER_SIGN_Y is where Godot draws the 紫金 sign text.
+TOWER_SIGN_Y = 127
+
+
+def tower_ext():
+    W, H = 96, 172
+    purple = (84, 60, 118, 255)
+    purple_d = (60, 42, 86, 255)
+    purple_hi = (112, 84, 150, 255)
+    gold = (214, 174, 78, 255)
+    gold_d = (170, 134, 54, 255)
+    win = (250, 224, 150, 255)
+    win_off = (124, 102, 154, 255)
+    facade = (52, 44, 64, 255)
+    facade_d = (40, 34, 50, 255)
+    black = (14, 12, 18, 255)
+    black_hi = (44, 36, 52, 255)
+    sign = (26, 20, 34, 255)
+    im = img(W, H)
+    px = im.load()
+    store_top = H - 50               # 122
+    # tower body
+    for y in range(8, store_top + 2):
+        for x in range(3, W - 3):
+            c = purple
+            if x < 6:
+                c = purple_hi
+            elif x > W - 7:
+                c = purple_d
+            px[x, y] = c
+    # gold parapet
+    for y in range(4, 10):
+        for x in range(2, W - 2):
+            px[x, y] = gold if y > 5 else gold_d
+    # gold-framed lit windows
+    wcols = [12, 41, 70]
+    fy = store_top - 16
+    fi = 0
+    while fy > 14:
+        for x in range(3, W - 3):
+            px[x, fy + 10] = purple_d
+        for ci, wx in enumerate(wcols):
+            lit = ((fi * 5 + ci * 3) % 4) != 0
+            col = win if lit else win_off
+            for y in range(fy, fy + 10):
+                for x in range(wx, wx + 14):
+                    px[x, y] = gold_d if (x == wx or x == wx + 13 or y == fy or y == fy + 9) else col
+        fy -= 20
+        fi += 1
+    # ground facade
+    for y in range(store_top, H):
+        for x in range(2, W - 2):
+            px[x, y] = facade_d if y >= H - 2 else facade
+    # gold sign band with a dark plate (Godot draws 紫金 here)
+    for y in range(120, 134):
+        for x in range(2, W - 2):
+            px[x, y] = gold if y < 132 else gold_d
+    for y in range(122, 132):
+        for x in range(28, 68):
+            px[x, y] = sign
+    # the OPEN black gate (arched), with a gold frame
+    cx = 48
+    for y in range(134, H):
+        for x in range(32, 64):
+            dx = x - cx
+            opening = abs(dx) <= 11 and (y >= 142 or (dx * dx) / 121.0 + ((y - 142) ** 2) / 64.0 <= 1.0)
+            if opening:
+                px[x, y] = black_hi if y > H - 5 else black
+            elif abs(dx) <= 13 and (y >= 138 or (dx * dx) / 169.0 + ((y - 142) ** 2) / 100.0 <= 1.0):
+                px[x, y] = gold_d            # gold doorframe
+    return im
+
+
 def main():
     save(grass(False), "grass.png")
     save(grass(True), "grass2.png")
@@ -444,6 +518,7 @@ def main():
                       (150, 154, 160, 255), (178, 182, 188, 255), (122, 126, 132, 255)), "bldg2.png")
     save(gen_building(106, (224, 140, 56, 255), (180, 104, 40, 255), (248, 196, 120, 255),
                       (170, 160, 150, 255), (192, 184, 174, 255), (142, 132, 122, 255)), "bldg3.png")
+    save(tower_ext(), "tower_ext.png")
 
 
 if __name__ == "__main__":

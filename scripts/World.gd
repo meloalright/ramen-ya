@@ -33,8 +33,9 @@ enum {
 }
 
 var map: Array = []           # MAP_H rows of MAP_W ints
-var door_cell := Vector2i(-1, -1)
-var buildings: Array = []     # {x, ft, tex, ramen} — storefronts along the street
+var door_cell := Vector2i(-1, -1)     # ramen shop entrance
+var tower_cell := Vector2i(-1, -1)    # 紫金大廈 entrance
+var buildings: Array = []     # {x, ft, tex, kind} — storefronts along the street
 
 # ---- palette --------------------------------------------------------
 const C_GRASS    := Color("4e8a3c")
@@ -85,7 +86,8 @@ const ROW_UP := 2
 @onready var cam: Camera2D = $Camera
 
 # ---- interaction ----------------------------------------------------
-var near_door := false
+var near_door := false       # near the ramen shop door
+var near_tower := false      # near the 紫金大廈 gate
 var font: Font
 var hint_blink := 0.0
 
@@ -95,7 +97,7 @@ var wtex := {}
 # ---- click / touch to move -----------------------------------------
 var move_target := Vector2.ZERO
 var has_target := false
-var enter_on_arrive := false
+var pending_enter := ""        # "" | "shop" | "tower" — enter on arrival
 
 
 # =====================================================================
@@ -141,7 +143,7 @@ func _make_font() -> Font:
 
 func _load_world_tiles() -> void:
 	for key in ["grass", "grass2", "path", "sand", "water", "tree", "shop",
-			"pavement", "road", "bldg1", "bldg2", "bldg3"]:
+			"pavement", "road", "bldg1", "bldg2", "bldg3", "tower_ext"]:
 		var p := "res://assets/world/%s.png" % key
 		if ResourceLoader.exists(p):
 			wtex[key] = load(p)
@@ -177,21 +179,25 @@ func _build_map() -> void:
 	var slots := [2, 11, 20, 29, 38, 47]
 	var variants := ["bldg1", "bldg2", "bldg3", "bldg2", "bldg3", "bldg1"]
 	var ramen_slot := 2
+	var tower_slot := 3                       # the 紫金大廈, right of the ramen shop
 	for i in slots.size():
 		var sx: int = slots[i]
-		var is_ramen: bool = i == ramen_slot
 		for yy in range(ft, ft + 4):
 			for xx in range(sx, sx + 6):
 				if xx < MAP_W and yy < MAP_H:
 					map[yy][xx] = T_BLD
-		if is_ramen:
-			var dx := sx + 3
-			var dy := ft + 3
+		var dx := sx + 3
+		var dy := ft + 3
+		if i == ramen_slot:
 			map[dy][dx] = T_DOOR
 			door_cell = Vector2i(dx, dy)
-			buildings.append({"x": sx, "ft": ft, "tex": "shop", "ramen": true})
+			buildings.append({"x": sx, "ft": ft, "tex": "shop", "kind": "ramen"})
+		elif i == tower_slot:
+			map[dy][dx] = T_DOOR
+			tower_cell = Vector2i(dx, dy)
+			buildings.append({"x": sx, "ft": ft, "tex": "tower_ext", "kind": "tower"})
 		else:
-			buildings.append({"x": sx, "ft": ft, "tex": variants[i], "ramen": false})
+			buildings.append({"x": sx, "ft": ft, "tex": variants[i], "kind": "deco"})
 
 	# --- street trees: one in each gap between storefronts (right by the kerb) ---
 	for i in range(slots.size() - 1):
@@ -262,7 +268,7 @@ func _process(delta: float) -> void:
 	# keyboard takes over; otherwise steer toward a clicked/tapped target
 	if dir != Vector2.ZERO:
 		has_target = false
-		enter_on_arrive = false
+		pending_enter = ""
 	elif has_target:
 		var to: Vector2 = move_target - player_pos
 		if to.length() <= 2.5:
@@ -296,7 +302,7 @@ func _process(delta: float) -> void:
 	# click-move that hit a wall and made no progress → drop the target
 	if has_target and dir != Vector2.ZERO and player_pos.distance_to(prev) < 0.05:
 		has_target = false
-		enter_on_arrive = false
+		pending_enter = ""
 
 	# --- walk animation ---
 	if moving:
@@ -311,51 +317,69 @@ func _process(delta: float) -> void:
 	# --- camera follow ---
 	cam.position = player_pos
 
-	# --- door proximity ---
-	near_door = false
-	if door_cell.x >= 0:
-		var dcenter := Vector2(door_cell.x * TILE + TILE / 2.0, door_cell.y * TILE + TILE)
-		near_door = player_pos.distance_to(dcenter) < 26.0
+	# --- entrance proximity ---
+	near_door = door_cell.x >= 0 and player_pos.distance_to(_cell_front(door_cell)) < 26.0
+	near_tower = tower_cell.x >= 0 and player_pos.distance_to(_cell_front(tower_cell)) < 26.0
 
-	# walked up to the door after tapping it → step inside
-	if near_door and enter_on_arrive:
+	# walked up to an entrance after tapping it → step inside
+	if pending_enter == "shop" and near_door:
 		_enter_shop()
+		return
+	if pending_enter == "tower" and near_tower:
+		_enter_tower()
 		return
 
 	queue_redraw()
 
 
+func _cell_front(cell: Vector2i) -> Vector2:
+	return Vector2(cell.x * TILE + TILE / 2.0, cell.y * TILE + TILE)
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_E and near_door:
-			_enter_shop()
+		if event.keycode == KEY_E:
+			if near_door:
+				_enter_shop()
+			elif near_tower:
+				_enter_tower()
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		# (touch is delivered as a mouse button too — emulate_mouse_from_touch)
 		_on_pointer(get_global_mouse_position())
 
 
 func _on_pointer(world_pos: Vector2) -> void:
-	# tapping the shop door walks there and enters (great for touch / mouse-only)
-	if door_cell.x >= 0 and _door_rect().has_point(world_pos):
-		if near_door:
-			_enter_shop()
-		else:
-			move_target = Vector2(door_cell.x * TILE + TILE / 2.0, door_cell.y * TILE + TILE)
-			has_target = true
-			enter_on_arrive = true
+	# tapping an entrance walks there and enters (great for touch / mouse-only)
+	if door_cell.x >= 0 and _cell_rect(door_cell).has_point(world_pos):
+		if near_door: _enter_shop()
+		else: _walk_to_enter(door_cell, "shop")
+		return
+	if tower_cell.x >= 0 and _cell_rect(tower_cell).has_point(world_pos):
+		if near_tower: _enter_tower()
+		else: _walk_to_enter(tower_cell, "tower")
 		return
 	# otherwise just walk toward the tapped point
 	move_target = world_pos
 	has_target = true
-	enter_on_arrive = false
+	pending_enter = ""
 
 
-func _door_rect() -> Rect2:
-	return Rect2(door_cell.x * TILE, door_cell.y * TILE, TILE, TILE)
+func _walk_to_enter(cell: Vector2i, what: String) -> void:
+	move_target = _cell_front(cell)
+	has_target = true
+	pending_enter = what
+
+
+func _cell_rect(cell: Vector2i) -> Rect2:
+	return Rect2(cell.x * TILE, cell.y * TILE, TILE, TILE)
 
 
 func _enter_shop() -> void:
 	get_tree().change_scene_to_file("res://scenes/Shop.tscn")
+
+
+func _enter_tower() -> void:
+	get_tree().change_scene_to_file("res://scenes/Tower.tscn")
 
 
 # =====================================================================
@@ -394,9 +418,11 @@ func _draw() -> void:
 	if has_target:
 		_draw_target_marker()
 
-	# door interaction hint (screen-space would need canvas layer; draw in world above head)
+	# entrance hint above the player's head
 	if near_door:
-		_draw_hint()
+		_draw_hint("[E] 進店")
+	elif near_tower:
+		_draw_hint("[E] 進入")
 
 
 func _visible_tile_rect() -> Rect2i:
@@ -495,8 +521,11 @@ func _draw_building(b: Dictionary) -> void:
 		var ox := sx * TILE
 		var oy := bottom - s.get_height()         # bottom-aligned
 		draw_texture_rect(s, Rect2(ox, oy, s.get_width(), s.get_height()), false)
-		if b.ramen:
-			_wtext("拉麵", Vector2(ox + s.get_width() / 2.0, oy + 134), 9, C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+		var mid := ox + s.get_width() / 2.0
+		if b.kind == "ramen":
+			_wtext("拉麵", Vector2(mid, oy + 134), 9, C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+		elif b.kind == "tower":
+			_wtext("紫金", Vector2(mid, oy + 130), 9, C_YELLOW, HORIZONTAL_ALIGNMENT_CENTER)
 		return
 	# fallback box
 	draw_rect(Rect2(sx * TILE, ft * TILE, 6 * TILE, 4 * TILE), C_WALL)
@@ -525,11 +554,10 @@ func _draw_player() -> void:
 	draw_texture_rect_region(chef_tex, dst, src)
 
 
-func _draw_hint() -> void:
+func _draw_hint(label: String) -> void:
 	var hx := player_pos.x
 	var hy := player_pos.y - PLAYER_H - 8
 	if int(hint_blink * 2.0) % 2 == 0:
-		var label := "[E] 進店"
 		var fs := 8
 		var tw: float = font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		draw_rect(Rect2(hx - tw / 2.0 - 4, hy - fs, tw + 8, fs + 4), Color(0, 0, 0, 0.72))
