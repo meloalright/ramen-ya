@@ -20,10 +20,20 @@ Walk the chef around the map — grass, flowers, trees, a pond, a dirt road. Fin
 | Enter the shop | `E` at the door, **or click / tap the door** |
 
 > Click-to-move makes the game fully playable with mouse or touch (no keyboard needed) —
-> handy on the Web build. Inside the shop, a **← 地図 MAP** button (top-right) returns you
-> to the overworld.
+> handy on the Web build.
 
-### Inside the shop (the cooking minigame)
+### Shop interior (`scenes/Shop.tscn`)
+Stepping through the door drops you into a walkable rectangular room — wooden floor,
+dining **tables + chairs**, and a service **counter (档口)** along the back. Walk around
+freely, then step up to the counter to start cooking, or back to the door to leave.
+
+| Action | Control |
+|---|---|
+| Move | `W A S D` / arrow keys, **or click / tap** |
+| Start cooking | walk to the **counter** + `E` (or **tap the counter**) |
+| Leave to the map | walk to the **door** + `E` (or **tap the door**) — also `ESC` / `M` |
+
+### At the counter (the cooking minigame — `scenes/Main.tscn`)
 You run the counter. Customers sit down and order a bowl shown in their speech bubble
 (a **broth** + some **toppings**). Build the matching bowl and serve it before their
 patience runs out.
@@ -35,7 +45,7 @@ patience runs out.
 | Add ingredient | click an ingredient button (toppings toggle on/off) |
 | Serve current bowl | **出す SERVE** button |
 | Trash current bowl | **捨てる CLEAR** button |
-| Back to the map | `ESC` / `M` |
+| Back to the shop | **← 店内** button (top-right), or `ESC` / `M` |
 
 **Rules**
 - A valid bowl needs **noodles (麺)** + one **broth** (醤油 Shoyu / 味噌 Miso).
@@ -53,7 +63,9 @@ ramen-ya/
 ├── icon.svg
 ├── scenes/World.tscn      # MAIN scene — open-world map (Node2D + follow Camera2D)
 ├── scripts/World.gd       # tile map, player movement, collision, camera, shop trigger
-├── scenes/Main.tscn       # the ramen-shop interior (cooking minigame)
+├── scenes/Shop.tscn       # walkable shop interior (tables, chairs, counter)
+├── scripts/Shop.gd        # interior room, furniture, counter + door interactions
+├── scenes/Main.tscn       # the counter cooking minigame
 ├── scripts/Main.gd        # cooking state machine + pixel rendering
 ├── assets/                # chef walk spritesheet (+ env art)
 └── build/                 # web export output goes here

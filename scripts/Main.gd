@@ -231,9 +231,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _handle_key(key: int) -> void:
-	# leave the shop, back to the overworld
+	# leave the counter, back to the shop interior
 	if key == KEY_ESCAPE or key == KEY_M:
-		get_tree().change_scene_to_file("res://scenes/World.tscn")
+		get_tree().change_scene_to_file("res://scenes/Shop.tscn")
 		return
 	if state == State.TITLE and (key == KEY_SPACE or key == KEY_ENTER):
 		_start_game()
@@ -242,9 +242,9 @@ func _handle_key(key: int) -> void:
 
 
 func _handle_click(p: Vector2) -> void:
-	# back-to-map button works in every state
+	# back-to-shop button works in every state
 	if BACK_RECT.has_point(p):
-		get_tree().change_scene_to_file("res://scenes/World.tscn")
+		get_tree().change_scene_to_file("res://scenes/Shop.tscn")
 		return
 	if state == State.TITLE:
 		_start_game()
@@ -401,7 +401,7 @@ func _draw_title() -> void:
 	draw_rect(Rect2(0, 224, W, 46), Color(0.07, 0.06, 0.09, 0.78))
 	_title_text("R A M E N - Y A", Vector2(244, 240), 20, COL_YELLOW)
 	_title_text("2D Pixel Ramen-Shop Manager  (DEMO)", Vector2(242, 254), 10, COL_WHITE)
-	_title_text("[ CLICK or SPACE to start ]   [ ESC = 地図へ / back to map ]", Vector2(242, 267), 9,
+	_title_text("[ CLICK or SPACE to start ]   [ ESC = 店内へ / back to shop ]", Vector2(242, 267), 9,
 		COL_GREEN if Time_blink() else COL_WHITE)
 
 
@@ -653,7 +653,7 @@ func _draw_chef(center_bottom: Vector2, h: float, row: int) -> void:
 func _draw_back_button() -> void:
 	draw_rect(BACK_RECT, Color(0, 0, 0, 0.6))
 	draw_rect(BACK_RECT, COL_YELLOW, false, 1.0)
-	_text("← 地図", Vector2(BACK_RECT.position.x + BACK_RECT.size.x / 2, BACK_RECT.position.y + 12),
+	_text("← 店内", Vector2(BACK_RECT.position.x + BACK_RECT.size.x / 2, BACK_RECT.position.y + 12),
 		9, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 
 

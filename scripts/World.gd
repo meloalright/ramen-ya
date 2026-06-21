@@ -343,7 +343,7 @@ func _door_rect() -> Rect2:
 
 
 func _enter_shop() -> void:
-	get_tree().change_scene_to_file("res://scenes/Main.tscn")
+	get_tree().change_scene_to_file("res://scenes/Shop.tscn")
 
 
 # =====================================================================
