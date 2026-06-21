@@ -11,7 +11,7 @@ extends Node2D
 
 const TILE := 16
 const MAP_W := 11            # tiles (incl. walls) — narrow
-const MAP_H := 30            # tall vertical room
+const MAP_H := 20            # short, cosy room
 
 enum { FLOOR, WALL, KITCHEN, COUNTER, TABLE, CHAIR, DOOR }
 
@@ -170,7 +170,7 @@ func _build_room() -> void:
 	seed(771)
 	seated.clear()
 	bowl_tables.clear()
-	for ry in [6, 10, 14, 18, 22, 26]:
+	for ry in [6, 10, 14]:
 		_make_booth(ry, 1, 2, 3)                              # left
 		_make_booth(ry, MAP_W - 2, MAP_W - 3, MAP_W - 4)     # right
 
