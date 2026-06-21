@@ -16,10 +16,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "ai_source.jpg")
 OUT = os.path.normpath(os.path.join(HERE, "..", "chef_sheet.png"))
 
-# 4x4 grid centres (detected from the 800x800 sheet)
-COL_C = [125, 298, 482, 661]
-ROW_C = [120, 302, 484, 662]
-CELL_W, CELL_H = 152, 178      # region cropped around each centre
+# 4x4 grid centres (detected from the 1254x1254 sheet)
+COL_C = [248, 508, 752, 1002]
+ROW_C = [156, 467, 770, 1064]
+CELL_W, CELL_H = 212, 284      # region cropped around each centre
 TH = 80                        # brightness (r+g+b) below this = black background
 
 FW, FH = 52, 68                # output frame cell (near on-screen size)
