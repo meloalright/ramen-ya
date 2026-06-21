@@ -119,6 +119,11 @@ python3 -m http.server 8000
   **Zpix / 最像素** (`assets/fonts/zpix.ttf`, antialiasing off). The font is **subset** to
   only the glyphs the game uses (~33 KB instead of 7 MB) to keep the Web build small.
 
+- **8-bit BGM**: a square-wave chiptune loop synthesized by
+  `assets/audio/generate.py` (NumPy → WAV), played by the `Music` autoload so
+  it carries across scene changes. Press **`0`** to mute/unmute. (On the Web
+  build, browsers start audio only after your first click/key.)
+
 ## 🎨 Credits
 - UI font: **Zpix（最像素）** by SolidZORO — https://github.com/SolidZORO/zpix-pixel-font
 - All other art is procedurally generated pixel-art (`assets/world/generate.py`,
