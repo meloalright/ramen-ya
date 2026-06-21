@@ -34,22 +34,24 @@ freely, then step up to the counter to start cooking, or back to the door to lea
 | Leave to the map | walk to the **door** + `E` (or **tap the door**) — also `ESC` / `M` |
 
 ### At the counter (the cooking minigame — `scenes/Main.tscn`)
-You run the counter. Customers sit down and order a bowl shown in their speech bubble
-(a **broth** + some **toppings**). Build the matching bowl and serve it before their
-patience runs out.
+You assemble a bowl of **beef ramen (牛肉麵)** with a *pick-up → put-down* flow. Every
+bowl always needs the base: **湯 (soup) + 麵 (noodles) + 牛肉 (beef)**. Each customer
+only asks whether to add **蔥花 / 香菜 / 辣椒** — match their order exactly and serve before
+their patience runs out.
 
 | Action | Control |
 |---|---|
 | Start / restart | `SPACE` / `Enter` / click |
 | Select a customer | click their seat |
-| Add ingredient | click an ingredient button (toppings toggle on/off) |
-| Serve current bowl | **出す SERVE** button |
-| Trash current bowl | **捨てる CLEAR** button |
-| Back to the shop | **← 店内** button (top-right), or `ESC` / `M` |
+| **Pick up** an ingredient | click a station: 湯鍋 / 麵鍋 / 牛肉片 / 蔥花 / 香菜 / 辣椒 |
+| **Put it in** the bowl | click the central **組裝碗** (it follows your cursor while held) |
+| Serve | **上菜** button |
+| Tip out & restart the bowl | **倒掉** button |
+| Back to the shop | **← 店內** button (top-right), or `ESC` / `M` |
 
 **Rules**
-- A valid bowl needs **noodles (麺)** + one **broth** (醤油 Shoyu / 味噌 Miso).
-- Toppings must **exactly match** the order: 玉子 Egg / 海苔 Nori / 叉焼 Chashu / 葱 Negi.
+- A correct bowl = 湯 + 麵 + 牛肉, **plus exactly** the toppings the customer wants
+  (no missing, no extra).
 - Correct serve → tip (bigger the faster you serve). Wrong serve → −￥30 & −1 reputation.
 - A customer whose patience hits zero leaves angry → −1 reputation.
 - Lose all 3 reputation **or** survive the 120-second day to end the shift.
