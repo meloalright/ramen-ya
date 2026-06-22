@@ -74,9 +74,6 @@ def vat(name, liquid, liquid_d, hi, basket):
     else:
         extra = f'<path d="M40 22 L72 22 L67 30 L36 30 Z" fill="{hi}" opacity="0.5"/>'
     body = f'''
-    <!-- side handle tabs -->
-    <rect x="2" y="30" width="9" height="9" rx="1.5" fill="#9aa2aa" stroke="{INK}" stroke-width="2.5"/>
-    <rect x="181" y="30" width="9" height="9" rx="1.5" fill="#9aa2aa" stroke="{INK}" stroke-width="2.5"/>
     <!-- front/side wall (some depth) -->
     <path d="M12 56 L16 66 L176 66 L180 56 Z" fill="#828a92" stroke="{INK}" stroke-width="3.5" stroke-linejoin="round"/>
     <!-- top metal frame (big wide foreshortened square) -->
