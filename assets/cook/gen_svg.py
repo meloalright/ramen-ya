@@ -69,25 +69,25 @@ def vat(name, liquid, liquid_d, hi, basket):
     # the liquid surface sits at y=28 (VAT_OPEN_Y).
     extra = ""
     if basket:
-        extra = f'''<rect x="82" y="23" width="28" height="10" rx="1.5" fill="#cfcab4" stroke="{INK}" stroke-width="2.5"/>
-        <g stroke="#d7b25a" stroke-width="1.6"><path d="M85 26 h22 M85 28 h22 M85 30 h22"/></g>'''
+        extra = f'''<rect x="82" y="28" width="28" height="12" rx="1.5" fill="#cfcab4" stroke="{INK}" stroke-width="2.5"/>
+        <g stroke="#d7b25a" stroke-width="1.6"><path d="M85 31 h22 M85 34 h22 M85 37 h22"/></g>'''
     else:
-        extra = f'<path d="M40 20 L70 20 L66 26 L37 26 Z" fill="{hi}" opacity="0.55"/>'
+        extra = f'<path d="M40 22 L72 22 L67 30 L36 30 Z" fill="{hi}" opacity="0.5"/>'
     body = f'''
     <!-- side handle tabs -->
-    <rect x="2" y="24" width="9" height="8" rx="1.5" fill="#9aa2aa" stroke="{INK}" stroke-width="2.5"/>
-    <rect x="181" y="24" width="9" height="8" rx="1.5" fill="#9aa2aa" stroke="{INK}" stroke-width="2.5"/>
-    <!-- thin shallow front/side wall -->
-    <path d="M14 42 L18 52 L174 52 L178 42 Z" fill="#828a92" stroke="{INK}" stroke-width="3.5" stroke-linejoin="round"/>
-    <!-- top metal frame (wide foreshortened square) -->
-    <path d="M28 14 L164 14 L178 42 L14 42 Z" fill="#c4cad0" stroke="{INK}" stroke-width="3.5" stroke-linejoin="round"/>
-    <path d="M32 16 L60 16 L52 40 L18 40 Z" fill="#dfe4e8" opacity="0.34"/>
+    <rect x="2" y="30" width="9" height="9" rx="1.5" fill="#9aa2aa" stroke="{INK}" stroke-width="2.5"/>
+    <rect x="181" y="30" width="9" height="9" rx="1.5" fill="#9aa2aa" stroke="{INK}" stroke-width="2.5"/>
+    <!-- front/side wall (some depth) -->
+    <path d="M12 56 L16 66 L176 66 L180 56 Z" fill="#828a92" stroke="{INK}" stroke-width="3.5" stroke-linejoin="round"/>
+    <!-- top metal frame (big wide foreshortened square) -->
+    <path d="M28 12 L164 12 L180 56 L12 56 Z" fill="#c4cad0" stroke="{INK}" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M32 15 L64 15 L52 53 L16 53 Z" fill="#dfe4e8" opacity="0.32"/>
     <!-- inner opening (thin wall) + liquid surface -->
-    <path d="M34 17 L158 17 L172 39 L20 39 Z" fill="#7d848c"/>
-    <path d="M38 18.5 L154 18.5 L168 37.5 L24 37.5 Z" fill="{liquid}"/>
-    <path d="M24 37.5 L168 37.5 L166 32 L26 32 Z" fill="{liquid_d}"/>
+    <path d="M34 16 L158 16 L174 53 L18 53 Z" fill="#7d848c"/>
+    <path d="M38 18 L154 18 L170 51 L22 51 Z" fill="{liquid}"/>
+    <path d="M22 51 L170 51 L168 43 L24 43 Z" fill="{liquid_d}"/>
     {extra}'''
-    render(name, 192, 56, body)
+    render(name, 192, 72, body)
 
 
 # ---- ingredient trays -----------------------------------------------
