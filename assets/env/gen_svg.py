@@ -106,14 +106,9 @@ def cashier():
         w = [78, 62, 84, 58][i]
         rows += (f'<rect x="200" y="{y}" width="{w}" height="15" rx="3" fill="{col}"/>'
                  f'<rect x="300" y="{y}" width="46" height="15" rx="3" fill="#cba978"/>')
+    # props only on a TRANSPARENT background — the noren / wall / counter bands
+    # are drawn procedurally full-width in Menu.gd so they extend to any width.
     body = f'''
-    <!-- wall -->
-    <rect width="{W2}" height="{H2}" fill="#e3cba0"/>
-    <rect y="430" width="{W2}" height="{H2-430}" fill="#d8bd8e"/>
-    <path d="M0 430 H{W2}" stroke="#c8a874" stroke-width="3"/>
-    <!-- top green noren -->
-    <rect x="0" y="0" width="{W2}" height="116" fill="#3f8f6a" stroke="{INK}" stroke-width="6"/>
-    <g stroke="{INK}" stroke-width="5"><path d="M90 116 V40 M180 116 V40 M270 116 V40 M360 116 V40 M450 116 V40"/></g>
     <!-- hanging paper lanterns -->
     <path d="M96 0 V52" stroke="{INK}" stroke-width="5"/>
     <ellipse cx="96" cy="132" rx="38" ry="50" fill="#e2533f" stroke="{INK}" stroke-width="6"/>
@@ -126,17 +121,13 @@ def cashier():
     <rect x="170" y="214" width="200" height="178" rx="10" fill="#5a3b26" stroke="{INK}" stroke-width="7"/>
     <rect x="186" y="230" width="168" height="146" rx="4" fill="#f0e6cf"/>
     {rows}
-    <!-- wooden counter -->
-    <rect x="0" y="{cy}" width="{W2}" height="{H2-cy}" fill="#a9743f" stroke="{INK}" stroke-width="8"/>
-    <rect x="0" y="{cy}" width="{W2}" height="20" fill="#c08a4e"/>
-    <g stroke="#8c5d30" stroke-width="3" opacity="0.55"><path d="M0 {cy+120} H{W2} M0 {cy+240} H{W2}"/></g>
     {register(150, cy)}
     {lucky_cat(414, cy)}
     '''
     svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W2} {H2}">{body}</svg>'
     cairosvg.svg2png(bytestring=svg.encode(), write_to=os.path.join(OUT, "cashier.png"),
                      output_width=W2, output_height=H2)
-    print("wrote cashier.png", (W2, H2))
+    print("wrote cashier.png (props only)", (W2, H2))
 
 
 if __name__ == "__main__":

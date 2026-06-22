@@ -80,17 +80,29 @@ func _draw() -> void:
 	var vp: Vector2 = get_viewport_rect().size
 	var ox: float = floor(max(0.0, (vp.x - W) / 2.0))
 	var oy: float = floor(max(0.0, (vp.y - H) / 2.0))
-	# extend the cover's three bands (noren / wall / counter) to fill any screen
+	var nb: float = oy + 58.0    # noren bottom
+	var ct: float = oy + 280.0   # counter top
+	# --- shop background drawn full-width so it extends to any screen size ---
 	draw_rect(Rect2(0, 0, vp.x, vp.y), Color("e3cba0"))                          # wall
-	draw_rect(Rect2(0, 0, vp.x, oy + 58), Color("3f8f6a"))                       # noren green
-	draw_rect(Rect2(0, oy + 280, vp.x, vp.y - (oy + 280)), Color("a9743f"))      # counter wood
+	draw_rect(Rect2(0, oy + 215.0, vp.x, ct - (oy + 215.0)), Color("d8bd8e"))    # lower wall
+	draw_rect(Rect2(0, oy + 215.0, vp.x, 1.0), Color("c8a874"))
+	# noren curtain with slats
+	draw_rect(Rect2(0, 0, vp.x, nb), Color("3f8f6a"))
+	var sx: float = 0.0
+	while sx < vp.x:
+		draw_rect(Rect2(sx, oy + 8.0, 2, nb - (oy + 8.0)), COL_INK)
+		sx += 28.0
+	draw_rect(Rect2(0, nb - 3.0, vp.x, 3), COL_INK)
+	# wooden counter that extends infinitely wide
+	draw_rect(Rect2(0, ct, vp.x, vp.y - ct), Color("a9743f"))
+	draw_rect(Rect2(0, ct, vp.x, 9), Color("c08a4e"))
+	draw_rect(Rect2(0, ct + 60.0, vp.x, 2), Color("8c5d30"))
+	draw_rect(Rect2(0, ct + 120.0, vp.x, 2), Color("8c5d30"))
 	draw_set_transform(Vector2(ox, oy), 0.0, Vector2.ONE)
 
-	draw_rect(Rect2(0, 0, W, H), COL_BG)
-	# the cashier counter as the full cover (art is exactly 2x the menu size)
+	# centred props (lanterns / board / register / cat) overlaid on the bands
 	if stall_tex != null:
 		draw_texture_rect(stall_tex, Rect2(0, 0, W, H), false)
-	draw_rect(Rect2(0, 0, W, 30), Color(0, 0, 0, 0.18))
 
 	# shop name on the noren
 	_ctext("拉 麵 屋", Vector2(135, 40), 26, COL_YELLOW)
