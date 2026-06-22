@@ -99,6 +99,7 @@ var held: String = ""              # "" or soup/noodles/beef/scallion/cilantro/c
 var held_q := ""                   # quality of held noodles: raw / ok / over
 var bowl_nq := ""                  # noodle quality placed in the bowl
 var mouse_pos := Vector2(W / 2.0, H / 2.0)
+var _oy := 0.0   # vertical offset that centres the 480-tall canvas on taller screens
 
 # 麵鍋 cooking: you must boil a portion and lift it at the right moment
 var noodle_state := "empty"        # empty / cooking
@@ -284,7 +285,8 @@ func _process(delta: float) -> void:
 		ft.ttl -= delta
 	float_texts = float_texts.filter(func(t): return t.ttl > 0.0)
 
-	mouse_pos = get_global_mouse_position()
+	_oy = floor(max(0.0, (get_viewport_rect().size.y - H) / 2.0))
+	mouse_pos = get_global_mouse_position() - Vector2(0, _oy)
 
 	if state == State.PLAY:
 		_update_play(delta)
@@ -340,12 +342,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			dragging = true
-			_handle_click(get_global_mouse_position())
+			_handle_click(get_global_mouse_position() - Vector2(0, _oy))
 		else:
 			dragging = false
 	elif event is InputEventMouseMotion and dragging:
 		# drag a topping over the bowl to keep sprinkling
-		var mp := get_global_mouse_position()
+		var mp := get_global_mouse_position() - Vector2(0, _oy)
 		if state == State.PLAY and held in TOP_ORDER and _in_bowl(mp):
 			_sprinkle(mp)
 	elif event is InputEventKey and event.pressed and not event.echo:
@@ -572,6 +574,16 @@ func _spawn_float(pos: Vector2, text: String, col: Color) -> void:
 #  DRAWING
 # =====================================================================
 func _draw() -> void:
+	# fill the whole (possibly taller) screen so there are no black bars, then
+	# centre the 480-tall canvas: top margin reads as the dark HUD strip, the
+	# bottom margin as more counter.
+	var vh: float = get_viewport_rect().size.y
+	_oy = floor(max(0.0, (vh - H) / 2.0))
+	draw_rect(Rect2(0, 0, W, vh), COL_WOOD)
+	if _oy > 0.0:
+		draw_rect(Rect2(0, 0, W, _oy + 1.0), COL_INK)
+	draw_set_transform(Vector2(0, _oy), 0.0, Vector2.ONE)
+
 	draw_rect(Rect2(0, 0, W, H), COL_BG)
 	match state:
 		State.TITLE:
@@ -590,6 +602,8 @@ func _draw() -> void:
 	for ft in float_texts:
 		_text(ft.text, ft.pos + Vector2(1, 1), 10, COL_INK, HORIZONTAL_ALIGNMENT_CENTER)
 		_text(ft.text, ft.pos, 10, ft.col, HORIZONTAL_ALIGNMENT_CENTER)
+
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 func _draw_title() -> void:

@@ -75,11 +75,19 @@ func _start() -> void:
 
 # =====================================================================
 func _draw() -> void:
+	# fill the whole (possibly taller) screen so there are no black bars, then
+	# centre the cover: top margin extends the noren green, bottom the counter wood
+	var vh: float = get_viewport_rect().size.y
+	var oy: float = floor(max(0.0, (vh - H) / 2.0))
+	draw_rect(Rect2(0, 0, W, vh), Color("a9743f"))
+	if oy > 0.0:
+		draw_rect(Rect2(0, 0, W, oy + 1.0), Color("3f8f6a"))
+	draw_set_transform(Vector2(0, oy), 0.0, Vector2.ONE)
+
 	draw_rect(Rect2(0, 0, W, H), COL_BG)
 	# the cashier counter as the full cover (art is exactly 2x the menu size)
 	if stall_tex != null:
 		draw_texture_rect(stall_tex, Rect2(0, 0, W, H), false)
-	# faint darkening top & bottom so the overlaid text reads cleanly
 	draw_rect(Rect2(0, 0, W, 30), Color(0, 0, 0, 0.18))
 
 	# shop name on the noren
@@ -90,6 +98,8 @@ func _draw() -> void:
 	_ctext("已完成  " + str(Game.high_score) + "  單", Vector2(135, 416), 10, COL_YELLOW)
 	_ctext("點擊 或 Enter / 空白鍵 開始", Vector2(135, 460), 9,
 		COL_GREEN if int(blink * 2.0) % 2 == 0 else COL_WHITE)
+
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 func _button(r: Rect2, label: String, base: Color, enabled: bool) -> void:
