@@ -248,11 +248,11 @@ func _make_font() -> Font:
 func _build_stations() -> void:
 	# portrait: two big vats (大缸) side by side under the bowl; toppings in a row below.
 	stations.clear()
-	# two tall square pots side by side: 湯 left, 麵 right (taller than the bowl)
-	stations.append({"item": "soup", "name": "湯", "center": Vector2(75, 322), "r": 32,
-		"rect": Rect2(20, 300, 110, 130), "cx": 75})
-	stations.append({"item": "noodles", "name": "麵", "center": Vector2(195, 322), "r": 32,
-		"rect": Rect2(140, 300, 110, 130), "cx": 195})
+	# the pots are off-screen below — only two steam patches show; click to take
+	stations.append({"item": "soup", "name": "湯", "center": Vector2(75, 352), "r": 32,
+		"rect": Rect2(22, 300, 106, 100), "cx": 75})
+	stations.append({"item": "noodles", "name": "麵", "center": Vector2(195, 352), "r": 32,
+		"rect": Rect2(142, 300, 106, 100), "cx": 195})
 	var defs := [
 		["beef", "牛肉", Vector2(45, 250), 22],
 		["scallion", "蔥花", Vector2(105, 250), 22],
@@ -304,10 +304,10 @@ func _process(delta: float) -> void:
 		steam_t -= delta
 		if steam_t <= 0.0:
 			steam_t = 0.16
-			_puff(62, 310)                            # 湯 pot (left) — always boiling
-			_puff(88, 310)
-			_puff(182, 310)                           # 麵 pot (right) — always boiling
-			_puff(208, 310)
+			_puff(64, 348)                            # 湯 steam (left)
+			_puff(86, 348)
+			_puff(184, 348)                           # 麵 steam (right)
+			_puff(206, 348)
 			if soup_fill > 0.0 or bowl.noodles or _base_ok():
 				_puff(BOWL_OPEN.x, BOWL_OPEN.y - 8)   # the bowl, once it holds hot broth/noodles
 
@@ -899,29 +899,31 @@ func _draw_noodle_nest(ctr: Vector2) -> void:
 		draw_polyline(sp, cream_d, 1.6)
 
 
+func _draw_steam_patch(c: Vector2, hot: bool) -> void:
+	# a soft column of steam rising from the (off-screen) pot
+	var t: float = Time.get_ticks_msec() / 1000.0
+	for i in range(7):
+		var ph: float = t * 0.9 + float(i) * 0.8
+		var yy: float = c.y - 2.0 - float(i) * 8.5
+		var xx: float = c.x + sin(ph) * (3.0 + float(i) * 1.5)
+		var rad: float = 15.0 - float(i) * 1.4
+		var a: float = (0.42 - float(i) * 0.05) * (1.25 if hot else 1.0)
+		draw_circle(Vector2(xx, yy), rad, Color(1, 1, 1, clamp(a, 0.0, 0.55)))
+
+
 func _draw_station(s: Dictionary) -> void:
 	var c: Vector2 = s.center
 	var rr: int = s.r
-	# 湯 / 麵 are two big separate vats (大缸)
+	# 湯 / 麵: the pots are below the frame — only a rising patch of steam shows
 	if s.item == "soup" or s.item == "noodles":
-		var vk := "td_vat_soup" if s.item == "soup" else "td_vat_noodle"
-		if ctex.has(vk):
-			var vt: Texture2D = ctex[vk]
-			# draw so the vat's opening (sprite y=VAT_OPEN_Y) lands at the station center
-			draw_texture_rect(vt, Rect2(c.x - vt.get_width() / 2.0, c.y - VAT_OPEN_Y,
-				vt.get_width(), vt.get_height()), false)
-		# noodles only show up once they're cooking: a cream nest (線團)
-		if s.item == "noodles" and noodle_state == "cooking":
-			_draw_noodle_nest(Vector2(c.x, c.y - 3))
-		var lit: bool = (s.item == "soup" and held == "soup") \
+		var hot: bool = (s.item == "soup" and held == "soup") \
 			or (s.item == "noodles" and (held == "noodles" or noodle_state == "cooking"))
-		if lit:
-			_draw_ellipse_ring(c, 50, 23, COL_YELLOW)
+		_draw_steam_patch(c, hot)
 		if s.item == "noodles" and noodle_state == "cooking":
-			_draw_boil_gauge(Vector2(177, 350))
-		# bold label on the broth / basket
-		_text(s.name, Vector2(c.x + 1, c.y + 5), 13, COL_INK, HORIZONTAL_ALIGNMENT_CENTER)
-		_text(s.name, Vector2(c.x, c.y + 4), 13, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+			_draw_boil_gauge(Vector2(c.x - 18, c.y + 28))
+		# label tucked under the steam
+		_text(s.name, Vector2(c.x + 1, c.y + 19), 12, COL_INK, HORIZONTAL_ALIGNMENT_CENTER)
+		_text(s.name, Vector2(c.x, c.y + 18), 12, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 		return
 	# ingredient boxes on the right
 	var spr := _item_sprite(s.item)
