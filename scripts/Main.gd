@@ -114,8 +114,16 @@ func _compute_layout() -> void:
 	if ws.y > 0:
 		var sa := DisplayServer.get_display_safe_area()
 		var sc := _vh / float(ws.y)
-		_safe_t = min(_vh * 0.2, max(0.0, float(sa.position.y)) * sc)
-		_safe_b = min(_vh * 0.2, max(0.0, float(ws.y - sa.position.y - sa.size.y)) * sc)
+		_safe_t = max(0.0, float(sa.position.y)) * sc
+		_safe_b = max(0.0, float(ws.y - sa.position.y - sa.size.y)) * sc
+	# on iOS, guarantee an inset even if the safe-area API reports nothing,
+	# so the top labels clear the notch / Dynamic Island and the buttons the
+	# home indicator
+	if OS.get_name() == "iOS":
+		_safe_t = max(_safe_t, 38.0)
+		_safe_b = max(_safe_b, 24.0)
+	_safe_t = min(_safe_t, _vh * 0.2)
+	_safe_b = min(_safe_b, _vh * 0.2)
 	_oy = _safe_t
 
 
