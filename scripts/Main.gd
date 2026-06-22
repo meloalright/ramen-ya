@@ -95,15 +95,37 @@ var held: String = ""              # "" or soup/noodles/beef/scallion/cilantro/c
 var held_q := ""                   # quality of held noodles: raw / ok / over
 var bowl_nq := ""                  # noodle quality placed in the bowl
 var mouse_pos := Vector2(W / 2.0, H / 2.0)
-var _ox := 0.0     # horizontal offset that centres the 270-wide column
-var _oy := 0.0     # always 0 (content is top-anchored); kept for input maths
-var _vh := float(H) # live viewport height (action buttons anchor to its bottom)
+var _ox := 0.0        # horizontal offset that centres the 270-wide column
+var _oy := 0.0        # vertical content offset (= top safe-area inset)
+var _vw := float(W)
+var _vh := float(H)   # live viewport size
+var _safe_t := 0.0    # iOS safe-area insets in logical px (notch / home indicator)
+var _safe_b := 0.0
 
 
-# bottom-anchored action buttons + centred victory buttons (responsive layout)
-func _clear_rect() -> Rect2: return Rect2(22, _vh - 40.0, 106, 28)
-func _serve_rect() -> Rect2: return Rect2(142, _vh - 40.0, 106, 28)
-func _vic_top() -> float: return floor((_vh - 250.0) / 2.0)
+func _compute_layout() -> void:
+	var vp: Vector2 = get_viewport_rect().size
+	_vw = vp.x
+	_vh = vp.y
+	_ox = floor(max(0.0, (vp.x - W) / 2.0))
+	_safe_t = 0.0
+	_safe_b = 0.0
+	var ws := DisplayServer.window_get_size()
+	if ws.y > 0:
+		var sa := DisplayServer.get_display_safe_area()
+		var sc := _vh / float(ws.y)
+		_safe_t = min(_vh * 0.2, max(0.0, float(sa.position.y)) * sc)
+		_safe_b = min(_vh * 0.2, max(0.0, float(ws.y - sa.position.y - sa.size.y)) * sc)
+	_oy = _safe_t
+
+
+# usable content height between the safe-area insets
+func _avail() -> float: return _vh - _safe_t - _safe_b
+
+# action buttons sit just above the bottom safe area; victory popup is centred
+func _clear_rect() -> Rect2: return Rect2(22, _avail() - 48.0, 106, 28)
+func _serve_rect() -> Rect2: return Rect2(142, _avail() - 48.0, 106, 28)
+func _vic_top() -> float: return floor((_avail() - 250.0) / 2.0)
 func _menu_rect() -> Rect2: return Rect2(36, _vic_top() + 188.0, 92, 30)
 func _next_rect() -> Rect2: return Rect2(142, _vic_top() + 188.0, 92, 30)
 
@@ -291,10 +313,7 @@ func _process(delta: float) -> void:
 		ft.ttl -= delta
 	float_texts = float_texts.filter(func(t): return t.ttl > 0.0)
 
-	var _vp: Vector2 = get_viewport_rect().size
-	_ox = floor(max(0.0, (_vp.x - W) / 2.0))
-	_oy = 0.0
-	_vh = _vp.y
+	_compute_layout()
 	mouse_pos = get_global_mouse_position() - Vector2(_ox, _oy)
 
 	if state == State.PLAY:
@@ -586,14 +605,11 @@ func _draw() -> void:
 	# fill the whole (possibly taller) screen so there are no black bars, then
 	# centre the 480-tall canvas: top margin reads as the dark HUD strip, the
 	# bottom margin as more counter.
-	var vp: Vector2 = get_viewport_rect().size
-	_ox = floor(max(0.0, (vp.x - W) / 2.0))
-	_oy = 0.0
-	_vh = vp.y
+	_compute_layout()
 	# the prep table extends to fill the whole screen, whatever its size
-	draw_rect(Rect2(0, 0, vp.x, vp.y), COL_WOOD)
-	for ty in range(0, int(vp.y), 12):
-		draw_rect(Rect2(0, ty, vp.x, 1), COL_WOOD_D)
+	draw_rect(Rect2(0, 0, _vw, _vh), COL_WOOD)
+	for ty in range(0, int(_vh), 12):
+		draw_rect(Rect2(0, ty, _vw, 1), COL_WOOD_D)
 	draw_set_transform(Vector2(_ox, _oy), 0.0, Vector2.ONE)
 
 	draw_rect(Rect2(0, 0, W, H), COL_BG)
@@ -692,9 +708,12 @@ func _puff(x: float, y: float) -> void:
 
 
 func _draw_hud() -> void:
-	draw_rect(Rect2(0, 0, W, 22), COL_INK)
+	# no top bar — the labels sit straight on the table with a soft shadow
+	_text("拉麵屋", Vector2(9, 17), 11, COL_INK)
 	_text("拉麵屋", Vector2(8, 16), 11, COL_YELLOW)
-	_text("完成 " + str(served) + " 單", Vector2(W - 134, 16), 11, COL_WHITE)
+	var s := "完成 " + str(served) + " 單"
+	_text(s, Vector2(W - 133, 17), 11, COL_INK)
+	_text(s, Vector2(W - 134, 16), 11, COL_WHITE)
 
 
 func _draw_order_ticket() -> void:
@@ -1044,8 +1063,8 @@ func _draw_back_button() -> void:
 
 
 func _draw_over() -> void:
-	# full-screen dim (cover the table on every side)
-	draw_rect(Rect2(-_ox, 0, W + 2.0 * _ox, _vh), Color(0.05, 0.04, 0.07, 0.72))
+	# full-screen dim (cover the table on every side, incl. safe-area insets)
+	draw_rect(Rect2(-_ox, -_safe_t, _vw, _vh), Color(0.05, 0.04, 0.07, 0.72))
 	# a panel, vertically centred on the live screen
 	var pt := _vic_top()
 	draw_rect(Rect2(24, pt, 222, 250), Color("2a2030"))
