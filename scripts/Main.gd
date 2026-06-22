@@ -211,15 +211,15 @@ func _make_font() -> Font:
 func _build_stations() -> void:
 	# portrait: two big vats (大缸) side by side under the bowl; toppings in a row below.
 	stations.clear()
-	stations.append({"item": "soup", "name": "湯", "center": Vector2(66, 270), "r": 32,
-		"rect": Rect2(18, 230, 96, 84), "cx": 66})
-	stations.append({"item": "noodles", "name": "麵", "center": Vector2(204, 270), "r": 32,
-		"rect": Rect2(156, 230, 96, 84), "cx": 204})
+	stations.append({"item": "soup", "name": "湯", "center": Vector2(66, 360), "r": 32,
+		"rect": Rect2(18, 320, 96, 84), "cx": 66})
+	stations.append({"item": "noodles", "name": "麵", "center": Vector2(204, 360), "r": 32,
+		"rect": Rect2(156, 320, 96, 84), "cx": 204})
 	var defs := [
-		["beef", "牛肉", Vector2(45, 360), 22],
-		["scallion", "蔥花", Vector2(105, 360), 22],
-		["cilantro", "香菜", Vector2(165, 360), 22],
-		["chili", "辣椒", Vector2(225, 360), 22],
+		["beef", "牛肉", Vector2(45, 250), 22],
+		["scallion", "蔥花", Vector2(105, 250), 22],
+		["cilantro", "香菜", Vector2(165, 250), 22],
+		["chili", "辣椒", Vector2(225, 250), 22],
 	]
 	for d in defs:
 		var c: Vector2 = d[2]
@@ -266,8 +266,8 @@ func _process(delta: float) -> void:
 		steam_t -= delta
 		if steam_t <= 0.0:
 			steam_t = 0.16
-			_puff(66, 262)                            # 湯 vat — always boiling
-			_puff(204, 262)                           # 麵 vat — always boiling
+			_puff(66, 352)                            # 湯 vat — always boiling
+			_puff(204, 352)                           # 麵 vat — always boiling
 			if soup_fill > 0.0 or bowl.noodles or _base_ok():
 				_puff(BOWL_OPEN.x, BOWL_OPEN.y - 8)   # the bowl, once it holds hot broth/noodles
 
@@ -614,7 +614,7 @@ func _draw_play() -> void:
 
 	# raised little wooden platforms the bowl & toppings sit on
 	_draw_riser(Rect2(54, 178, 162, 46), 11.0)     # under the bowl
-	_draw_riser(Rect2(14, 350, 242, 30), 10.0)     # under the topping trays
+	_draw_riser(Rect2(14, 240, 242, 30), 10.0)     # toppings — right below the bowl's stand
 
 	# the bowl (top-down) in the middle of the counter
 	_draw_assembly(BOWL_C)
@@ -862,7 +862,7 @@ func _draw_station(s: Dictionary) -> void:
 		if lit:
 			_draw_ellipse_ring(c, 38, 28, COL_YELLOW)
 		if s.item == "noodles" and noodle_state == "cooking":
-			_draw_boil_gauge(Vector2(117, 268))
+			_draw_boil_gauge(Vector2(117, 358))
 		# bold label on the broth / basket
 		_text(s.name, Vector2(c.x + 1, c.y + 5), 13, COL_INK, HORIZONTAL_ALIGNMENT_CENTER)
 		_text(s.name, Vector2(c.x, c.y + 4), 13, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
