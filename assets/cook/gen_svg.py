@@ -69,9 +69,9 @@ def vat(name, liquid, liquid_d, hi, basket):
     # runs off behind the action buttons. liquid surface sits at y=32.
     extra = ""
     if basket:
-        extra = f'<ellipse cx="64" cy="30" rx="12" ry="5" fill="#cfcab4" stroke="{INK}" stroke-width="2.5"/>'
+        extra = f'<ellipse cx="62" cy="30" rx="12" ry="8" fill="#cfcab4" stroke="{INK}" stroke-width="2.5"/>'
     else:
-        extra = f'<ellipse cx="40" cy="27" rx="9" ry="3" fill="{hi}" opacity="0.6"/>'
+        extra = f'<ellipse cx="38" cy="24" rx="9" ry="4" fill="{hi}" opacity="0.6"/>'
     body = f'''
     <defs>
       <linearGradient id="cy_{name}" x1="0" y1="0" x2="1" y2="0">
@@ -82,13 +82,13 @@ def vat(name, liquid, liquid_d, hi, basket):
       </linearGradient>
     </defs>
     <!-- smooth cylinder body, plain undecorated walls -->
-    <path d="M5 30 L5 120 A48 12 0 0 0 101 120 L101 30 A48 13 0 0 1 5 30 Z"
+    <path d="M5 30 L5 112 A48 16 0 0 0 101 112 L101 30 A48 22 0 0 1 5 30 Z"
           fill="url(#cy_{name})" stroke="{INK}" stroke-width="4.5" stroke-linejoin="round"/>
-    <!-- round rim + liquid surface -->
-    <ellipse cx="53" cy="30" rx="48" ry="13" fill="#c4cad0" stroke="{INK}" stroke-width="4.5"/>
-    <ellipse cx="53" cy="30" rx="40" ry="9" fill="#888f97"/>
-    <ellipse cx="53" cy="30" rx="36" ry="7.5" fill="{liquid}"/>
-    <path d="M17 30 a36 7.5 0 0 0 72 0 a36 7.5 0 0 1 -72 0" fill="{liquid_d}"/>
+    <!-- round rim + liquid surface (fuller 3/4 oval) -->
+    <ellipse cx="53" cy="30" rx="48" ry="22" fill="#c4cad0" stroke="{INK}" stroke-width="4.5"/>
+    <ellipse cx="53" cy="30" rx="40" ry="17" fill="#888f97"/>
+    <ellipse cx="53" cy="30" rx="36" ry="15" fill="{liquid}"/>
+    <path d="M17 30 a36 15 0 0 0 72 0 a36 15 0 0 1 -72 0" fill="{liquid_d}"/>
     {extra}'''
     render(name, 106, 132, body)
 
