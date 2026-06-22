@@ -121,7 +121,7 @@ func _compute_layout() -> void:
 	# home indicator
 	if OS.get_name() == "iOS":
 		_safe_t = max(_safe_t, 38.0)
-		_safe_b = max(_safe_b, 24.0)
+		_safe_b = max(_safe_b, 30.0)
 	_safe_t = min(_safe_t, _vh * 0.2)
 	_safe_b = min(_safe_b, _vh * 0.2)
 	_oy = _safe_t
