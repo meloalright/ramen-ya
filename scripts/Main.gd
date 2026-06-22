@@ -941,21 +941,28 @@ func _draw_assembly(center: Vector2) -> void:
 # --- held ingredient on the cursor -----------------------------------
 func _draw_held(p: Vector2) -> void:
 	var label := _item_name(held)
-	var spr := _item_sprite(held)
-	if ctex.has(spr):
-		var t: Texture2D = ctex[spr]
-		draw_texture_rect(t, Rect2(p.x - t.get_width() / 2.0, p.y - t.get_height() / 2.0,
-			t.get_width(), t.get_height()), false)
+	if held in TOP_ORDER:
+		# a held pinch of the topping (you sprinkle it) — no bowl/tray icon
+		var pcol: Color = TOPPING[held].col
+		for d in [Vector2(-3, -2), Vector2(3, -2), Vector2(0, 0), Vector2(-2, 3), Vector2(3, 3)]:
+			draw_rect(Rect2(p.x + d.x - 1, p.y + d.y - 1, 3, 3), pcol)
+			draw_rect(Rect2(p.x + d.x - 1, p.y + d.y - 1, 3, 1), pcol.lightened(0.3))
 	else:
-		var col := C_SOUP
-		match held:
-			"soup": col = C_SOUP
-			"noodles": col = C_NOODLE
-			"beef": col = C_BEEF
-			_: col = TOPPING[held].col
-		draw_rect(Rect2(p.x - 9, p.y - 9, 18, 12), COL_BOWL)
-		draw_rect(Rect2(p.x - 9, p.y - 10, 18, 3), COL_BOWL_RIM)
-		draw_rect(Rect2(p.x - 6, p.y - 7, 12, 7), col)
+		var spr := _item_sprite(held)
+		if ctex.has(spr):
+			var t: Texture2D = ctex[spr]
+			draw_texture_rect(t, Rect2(p.x - t.get_width() / 2.0, p.y - t.get_height() / 2.0,
+				t.get_width(), t.get_height()), false)
+		else:
+			var col := C_SOUP
+			match held:
+				"soup": col = C_SOUP
+				"noodles": col = C_NOODLE
+				"beef": col = C_BEEF
+				_: col = TOPPING[held].col
+			draw_rect(Rect2(p.x - 9, p.y - 9, 18, 12), COL_BOWL)
+			draw_rect(Rect2(p.x - 9, p.y - 10, 18, 3), COL_BOWL_RIM)
+			draw_rect(Rect2(p.x - 6, p.y - 7, 12, 7), col)
 	# label tag + how-to / put-down hint
 	var hint := "點碗放入"
 	if held in TOP_ORDER:
