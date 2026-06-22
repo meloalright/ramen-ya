@@ -123,10 +123,16 @@ def ladle():
 
 
 def noodle_clump():
+    # big chopsticks lifting a bunch of white noodles
     body = f'''
-    <ellipse cx="24" cy="26" rx="20" ry="16" fill="#f0dd92" stroke="{INK}" stroke-width="3.5"/>
-    <g fill="none" stroke="#d7bf68" stroke-width="2.4" stroke-linecap="round">
-     <path d="M8 22 q16 10 32 0"/><path d="M8 28 q16 10 32 0"/><path d="M10 34 q14 8 28 0"/></g>'''
+    <rect x="19" y="0" width="4.6" height="30" rx="2" fill="#c98f54" stroke="{INK}" stroke-width="2.6"/>
+    <rect x="26" y="0" width="4.6" height="30" rx="2" fill="#b97f44" stroke="{INK}" stroke-width="2.6"/>
+    <ellipse cx="25" cy="27" rx="13" ry="5.5" fill="#f2efe6" stroke="{INK}" stroke-width="2.6"/>
+    <g fill="none" stroke="#f2efe6" stroke-width="3.3" stroke-linecap="round">
+      <path d="M16 28 q-3 10 1 19"/><path d="M22 29 q-1 11 2 19"/>
+      <path d="M28 29 q2 10 0 18"/><path d="M34 27 q4 9 1 16"/></g>
+    <g fill="none" stroke="#d3cdbd" stroke-width="1.3" stroke-linecap="round">
+      <path d="M22 29 q-1 11 2 19"/><path d="M28 29 q2 10 0 18"/></g>'''
     render("td_pot_noodle", 48, 48, body)
 
 

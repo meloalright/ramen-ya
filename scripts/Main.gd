@@ -1065,13 +1065,20 @@ func _draw_assembly(center: Vector2) -> void:
 
 # --- held ingredient on the cursor -----------------------------------
 func _draw_held(p: Vector2) -> void:
-	# just a small pinch of the held item's colour on the cursor — no bowl, no text
-	var col := C_SOUP
-	match held:
-		"soup": col = C_SOUP
-		"noodles": col = C_NOODLE
-		"beef": col = C_BEEF
-		_: col = TOPPING[held].col
+	# soup -> a ladleful of broth; noodles -> chopsticks lifting noodles
+	var tool := ""
+	if held == "soup":
+		tool = "td_pot_soup"
+	elif held == "noodles":
+		tool = "td_pot_noodle"
+	if tool != "" and ctex.has(tool):
+		var t: Texture2D = ctex[tool]
+		# the "business end" (broth / noodles) hangs at the cursor, grip above
+		draw_texture_rect(t, Rect2(p.x - t.get_width() / 2.0, p.y - t.get_height() + 14.0,
+			t.get_width(), t.get_height()), false)
+		return
+	# beef / toppings: a small pinch of colour on the cursor
+	var col: Color = C_BEEF if held == "beef" else TOPPING[held].col
 	for d in [Vector2(-3, -2), Vector2(3, -2), Vector2(0, 0), Vector2(-2, 3), Vector2(3, 3)]:
 		draw_rect(Rect2(p.x + d.x - 1, p.y + d.y - 1, 3, 3), col)
 		draw_rect(Rect2(p.x + d.x - 1, p.y + d.y - 1, 3, 1), col.lightened(0.3))
