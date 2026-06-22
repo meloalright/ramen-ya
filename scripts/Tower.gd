@@ -59,12 +59,23 @@ const OBST_HH := 13.0
 var obstacles: Array = []      # {pos, vy, hp, hurt}
 var obst_cd := 2.2
 
-# 大招 · 沸腾巨浪: charge by defeating enemies, then sweep the whole shaft
+# 大招: charge by defeating enemies, then unleash the SELECTED ultimate.
+#   0 沸騰巨浪 (screen sweep)  1 高湯激光 (beam)  2 時之味噌 (slow)  3 麵旋風 (spread)
 const ULT_MAX := 8
+const ULT_CHARS := ["浪", "光", "慢", "旋"]
 var ult_charge := 0
+var selected_ult := 0
+var flash := 0.0
+# 0: sweep
 var ult_active := false
 var ult_wave_y := 0.0
-var flash := 0.0
+# 1: beam
+var laser_t := 0.0
+var laser_tick := 0.0
+# 2: slow
+var slow_t := 0.0
+# 3: spread
+var spread_t := 0.0
 var puffs: Array = []          # {pos, ttl}
 var bg_y := 0.0
 
@@ -82,7 +93,7 @@ var touch_pts := {}
 const LEFT_RECT  := Rect2(16, 200, 52, 52)
 const RIGHT_RECT := Rect2(72, 200, 52, 52)
 const SHOOT_RECT := Rect2(396, 194, 70, 60)
-const ULT_RECT   := Rect2(16, 130, 108, 52)
+const ULT_RECT   := Rect2(8, 56, 122, 44)
 const BACK_RECT  := Rect2(W - 50, 4, 46, 16)
 
 @onready var cam: Camera2D = $Camera
@@ -137,6 +148,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_restart()
 		elif event.keycode in [KEY_E, KEY_SHIFT, KEY_Q]:
 			_fire_ult()
+		elif event.keycode in [KEY_1, KEY_2, KEY_3, KEY_4]:
+			selected_ult = event.keycode - KEY_1
 
 
 func _on_press(p: Vector2) -> void:
@@ -146,6 +159,10 @@ func _on_press(p: Vector2) -> void:
 	if game_over:
 		_restart()
 		return
+	for i in range(4):
+		if _chip_rect(i).has_point(p):
+			selected_ult = i
+			return
 	if ULT_RECT.has_point(p) and ult_charge >= ULT_MAX and not ult_active:
 		_fire_ult()
 		return
@@ -211,13 +228,25 @@ func _process(delta: float) -> void:
 	var dir := (1.0 if rp else 0.0) - (1.0 if lp else 0.0)
 	player_x = clamp(player_x + dir * PLAYER_SPEED * delta, PMIN_X, PMAX_X)
 
-	# shoot shockwaves upward
+	# decay ult effect timers
+	if slow_t > 0.0:
+		slow_t -= delta
+	if spread_t > 0.0:
+		spread_t -= delta
+
+	# shoot shockwaves upward (麵旋風 = 5-way spread)
 	shot_cd = max(0.0, shot_cd - delta)
 	if sp and shot_cd <= 0.0:
-		shots.append({"x": player_x, "y": PLAYER_Y - 16.0, "w": 9.0})
-		shot_cd = SHOOT_DT
+		if spread_t > 0.0:
+			for vx in [-88.0, -44.0, 0.0, 44.0, 88.0]:
+				shots.append({"x": player_x, "y": PLAYER_Y - 16.0, "w": 9.0, "vx": vx})
+			shot_cd = SHOOT_DT * 0.95
+		else:
+			shots.append({"x": player_x, "y": PLAYER_Y - 16.0, "w": 9.0, "vx": 0.0})
+			shot_cd = SHOOT_DT
 	for s in shots:
 		s.y -= SHOT_SPEED * delta
+		s.x += s.vx * delta
 		s.w = min(30.0, s.w + 42.0 * delta)
 
 	# spawn enemies at the top of the shaft (ramping up)
@@ -249,13 +278,16 @@ func _process(delta: float) -> void:
 				game_over = true
 	obstacles = obstacles.filter(func(o): return o.hp > 0 and o.pos.y < H + 24.0)
 
+	# 時之味噌: slow enemies & their bullets while active
+	var es := delta * (0.34 if slow_t > 0.0 else 1.0)
+
 	# enemies descend, weave and fire
 	for e in enemies:
-		e.pos.y += e.vy * delta
+		e.pos.y += e.vy * es
 		e.pos.x = clamp(e.x0 + sin(t * 1.4 + e.bob) * e.weave, CX_L + 14.0, CX_R - 14.0)
 		if e.hurt > 0.0:
 			e.hurt -= delta
-		e.fire -= delta
+		e.fire -= es
 		if e.fire <= 0.0 and e.pos.y > 8.0 and e.pos.y < PLAYER_Y - 24.0:
 			var aim: Vector2 = (Vector2(player_x, PLAYER_Y) - e.pos).normalized()
 			eballs.append({"pos": e.pos + Vector2(0, 10), "vel": Vector2(aim.x * 52.0, EBALL_SPEED)})
@@ -269,6 +301,32 @@ func _process(delta: float) -> void:
 			_sfx()
 			if hp <= 0:
 				game_over = true
+
+	# 高湯激光: a steerable beam melting everything in the player's column
+	if laser_t > 0.0:
+		laser_t -= delta
+		laser_tick -= delta
+		var tick := laser_tick <= 0.0
+		if tick:
+			laser_tick = 0.14
+		for e in enemies:
+			if e.hp > 0 and abs(e.pos.x - player_x) < 15.0 and e.pos.y > 4.0:
+				e.hurt = 0.1
+				if tick:
+					e.hp -= 1
+					if e.hp <= 0:
+						defeated += 1
+						puffs.append({"pos": e.pos, "ttl": 0.4})
+		for o in obstacles:
+			if o.hp > 0 and abs(o.pos.x - player_x) < 15.0:
+				o.hurt = 0.1
+				if tick:
+					o.hp -= 1
+					if o.hp <= 0:
+						puffs.append({"pos": o.pos, "ttl": 0.4})
+		for b in eballs:
+			if abs(b.pos.x - player_x) < 15.0:
+				b.pos.y = 9999.0
 
 	# shockwaves: blocked by obstacles (absorbed), otherwise damage enemies
 	for s in shots:
@@ -296,7 +354,7 @@ func _process(delta: float) -> void:
 
 	# enemy bullets: blocked by obstacles (cover), else hit the player
 	for b in eballs:
-		b.pos += b.vel * delta
+		b.pos += b.vel * es
 		for o in obstacles:
 			if o.hp > 0 and abs(b.pos.x - o.pos.x) < OBST_HW + 4.0 and abs(b.pos.y - o.pos.y) < OBST_HH + 4.0:
 				b.pos.y = 9999.0
@@ -332,18 +390,34 @@ func _restart() -> void:
 	obst_cd = 2.2
 	ult_charge = 0
 	ult_active = false
+	laser_t = 0.0
+	slow_t = 0.0
+	spread_t = 0.0
 	flash = 0.0
 	game_over = false
 
 
+func _chip_rect(i: int) -> Rect2:
+	return Rect2(8 + i * 33, 24, 30, 26)
+
+
 func _fire_ult() -> void:
-	if ult_active or ult_charge < ULT_MAX:
+	if ult_active or laser_t > 0.0 or ult_charge < ULT_MAX:
 		return
-	ult_active = true
-	ult_wave_y = H + 12.0
 	ult_charge = 0
-	flash = 0.6
+	flash = 0.45
 	_sfx()
+	match selected_ult:
+		0:                       # 沸騰巨浪 — sweep the whole shaft
+			ult_active = true
+			ult_wave_y = H + 12.0
+		1:                       # 高湯激光 — a beam you can steer
+			laser_t = 1.9
+			laser_tick = 0.0
+		2:                       # 時之味噌 — slow enemies & bullets
+			slow_t = 3.6
+		3:                       # 麵旋風 — 5-way spread for a few seconds
+			spread_t = 5.0
 
 
 func _sfx() -> void:
@@ -382,6 +456,12 @@ func _draw() -> void:
 		draw_circle(b.pos + Vector2(-1.4, -1.4), 1.6, Color(1, 1, 1, 0.85))
 	for s in shots:
 		_draw_wave(s)
+	# 高湯激光 beam
+	if laser_t > 0.0:
+		var bw := 13.0 + sin(t * 40.0) * 1.5
+		draw_rect(Rect2(player_x - bw, 0, bw * 2.0, PLAYER_Y - 14.0), Color(0.95, 0.7, 0.3, 0.28))
+		draw_rect(Rect2(player_x - bw * 0.6, 0, bw * 1.2, PLAYER_Y - 14.0), Color(1.0, 0.85, 0.45, 0.5))
+		draw_rect(Rect2(player_x - 2, 0, 4, PLAYER_Y - 14.0), Color(1, 1, 1, 0.85))
 	_draw_player()
 	for p in puffs:
 		var a: float = clamp(p.ttl / 0.4, 0.0, 1.0)
@@ -396,6 +476,11 @@ func _draw() -> void:
 		while bx < CX_R:
 			draw_arc(Vector2(bx, wy + 7.0), 15.0, PI * 1.1, PI * 1.9, 12, Color(1, 1, 1, 0.85), 3.0)
 			bx += 38.0
+	if slow_t > 0.0:
+		draw_rect(Rect2(CX_L, 0, CX_R - CX_L, H), Color(0.4, 0.55, 1.0, 0.12))
+		_text("時之味噌 %.0f" % ceil(slow_t), Vector2(W / 2.0, 36), 9, Color(0.7, 0.8, 1.0), HORIZONTAL_ALIGNMENT_CENTER)
+	if spread_t > 0.0:
+		_text("麵旋風 %.0f" % ceil(spread_t), Vector2(W / 2.0, 36), 9, C_WAVE, HORIZONTAL_ALIGNMENT_CENTER)
 	if flash > 0.0:
 		draw_rect(Rect2(0, 0, W, H), Color(1, 1, 1, flash * 0.55))
 
@@ -475,7 +560,14 @@ func _draw_heart(c: Vector2, full: bool) -> void:
 
 
 func _draw_buttons() -> void:
-	# 大招 button + charge gauge (left panel, above the move buttons)
+	# 大招 selector chips (tap or 1-4)
+	for i in range(4):
+		var cr := _chip_rect(i)
+		var sel := i == selected_ult
+		draw_rect(cr, Color(0.95, 0.6, 0.25, 0.5 if sel else 0.16))
+		draw_rect(cr, C_YELLOW if sel else Color(1, 1, 1, 0.4), false, 2.0 if sel else 1.0)
+		_text(ULT_CHARS[i], cr.get_center() + Vector2(0, 5), 13, C_WHITE if sel else Color(1, 1, 1, 0.7), HORIZONTAL_ALIGNMENT_CENTER)
+	# fire button + charge gauge (shows the selected ult)
 	var ready := ult_charge >= ULT_MAX
 	draw_rect(ULT_RECT, Color(0.95, 0.55, 0.2, 0.5 if ready else 0.18))
 	if not ready:
@@ -483,7 +575,7 @@ func _draw_buttons() -> void:
 		draw_rect(Rect2(ULT_RECT.position, Vector2(ULT_RECT.size.x * f, ULT_RECT.size.y)), Color(0.95, 0.6, 0.3, 0.4))
 	var lit := ready and int(t * 4.0) % 2 == 0
 	draw_rect(ULT_RECT, C_YELLOW if lit else Color(1, 1, 1, 0.55), false, 2.5 if lit else 1.5)
-	var label := "大招！" if ready else "大招 %d/%d" % [ult_charge, ULT_MAX]
+	var label: String = ("大招 " + ULT_CHARS[selected_ult] + "！") if ready else "大招 %d/%d" % [ult_charge, ULT_MAX]
 	_text(label, ULT_RECT.get_center() + Vector2(0, 4), 11 if ready else 9,
 		C_WHITE if ready else Color(1, 1, 1, 0.7), HORIZONTAL_ALIGNMENT_CENTER)
 
