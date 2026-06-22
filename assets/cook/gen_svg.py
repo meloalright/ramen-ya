@@ -70,31 +70,30 @@ def vat(name, liquid, liquid_d, hi, basket):
     # opening surface sits at y=36.
     extra = ""
     if basket:
-        extra = f'''<ellipse cx="54" cy="36" rx="13" ry="5" fill="#cfcab4" stroke="{INK}" stroke-width="3"/>
-        <g stroke="#d7b25a" stroke-width="2"><path d="M43 36 h22 M43 38 h22 M43 34 h22"/></g>'''
+        extra = f'''<ellipse cx="54" cy="36" rx="13" ry="7" fill="#cfcab4" stroke="{INK}" stroke-width="3"/>
+        <g stroke="#d7b25a" stroke-width="2"><path d="M43 36 h22 M43 40 h22 M43 32 h22"/></g>'''
     else:
-        extra = f'<ellipse cx="34" cy="34" rx="7" ry="2.5" fill="{hi}" opacity="0.75"/>'
+        extra = f'<ellipse cx="34" cy="31" rx="7" ry="3.5" fill="{hi}" opacity="0.75"/>'
     body = f'''
     <!-- side loop handles -->
-    <ellipse cx="4" cy="54" rx="4" ry="7.5" fill="none" stroke="#7e868e" stroke-width="4"/>
-    <ellipse cx="84" cy="54" rx="4" ry="7.5" fill="none" stroke="#7e868e" stroke-width="4"/>
-    <!-- pot body: straight metal walls, flat-cut bottom (runs off frame) -->
-    <path d="M6 36 L6 120 L82 120 L82 36 A38 14 0 0 1 6 36 Z"
+    <ellipse cx="4" cy="48" rx="4" ry="7" fill="none" stroke="#7e868e" stroke-width="4"/>
+    <ellipse cx="84" cy="48" rx="4" ry="7" fill="none" stroke="#7e868e" stroke-width="4"/>
+    <!-- pot body: straight metal walls, flat-cut bottom (hidden off frame) -->
+    <path d="M6 36 L6 104 L82 104 L82 36 A38 22 0 0 1 6 36 Z"
           fill="#a7afb7" stroke="{INK}" stroke-width="5" stroke-linejoin="round"/>
     <!-- metal shading: left sheen, centre highlight, right shadow -->
-    <rect x="9" y="40" width="12" height="80" fill="#c8ced4" opacity="0.55"/>
-    <rect x="40" y="42" width="7" height="78" fill="#dfe4e8" opacity="0.4"/>
-    <rect x="64" y="40" width="16" height="80" fill="#6f767e" opacity="0.5"/>
-    <!-- welded band rings around the body -->
-    <path d="M7 70 Q44 80 81 70" fill="none" stroke="#80878f" stroke-width="3"/>
-    <path d="M7 98 Q44 108 81 98" fill="none" stroke="#80878f" stroke-width="3"/>
-    <!-- rim + liquid surface -->
-    <ellipse cx="44" cy="36" rx="38" ry="14" fill="#c4cad0" stroke="{INK}" stroke-width="5"/>
-    <ellipse cx="44" cy="36" rx="31" ry="9" fill="#888f97"/>
-    <ellipse cx="44" cy="36" rx="28" ry="7.5" fill="{liquid}"/>
-    <path d="M16 36 a28 7.5 0 0 0 56 0 a28 7.5 0 0 1 -56 0" fill="{liquid_d}"/>
+    <rect x="9" y="42" width="12" height="62" fill="#c8ced4" opacity="0.55"/>
+    <rect x="40" y="46" width="7" height="58" fill="#dfe4e8" opacity="0.4"/>
+    <rect x="64" y="42" width="16" height="62" fill="#6f767e" opacity="0.5"/>
+    <!-- welded band ring around the body -->
+    <path d="M7 86 Q44 96 81 86" fill="none" stroke="#80878f" stroke-width="3"/>
+    <!-- rim + liquid surface (3/4 overhead: a fuller oval mouth) -->
+    <ellipse cx="44" cy="36" rx="38" ry="22" fill="#c4cad0" stroke="{INK}" stroke-width="5"/>
+    <ellipse cx="44" cy="36" rx="31" ry="16" fill="#888f97"/>
+    <ellipse cx="44" cy="36" rx="28" ry="14" fill="{liquid}"/>
+    <path d="M16 36 a28 14 0 0 0 56 0 a28 14 0 0 1 -56 0" fill="{liquid_d}"/>
     {extra}'''
-    render(name, 88, 124, body)
+    render(name, 88, 104, body)
 
 
 # ---- ingredient trays -----------------------------------------------
