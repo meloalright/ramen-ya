@@ -70,7 +70,7 @@ def vat(name, liquid, liquid_d, hi, basket):
         extra = f'''<ellipse cx="56" cy="36" rx="16" ry="11" fill="#cfcab4" stroke="{INK}" stroke-width="3"/>
         <g stroke="#d7b25a" stroke-width="2"><path d="M44 36 h24 M44 40 h24 M44 32 h24"/></g>'''
     else:
-        extra = '<ellipse cx="34" cy="30" rx="9" ry="5" fill="#f2bd5c" opacity="0.7"/>'
+        extra = f'<ellipse cx="34" cy="30" rx="9" ry="5" fill="{hi}" opacity="0.7"/>'
     body = f'''
     <path d="M5 36 C5 16 83 16 83 36 C83 70 66 86 44 86 C22 86 5 70 5 36 Z"
           fill="#8a5a3c" stroke="{INK}" stroke-width="5" stroke-linejoin="round"/>
@@ -124,7 +124,7 @@ def noodle_clump():
 def main():
     bowl_empty(); broth(); noodles(); beef(); ladle(); noodle_clump()
     vat("td_vat_soup", "#eaa43e", "#d18b2c", "#f2bd5c", False)
-    vat("td_vat_noodle", "#dfe3d2", "#c6ccb4", "#eef0e4", True)
+    vat("td_vat_noodle", "#ece8dc", "#d6d1c0", "#f8f5ee", False)   # 白汤 (noodles appear only while cooking)
     tray("td_box_beef", "#b06246", "#8a4a33", "beef")
     tray("td_box_scallion", "#8fd25a", "#6fb244", "scallion")
     tray("td_box_cilantro", "#4e9e58", "#3a7a42", "cilantro")

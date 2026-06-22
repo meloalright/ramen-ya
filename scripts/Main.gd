@@ -800,6 +800,29 @@ func _draw_ticket(i: int) -> void:
 	draw_rect(Rect2(r.position.x + 8, r.position.y + r.size.y - 7, int(pw * pf), 3), pc)
 
 
+func _draw_noodle_nest(ctr: Vector2) -> void:
+	var cream := Color("efe6cf")
+	var cream_d := Color("d6cbab")
+	var rx := 17.0
+	var ry := 12.0
+	var pts := PackedVector2Array()
+	var pts2 := PackedVector2Array()
+	for i in range(22):
+		var a := TAU * i / 22.0
+		pts.append(ctr + Vector2(cos(a) * rx, sin(a) * ry))
+		pts2.append(ctr + Vector2(cos(a) * (rx - 2.5), sin(a) * (ry - 2.5)))
+	draw_colored_polygon(pts, cream_d)
+	draw_colored_polygon(pts2, cream)
+	# wavy noodle strands
+	for yy in [-4.0, 0.0, 4.0]:
+		var sp := PackedVector2Array()
+		var x := -14.0
+		while x <= 14.0:
+			sp.append(ctr + Vector2(x, yy + sin(x * 0.55) * 1.6))
+			x += 2.0
+		draw_polyline(sp, cream_d, 1.6)
+
+
 func _draw_station(s: Dictionary) -> void:
 	var c: Vector2 = s.center
 	var rr: int = s.r
@@ -811,6 +834,9 @@ func _draw_station(s: Dictionary) -> void:
 			# draw so the vat's opening (sprite y=VAT_OPEN_Y) lands at the station center
 			draw_texture_rect(vt, Rect2(c.x - vt.get_width() / 2.0, c.y - VAT_OPEN_Y,
 				vt.get_width(), vt.get_height()), false)
+		# noodles only show up once they're cooking: a cream nest (線團)
+		if s.item == "noodles" and noodle_state == "cooking":
+			_draw_noodle_nest(Vector2(c.x, c.y - 3))
 		var lit: bool = (s.item == "soup" and held == "soup") \
 			or (s.item == "noodles" and (held == "noodles" or noodle_state == "cooking"))
 		if lit:
