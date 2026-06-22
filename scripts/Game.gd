@@ -19,22 +19,6 @@ var up_day := 0          # +20s business day per level
 const UP_MAX := 5
 
 
-func _ready() -> void:
-	# portrait screens (phones / iOS) fill the height via keep_width; on a
-	# landscape window (desktop browser) fall back to keep so nothing is clipped.
-	_apply_aspect()
-	get_tree().root.size_changed.connect(_apply_aspect)
-
-
-func _apply_aspect() -> void:
-	var root := get_tree().root
-	if root == null:
-		return
-	var sz := root.size
-	root.content_scale_aspect = (Window.CONTENT_SCALE_ASPECT_KEEP_WIDTH
-		if sz.y >= sz.x else Window.CONTENT_SCALE_ASPECT_KEEP)
-
-
 func has_save() -> bool:
 	return FileAccess.file_exists(PATH)
 

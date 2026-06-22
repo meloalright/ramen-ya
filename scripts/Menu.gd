@@ -77,12 +77,14 @@ func _start() -> void:
 func _draw() -> void:
 	# fill the whole (possibly taller) screen so there are no black bars, then
 	# centre the cover: top margin extends the noren green, bottom the counter wood
-	var vh: float = get_viewport_rect().size.y
-	var oy: float = floor(max(0.0, (vh - H) / 2.0))
-	draw_rect(Rect2(0, 0, W, vh), Color("a9743f"))
-	if oy > 0.0:
-		draw_rect(Rect2(0, 0, W, oy + 1.0), Color("3f8f6a"))
-	draw_set_transform(Vector2(0, oy), 0.0, Vector2.ONE)
+	var vp: Vector2 = get_viewport_rect().size
+	var ox: float = floor(max(0.0, (vp.x - W) / 2.0))
+	var oy: float = floor(max(0.0, (vp.y - H) / 2.0))
+	# extend the cover's three bands (noren / wall / counter) to fill any screen
+	draw_rect(Rect2(0, 0, vp.x, vp.y), Color("e3cba0"))                          # wall
+	draw_rect(Rect2(0, 0, vp.x, oy + 58), Color("3f8f6a"))                       # noren green
+	draw_rect(Rect2(0, oy + 280, vp.x, vp.y - (oy + 280)), Color("a9743f"))      # counter wood
+	draw_set_transform(Vector2(ox, oy), 0.0, Vector2.ONE)
 
 	draw_rect(Rect2(0, 0, W, H), COL_BG)
 	# the cashier counter as the full cover (art is exactly 2x the menu size)
