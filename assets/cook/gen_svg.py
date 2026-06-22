@@ -74,12 +74,12 @@ def vat(name, liquid, liquid_d, hi, basket):
     else:
         extra = f'<path d="M24 20 L44 20 L40 27 L22 27 Z" fill="{hi}" opacity="0.5"/>'
     body = f'''
-    <!-- tall square metal body -->
-    <path d="M6 50 L6 160 L100 160 L100 50 Z" fill="#a7afb7" stroke="{INK}" stroke-width="4.5" stroke-linejoin="round"/>
-    <rect x="10" y="52" width="12" height="108" fill="#c8ced4" opacity="0.5"/>
-    <rect x="36" y="54" width="6" height="106" fill="#dfe4e8" opacity="0.32"/>
-    <rect x="80" y="52" width="20" height="108" fill="#6f767e" opacity="0.45"/>
-    <path d="M6 92 L100 92 M6 126 L100 126" stroke="#80878f" stroke-width="2.5"/>
+    <!-- square metal body (a bit taller than the bowl, but clears the buttons) -->
+    <path d="M6 50 L6 132 L100 132 L100 50 Z" fill="#a7afb7" stroke="{INK}" stroke-width="4.5" stroke-linejoin="round"/>
+    <rect x="10" y="52" width="12" height="80" fill="#c8ced4" opacity="0.5"/>
+    <rect x="36" y="54" width="6" height="78" fill="#dfe4e8" opacity="0.32"/>
+    <rect x="80" y="52" width="20" height="80" fill="#6f767e" opacity="0.45"/>
+    <path d="M6 86 L100 86 M6 114 L100 114" stroke="#80878f" stroke-width="2.5"/>
     <!-- top rim frame (square opening) -->
     <path d="M12 14 L94 14 L100 50 L6 50 Z" fill="#c4cad0" stroke="{INK}" stroke-width="4.5" stroke-linejoin="round"/>
     <path d="M16 16 L38 16 L31 48 L10 48 Z" fill="#dfe4e8" opacity="0.32"/>
@@ -88,7 +88,7 @@ def vat(name, liquid, liquid_d, hi, basket):
     <path d="M21 19 L85 19 L90 46 L16 46 Z" fill="{liquid}"/>
     <path d="M16 46 L90 46 L88 39 L18 39 Z" fill="{liquid_d}"/>
     {extra}'''
-    render(name, 106, 160, body)
+    render(name, 106, 132, body)
 
 
 # ---- ingredient trays -----------------------------------------------
