@@ -15,12 +15,8 @@ const H := 480
 # on-screen "back to menu" button (also bound to ESC / M)
 const BACK_RECT := Rect2(W - 52, 4, 48, 15)
 
-# action buttons
-const CLEAR_RECT := Rect2(22, 440, 106, 28)
-const SERVE_RECT := Rect2(142, 440, 106, 28)
-# victory screen buttons
-const MENU_RECT := Rect2(36, 300, 92, 30)
-const NEXT_RECT := Rect2(142, 300, 92, 30)
+# action buttons + victory buttons are anchored to the live screen — see
+# _clear_rect()/_serve_rect()/_menu_rect()/_next_rect()
 
 # the assembly bowl (slightly-tilted overhead) — click target to add / sprinkle.
 const BOWL_C := Vector2(135, 152)
@@ -99,8 +95,17 @@ var held: String = ""              # "" or soup/noodles/beef/scallion/cilantro/c
 var held_q := ""                   # quality of held noodles: raw / ok / over
 var bowl_nq := ""                  # noodle quality placed in the bowl
 var mouse_pos := Vector2(W / 2.0, H / 2.0)
-var _ox := 0.0   # offsets that centre the 270x480 canvas; the table fills the rest
-var _oy := 0.0
+var _ox := 0.0     # horizontal offset that centres the 270-wide column
+var _oy := 0.0     # always 0 (content is top-anchored); kept for input maths
+var _vh := float(H) # live viewport height (action buttons anchor to its bottom)
+
+
+# bottom-anchored action buttons + centred victory buttons (responsive layout)
+func _clear_rect() -> Rect2: return Rect2(22, _vh - 40.0, 106, 28)
+func _serve_rect() -> Rect2: return Rect2(142, _vh - 40.0, 106, 28)
+func _vic_top() -> float: return floor((_vh - 250.0) / 2.0)
+func _menu_rect() -> Rect2: return Rect2(36, _vic_top() + 188.0, 92, 30)
+func _next_rect() -> Rect2: return Rect2(142, _vic_top() + 188.0, 92, 30)
 
 # 麵鍋 cooking: you must boil a portion and lift it at the right moment
 var noodle_state := "empty"        # empty / cooking
@@ -288,7 +293,8 @@ func _process(delta: float) -> void:
 
 	var _vp: Vector2 = get_viewport_rect().size
 	_ox = floor(max(0.0, (_vp.x - W) / 2.0))
-	_oy = floor(max(0.0, (_vp.y - H) / 2.0))
+	_oy = 0.0
+	_vh = _vp.y
 	mouse_pos = get_global_mouse_position() - Vector2(_ox, _oy)
 
 	if state == State.PLAY:
@@ -370,17 +376,17 @@ func _handle_click(p: Vector2) -> void:
 		get_tree().change_scene_to_file("res://scenes/Menu.tscn")
 		return
 	if state == State.OVER:
-		if MENU_RECT.has_point(p):
+		if _menu_rect().has_point(p):
 			get_tree().change_scene_to_file("res://scenes/Menu.tscn")
 		else:
 			_start_game()      # 再來一單 button, or tap anywhere
 		return
 
 	# action buttons
-	if SERVE_RECT.has_point(p):
+	if _serve_rect().has_point(p):
 		_serve()
 		return
-	if CLEAR_RECT.has_point(p):
+	if _clear_rect().has_point(p):
 		_reset_bowl()
 		_spawn_float(BOWL_C, "倒掉了", COL_YELLOW)
 		return
@@ -582,7 +588,8 @@ func _draw() -> void:
 	# bottom margin as more counter.
 	var vp: Vector2 = get_viewport_rect().size
 	_ox = floor(max(0.0, (vp.x - W) / 2.0))
-	_oy = floor(max(0.0, (vp.y - H) / 2.0))
+	_oy = 0.0
+	_vh = vp.y
 	# the prep table extends to fill the whole screen, whatever its size
 	draw_rect(Rect2(0, 0, vp.x, vp.y), COL_WOOD)
 	for ty in range(0, int(vp.y), 12):
@@ -651,8 +658,8 @@ func _draw_play() -> void:
 		draw_rect(Rect2(p.pos.x - 2, p.pos.y - 2, 4, 4), Color(1, 1, 1, a))
 
 	# action buttons
-	_draw_button(CLEAR_RECT, "倒掉", COL_RED)
-	_draw_button(SERVE_RECT, "上菜", COL_GREEN)
+	_draw_button(_clear_rect(), "倒掉", COL_RED)
+	_draw_button(_serve_rect(), "上菜", COL_GREEN)
 
 	_draw_hud()
 
@@ -1037,13 +1044,15 @@ func _draw_back_button() -> void:
 
 
 func _draw_over() -> void:
-	draw_rect(Rect2(0, 0, W, H), Color(0.05, 0.04, 0.07, 0.72))
-	# a panel
-	draw_rect(Rect2(24, 112, 222, 250), Color("2a2030"))
-	draw_rect(Rect2(24, 112, 222, 250), COL_YELLOW, false, 2.0)
-	_text("上菜成功！", Vector2(135, 142), 19, COL_GREEN, HORIZONTAL_ALIGNMENT_CENTER)
+	# full-screen dim (cover the table on every side)
+	draw_rect(Rect2(-_ox, 0, W + 2.0 * _ox, _vh), Color(0.05, 0.04, 0.07, 0.72))
+	# a panel, vertically centred on the live screen
+	var pt := _vic_top()
+	draw_rect(Rect2(24, pt, 222, 250), Color("2a2030"))
+	draw_rect(Rect2(24, pt, 222, 250), COL_YELLOW, false, 2.0)
+	_text("上菜成功！", Vector2(135, pt + 30.0), 19, COL_GREEN, HORIZONTAL_ALIGNMENT_CENTER)
 	# the finished bowl (scaled preview)
-	var bc := Vector2(135, 200)
+	var bc := Vector2(135, pt + 88.0)
 	var sz := 86.0
 	var dst := Rect2(bc.x - sz / 2.0, bc.y - sz / 2.0, sz, sz)
 	if ctex.has("td_bowl"):
@@ -1057,12 +1066,12 @@ func _draw_over() -> void:
 	# star rating (always 3 slots)
 	var sx0 := 135.0 - 3 * 18.0 / 2.0 + 9.0
 	for i in range(3):
-		_draw_star(Vector2(sx0 + i * 18.0, 258.0), i < stars)
+		_draw_star(Vector2(sx0 + i * 18.0, pt + 146.0), i < stars)
 	var comment := "完美的一碗！" if stars >= 3 else "好吃,麵的火候再練練"
-	_text(comment, Vector2(135, 278), 10, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	_text(comment, Vector2(135, pt + 166.0), 10, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 	# buttons
-	_draw_button(MENU_RECT, "回主選單", COL_PANEL_HI)
-	_draw_button(NEXT_RECT, "再來一單", COL_GREEN)
+	_draw_button(_menu_rect(), "回主選單", COL_PANEL_HI)
+	_draw_button(_next_rect(), "再來一單", COL_GREEN)
 
 
 func _draw_star(c: Vector2, full: bool) -> void:
