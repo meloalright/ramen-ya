@@ -115,23 +115,28 @@ def tray(name, fill, fill_d, chunky):
 
 
 def ladle():
+    # side view: a deep scoop of broth with the handle angled up to the right
     body = f'''
-    <rect x="22" y="2" width="5" height="30" rx="2.5" fill="#9a6a3a" stroke="{INK}" stroke-width="3"/>
-    <path d="M6 34 a18 12 0 0 0 36 0 Z" fill="#cfcab4" stroke="{INK}" stroke-width="3.5"/>
-    <ellipse cx="24" cy="34" rx="16" ry="6" fill="#eaa43e" stroke="{INK}" stroke-width="3"/>'''
+    <path d="M33 21 L45 6" stroke="{INK}" stroke-width="6.5" stroke-linecap="round"/>
+    <path d="M33 21 L45 6" stroke="#9a6a3a" stroke-width="4" stroke-linecap="round"/>
+    <path d="M8 23 L8 27 Q8 43 23 43 Q38 43 38 27 L38 23 Z" fill="#c9c4b4" stroke="{INK}" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M11 24 Q11 40 23 40 Q35 40 35 24 Z" fill="#eaa43e"/>
+    <ellipse cx="23" cy="24" rx="14.5" ry="3.6" fill="#f2b65a" stroke="{INK}" stroke-width="2.6"/>'''
     render("td_pot_soup", 48, 48, body)
 
 
 def noodle_clump():
-    # big chopsticks gripping a few white noodle strands (just strands, no clump)
+    # side view: chopsticks held at an angle, white noodle strands draped off the tips
     body = f'''
-    <rect x="19" y="0" width="4.6" height="28" rx="2" fill="#c98f54" stroke="{INK}" stroke-width="2.6"/>
-    <rect x="26" y="0" width="4.6" height="28" rx="2" fill="#b97f44" stroke="{INK}" stroke-width="2.6"/>
+    <line x1="9" y1="32" x2="41" y2="5" stroke="{INK}" stroke-width="6.5" stroke-linecap="round"/>
+    <line x1="9" y1="32" x2="41" y2="5" stroke="#c98f54" stroke-width="3.8" stroke-linecap="round"/>
+    <line x1="15" y1="36" x2="46" y2="11" stroke="{INK}" stroke-width="6.5" stroke-linecap="round"/>
+    <line x1="15" y1="36" x2="46" y2="11" stroke="#b97f44" stroke-width="3.8" stroke-linecap="round"/>
     <g fill="none" stroke="#f2efe6" stroke-width="3" stroke-linecap="round">
-      <path d="M15 24 q-2 12 2 22"/><path d="M21 25 q-1 12 1 22"/>
-      <path d="M27 25 q1 12 0 21"/><path d="M33 24 q3 11 1 19"/></g>
+      <path d="M9 31 q-3 9 0 16"/><path d="M13 33 q-1 9 1 15"/>
+      <path d="M17 35 q1 9 -1 14"/><path d="M21 36 q2 8 0 13"/></g>
     <g fill="none" stroke="#d3cdbd" stroke-width="1.2" stroke-linecap="round">
-      <path d="M21 25 q-1 12 1 22"/><path d="M27 25 q1 12 0 21"/></g>'''
+      <path d="M13 33 q-1 9 1 15"/><path d="M17 35 q1 9 -1 14"/></g>'''
     render("td_pot_noodle", 48, 48, body)
 
 
