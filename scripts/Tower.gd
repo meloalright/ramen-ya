@@ -50,6 +50,14 @@ var spawn_cd := 0.7
 var spawn_dt := 1.5
 var enemy_vy := 30.0
 var defeated := 0
+
+# destructible obstacles: block both shockwaves and bullets, hurt you on
+# contact, and break after a few taps.
+const OBST_HP := 3
+const OBST_HW := 17.0
+const OBST_HH := 13.0
+var obstacles: Array = []      # {pos, vy, hp, hurt}
+var obst_cd := 2.2
 var puffs: Array = []          # {pos, ttl}
 var bg_y := 0.0
 
@@ -124,8 +132,19 @@ func _unhandled_input(event: InputEvent) -> void:
 func _on_press(p: Vector2) -> void:
 	if BACK_RECT.has_point(p):
 		_exit()
-	elif game_over:
+		return
+	if game_over:
 		_restart()
+		return
+	# tap an obstacle (in the play column) to chip it — a few taps breaks it
+	for o in obstacles:
+		if o.hp > 0 and abs(p.x - o.pos.x) < OBST_HW + 3.0 and abs(p.y - o.pos.y) < OBST_HH + 3.0:
+			o.hp -= 1
+			o.hurt = 0.12
+			_sfx()
+			if o.hp <= 0:
+				puffs.append({"pos": o.pos, "ttl": 0.4})
+			break
 
 
 func _touch_in(r: Rect2) -> bool:
@@ -178,6 +197,27 @@ func _process(delta: float) -> void:
 		enemy_vy = min(58.0, enemy_vy + 0.6)
 		spawn_cd = spawn_dt
 
+	# spawn obstacles (less often)
+	obst_cd -= delta
+	if obst_cd <= 0.0:
+		obstacles.append({"pos": Vector2(randf_range(CX_L + 26.0, CX_R - 26.0), -16.0),
+			"vy": enemy_vy * 0.95, "hp": OBST_HP, "hurt": 0.0})
+		obst_cd = randf_range(2.8, 4.6)
+
+	# obstacles descend; crashing into the player hurts
+	for o in obstacles:
+		o.pos.y += o.vy * delta
+		if o.hurt > 0.0:
+			o.hurt -= delta
+		if invuln <= 0.0 and o.hp > 0 and abs(o.pos.x - player_x) < OBST_HW + 6.0 and abs(o.pos.y - PLAYER_Y) < OBST_HH + 10.0:
+			hp -= 1
+			invuln = INVULN
+			o.hurt = 0.12
+			_sfx()
+			if hp <= 0:
+				game_over = true
+	obstacles = obstacles.filter(func(o): return o.hp > 0 and o.pos.y < H + 24.0)
+
 	# enemies descend, weave and fire
 	for e in enemies:
 		e.pos.y += e.vy * delta
@@ -199,8 +239,16 @@ func _process(delta: float) -> void:
 			if hp <= 0:
 				game_over = true
 
-	# shockwaves vs enemies
+	# shockwaves: blocked by obstacles (absorbed), otherwise damage enemies
 	for s in shots:
+		var blocked := false
+		for o in obstacles:
+			if o.hp > 0 and abs(o.pos.x - s.x) < OBST_HW + s.w * 0.5 and abs(o.pos.y - s.y) < OBST_HH + 6.0:
+				s.y = -999.0
+				blocked = true
+				break
+		if blocked:
+			continue
 		for e in enemies:
 			if e.hp > 0 and abs(e.pos.x - s.x) < s.w * 0.6 + 4.0 and abs(e.pos.y - s.y) < 12.0:
 				e.hp -= 1
@@ -214,9 +262,13 @@ func _process(delta: float) -> void:
 	shots = shots.filter(func(s): return s.y > -24.0)
 	enemies = enemies.filter(func(e): return e.hp > 0 and e.pos.y < H + 22.0)
 
-	# enemy bullets vs player
+	# enemy bullets: blocked by obstacles (cover), else hit the player
 	for b in eballs:
 		b.pos += b.vel * delta
+		for o in obstacles:
+			if o.hp > 0 and abs(b.pos.x - o.pos.x) < OBST_HW + 4.0 and abs(b.pos.y - o.pos.y) < OBST_HH + 4.0:
+				b.pos.y = 9999.0
+				break
 		if invuln <= 0.0 and abs(b.pos.x - player_x) < 11.0 and abs(b.pos.y - PLAYER_Y) < 14.0:
 			hp -= 1
 			invuln = INVULN
@@ -240,11 +292,12 @@ func _restart() -> void:
 	hp = HP_MAX
 	invuln = 0.0
 	player_x = 240.0
-	enemies.clear(); eballs.clear(); shots.clear(); puffs.clear()
+	enemies.clear(); eballs.clear(); shots.clear(); puffs.clear(); obstacles.clear()
 	defeated = 0
 	spawn_dt = 1.5
 	enemy_vy = 30.0
 	spawn_cd = 0.7
+	obst_cd = 2.2
 	game_over = false
 
 
@@ -276,6 +329,8 @@ func _draw() -> void:
 
 	for e in enemies:
 		_draw_monster(e)
+	for o in obstacles:
+		_draw_obstacle(o)
 	for b in eballs:
 		draw_circle(b.pos, 6.0, INK)
 		draw_circle(b.pos, 5.0, C_EBALL)
@@ -314,6 +369,22 @@ func _draw_monster(e: Dictionary) -> void:
 	draw_line(p + Vector2(-4, 6), p + Vector2(4, 6), INK, 1.6)
 	for i in range(int(e.hp)):
 		draw_rect(Rect2(p.x - 5 + i * 5, p.y - 20, 3, 2), C_YELLOW)
+
+
+func _draw_obstacle(o: Dictionary) -> void:
+	var p: Vector2 = o.pos
+	var col: Color = Color("a8946a") if o.hurt > 0.0 else Color("857252")
+	draw_rect(Rect2(p.x - OBST_HW, p.y - OBST_HH, OBST_HW * 2, OBST_HH * 2), INK)
+	draw_rect(Rect2(p.x - OBST_HW + 2, p.y - OBST_HH + 2, OBST_HW * 2 - 4, OBST_HH * 2 - 4), col)
+	draw_rect(Rect2(p.x - OBST_HW + 2, p.y - OBST_HH + 2, OBST_HW * 2 - 4, 3), Color(1, 1, 1, 0.18))
+	# cracks grow as it takes taps
+	var dmg := OBST_HP - int(o.hp)
+	if dmg >= 1:
+		draw_line(p + Vector2(-8, -9), p + Vector2(0, 3), INK, 1.6)
+		draw_line(p + Vector2(0, 3), p + Vector2(-4, 10), INK, 1.6)
+	if dmg >= 2:
+		draw_line(p + Vector2(9, -8), p + Vector2(1, 0), INK, 1.6)
+		draw_line(p + Vector2(1, 0), p + Vector2(8, 9), INK, 1.6)
 
 
 func _draw_player() -> void:
