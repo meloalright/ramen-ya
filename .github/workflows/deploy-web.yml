@@ -40,6 +40,18 @@ jobs:
           mkdir -p build
           godot --headless --verbose --export-release "Web" build/index.html
 
+      - name: Cache-bust assets (sha-suffixed filenames)
+        run: |
+          cd build
+          SHA=$(echo "${GITHUB_SHA}" | cut -c1-8)
+          for f in index.*; do
+            [ "$f" = "index.html" ] && continue
+            mv "$f" "${f/index./index.$SHA.}"
+          done
+          sed -i "s/index\./index.$SHA./g" index.html
+          sed -i "s/\"executable\":\"index\"/\"executable\":\"index.$SHA\"/" index.html
+          echo "rewrote references to index.$SHA.*"
+
       - name: Prepare site for static hosting
         run: |
           rm -f build/*.import build/.gitkeep
