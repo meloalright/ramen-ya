@@ -65,20 +65,29 @@ def beef():
 
 # ---- big vats (大缸) -------------------------------------------------
 def vat(name, liquid, liquid_d, hi, basket):
+    # a straight-sided cylindrical earthenware 缸: flat oval mouth, vertical
+    # walls, hoop bands, rounded bottom. opening surface sits at y=36.
     extra = ""
     if basket:
-        extra = f'''<ellipse cx="56" cy="36" rx="16" ry="11" fill="#cfcab4" stroke="{INK}" stroke-width="3"/>
-        <g stroke="#d7b25a" stroke-width="2"><path d="M44 36 h24 M44 40 h24 M44 32 h24"/></g>'''
+        extra = f'''<ellipse cx="54" cy="36" rx="14" ry="6" fill="#cfcab4" stroke="{INK}" stroke-width="3"/>
+        <g stroke="#d7b25a" stroke-width="2"><path d="M42 36 h22 M42 38 h22 M42 34 h22"/></g>'''
     else:
-        extra = f'<ellipse cx="34" cy="30" rx="9" ry="5" fill="{hi}" opacity="0.7"/>'
+        extra = f'<ellipse cx="33" cy="33" rx="8" ry="3" fill="{hi}" opacity="0.7"/>'
     body = f'''
-    <path d="M5 36 C5 16 83 16 83 36 C83 70 66 86 44 86 C22 86 5 70 5 36 Z"
-          fill="#8a5a3c" stroke="{INK}" stroke-width="5" stroke-linejoin="round"/>
-    <path d="M44 86 C22 86 5 70 5 36 C12 66 28 78 44 80 Z" fill="#6f452d" opacity="0.6"/>
-    <path d="M10 58 C24 78 64 78 78 58" fill="none" stroke="#5e3a24" stroke-width="6" stroke-linecap="round"/>
-    <ellipse cx="44" cy="36" rx="40" ry="30" fill="#a06b46" stroke="{INK}" stroke-width="5"/>
-    <ellipse cx="44" cy="36" rx="33" ry="24" fill="{liquid}"/>
-    <path d="M11 39 a33 24 0 0 0 66 0 a33 24 0 0 1 -66 0" fill="{liquid_d}"/>
+    <!-- cylinder body -->
+    <path d="M6 36 L6 76 Q44 87 82 76 L82 36 A38 15 0 0 1 6 36 Z"
+          fill="#a5673f" stroke="{INK}" stroke-width="5" stroke-linejoin="round"/>
+    <!-- lower-front shadow -->
+    <path d="M6 56 L6 76 Q44 87 82 76 L82 56 Q44 67 6 56 Z" fill="#7c4c2c" opacity="0.4"/>
+    <!-- soft left highlight -->
+    <path d="M12 40 L12 73" fill="none" stroke="#c08658" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
+    <!-- hoop bands (earthenware) -->
+    <path d="M7 50 Q44 60 81 50" fill="none" stroke="#5e3a24" stroke-width="4"/>
+    <path d="M7 66 Q44 78 81 66" fill="none" stroke="#5e3a24" stroke-width="4"/>
+    <!-- rim + liquid surface -->
+    <ellipse cx="44" cy="36" rx="38" ry="15" fill="#b07a4e" stroke="{INK}" stroke-width="5"/>
+    <ellipse cx="44" cy="36" rx="31" ry="11" fill="{liquid}"/>
+    <path d="M13 36 a31 11 0 0 0 62 0 a31 11 0 0 1 -62 0" fill="{liquid_d}"/>
     {extra}'''
     render(name, 88, 88, body)
 

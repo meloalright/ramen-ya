@@ -823,8 +823,8 @@ func _draw_ticket(i: int) -> void:
 func _draw_noodle_nest(ctr: Vector2) -> void:
 	var cream := Color("efe6cf")
 	var cream_d := Color("d6cbab")
-	var rx := 17.0
-	var ry := 12.0
+	var rx := 16.0
+	var ry := 7.0
 	var pts := PackedVector2Array()
 	var pts2 := PackedVector2Array()
 	for i in range(22):
@@ -860,7 +860,7 @@ func _draw_station(s: Dictionary) -> void:
 		var lit: bool = (s.item == "soup" and held == "soup") \
 			or (s.item == "noodles" and (held == "noodles" or noodle_state == "cooking"))
 		if lit:
-			_draw_ellipse_ring(c, 38, 28, COL_YELLOW)
+			_draw_ellipse_ring(c, 40, 16, COL_YELLOW)
 		if s.item == "noodles" and noodle_state == "cooking":
 			_draw_boil_gauge(Vector2(117, 358))
 		# bold label on the broth / basket
