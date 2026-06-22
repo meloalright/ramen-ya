@@ -58,6 +58,13 @@ const OBST_HW := 17.0
 const OBST_HH := 13.0
 var obstacles: Array = []      # {pos, vy, hp, hurt}
 var obst_cd := 2.2
+
+# 大招 · 沸腾巨浪: charge by defeating enemies, then sweep the whole shaft
+const ULT_MAX := 8
+var ult_charge := 0
+var ult_active := false
+var ult_wave_y := 0.0
+var flash := 0.0
 var puffs: Array = []          # {pos, ttl}
 var bg_y := 0.0
 
@@ -75,6 +82,7 @@ var touch_pts := {}
 const LEFT_RECT  := Rect2(16, 200, 52, 52)
 const RIGHT_RECT := Rect2(72, 200, 52, 52)
 const SHOOT_RECT := Rect2(396, 194, 70, 60)
+const ULT_RECT   := Rect2(16, 130, 108, 52)
 const BACK_RECT  := Rect2(W - 50, 4, 46, 16)
 
 @onready var cam: Camera2D = $Camera
@@ -127,6 +135,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_exit()
 		elif game_over and event.keycode in [KEY_R, KEY_SPACE, KEY_ENTER]:
 			_restart()
+		elif event.keycode in [KEY_E, KEY_SHIFT, KEY_Q]:
+			_fire_ult()
 
 
 func _on_press(p: Vector2) -> void:
@@ -135,6 +145,9 @@ func _on_press(p: Vector2) -> void:
 		return
 	if game_over:
 		_restart()
+		return
+	if ULT_RECT.has_point(p) and ult_charge >= ULT_MAX and not ult_active:
+		_fire_ult()
 		return
 	# tap an obstacle (in the play column) to chip it — a few taps breaks it
 	for o in obstacles:
@@ -162,6 +175,8 @@ func _process(delta: float) -> void:
 		anim -= 0.16
 		anim_i = (anim_i + 1) % 4
 	bg_y = fmod(bg_y + 74.0 * delta, 40.0)
+	if flash > 0.0:
+		flash = max(0.0, flash - delta * 1.4)
 	for p in puffs:
 		p.ttl -= delta
 	puffs = puffs.filter(func(p): return p.ttl > 0.0)
@@ -172,6 +187,22 @@ func _process(delta: float) -> void:
 
 	if invuln > 0.0:
 		invuln -= delta
+
+	# 大招 sweep: a boiling surge rises and wipes everything in its wake
+	if ult_active:
+		ult_wave_y -= 560.0 * delta
+		eballs.clear()
+		for e in enemies:
+			if e.hp > 0 and e.pos.y >= ult_wave_y:
+				defeated += 1
+				puffs.append({"pos": e.pos, "ttl": 0.4})
+				e.hp = 0
+		for o in obstacles:
+			if o.hp > 0 and o.pos.y >= ult_wave_y:
+				puffs.append({"pos": o.pos, "ttl": 0.4})
+				o.hp = 0
+		if ult_wave_y < -32.0:
+			ult_active = false
 
 	# movement (within the column)
 	var lp := Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT) or _touch_in(LEFT_RECT)
@@ -256,6 +287,7 @@ func _process(delta: float) -> void:
 				s.y = -999.0
 				if e.hp <= 0:
 					defeated += 1
+					ult_charge = min(ULT_MAX, ult_charge + 1)
 					puffs.append({"pos": e.pos, "ttl": 0.4})
 					_sfx()
 				break
@@ -298,7 +330,20 @@ func _restart() -> void:
 	enemy_vy = 30.0
 	spawn_cd = 0.7
 	obst_cd = 2.2
+	ult_charge = 0
+	ult_active = false
+	flash = 0.0
 	game_over = false
+
+
+func _fire_ult() -> void:
+	if ult_active or ult_charge < ULT_MAX:
+		return
+	ult_active = true
+	ult_wave_y = H + 12.0
+	ult_charge = 0
+	flash = 0.6
+	_sfx()
 
 
 func _sfx() -> void:
@@ -341,6 +386,18 @@ func _draw() -> void:
 	for p in puffs:
 		var a: float = clamp(p.ttl / 0.4, 0.0, 1.0)
 		draw_arc(p.pos, (1.0 - a) * 18.0 + 4.0, 0.0, TAU, 18, Color(1, 1, 1, a * 0.6), 2.5)
+
+	if ult_active:
+		var wy := ult_wave_y
+		draw_rect(Rect2(CX_L, wy, CX_R - CX_L, H - wy + 12.0), Color(0.42, 0.9, 1.0, 0.16))
+		draw_rect(Rect2(CX_L, wy - 3.0, CX_R - CX_L, 9.0), C_WAVE)
+		draw_rect(Rect2(CX_L, wy - 5.0, CX_R - CX_L, 2.0), Color(1, 1, 1, 0.95))
+		var bx := CX_L + 18.0
+		while bx < CX_R:
+			draw_arc(Vector2(bx, wy + 7.0), 15.0, PI * 1.1, PI * 1.9, 12, Color(1, 1, 1, 0.85), 3.0)
+			bx += 38.0
+	if flash > 0.0:
+		draw_rect(Rect2(0, 0, W, H), Color(1, 1, 1, flash * 0.55))
 
 	_draw_hud()
 	_draw_buttons()
@@ -418,6 +475,18 @@ func _draw_heart(c: Vector2, full: bool) -> void:
 
 
 func _draw_buttons() -> void:
+	# 大招 button + charge gauge (left panel, above the move buttons)
+	var ready := ult_charge >= ULT_MAX
+	draw_rect(ULT_RECT, Color(0.95, 0.55, 0.2, 0.5 if ready else 0.18))
+	if not ready:
+		var f := ult_charge / float(ULT_MAX)
+		draw_rect(Rect2(ULT_RECT.position, Vector2(ULT_RECT.size.x * f, ULT_RECT.size.y)), Color(0.95, 0.6, 0.3, 0.4))
+	var lit := ready and int(t * 4.0) % 2 == 0
+	draw_rect(ULT_RECT, C_YELLOW if lit else Color(1, 1, 1, 0.55), false, 2.5 if lit else 1.5)
+	var label := "大招！" if ready else "大招 %d/%d" % [ult_charge, ULT_MAX]
+	_text(label, ULT_RECT.get_center() + Vector2(0, 4), 11 if ready else 9,
+		C_WHITE if ready else Color(1, 1, 1, 0.7), HORIZONTAL_ALIGNMENT_CENTER)
+
 	_btn(LEFT_RECT, _touch_in(LEFT_RECT) or Input.is_physical_key_pressed(KEY_LEFT) or Input.is_physical_key_pressed(KEY_A))
 	var lc := LEFT_RECT.get_center()
 	draw_colored_polygon(PackedVector2Array([lc + Vector2(7, -9), lc + Vector2(7, 9), lc + Vector2(-9, 0)]), C_WHITE)
