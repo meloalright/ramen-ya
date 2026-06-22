@@ -80,6 +80,7 @@ var puffs: Array = []          # {pos, ttl}
 var bg_y := 0.0
 
 var game_over := false
+var score_submitted := false
 var font: Font
 var chef_tex: Texture2D
 var sfx: AudioStreamPlayer
@@ -199,6 +200,9 @@ func _process(delta: float) -> void:
 	puffs = puffs.filter(func(p): return p.ttl > 0.0)
 
 	if game_over:
+		if not score_submitted:
+			score_submitted = true
+			_submit_score()
 		queue_redraw()
 		return
 
@@ -395,6 +399,7 @@ func _restart() -> void:
 	spread_t = 0.0
 	flash = 0.0
 	game_over = false
+	score_submitted = false
 
 
 func _chip_rect(i: int) -> Rect2:
@@ -426,7 +431,14 @@ func _sfx() -> void:
 
 
 func _exit() -> void:
-	get_tree().change_scene_to_file("res://scenes/World.tscn")
+	_submit_score()
+	get_tree().change_scene_to_file("res://scenes/Menu.tscn")
+
+
+func _submit_score() -> void:
+	var g = get_node_or_null("/root/Game")
+	if g and defeated > 0:
+		g.submit_score(defeated)
 
 
 # ---- draw -----------------------------------------------------------
@@ -600,9 +612,12 @@ func _btn(r: Rect2, pressed: bool, base := Color(1, 1, 1, 1)) -> void:
 
 func _draw_over() -> void:
 	draw_rect(Rect2(0, 0, W, H), Color(0.06, 0.04, 0.09, 0.72))
-	_text("被打倒了…", Vector2(W / 2.0, 116), 18, C_RED, HORIZONTAL_ALIGNMENT_CENTER)
-	_text("擊退了 " + str(defeated) + " 隻", Vector2(W / 2.0, 140), 11, C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
-	_text("點擊重來  ·  ESC 離開", Vector2(W / 2.0, 162), 10,
+	_text("被打倒了…", Vector2(W / 2.0, 108), 18, C_RED, HORIZONTAL_ALIGNMENT_CENTER)
+	_text("擊退了 " + str(defeated) + " 隻", Vector2(W / 2.0, 132), 11, C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	var g = get_node_or_null("/root/Game")
+	var hi: int = max(defeated, g.high_score if g else 0)
+	_text("最高擊退 " + str(hi), Vector2(W / 2.0, 150), 10, C_YELLOW, HORIZONTAL_ALIGNMENT_CENTER)
+	_text("點擊重來  ·  ESC 回主選單", Vector2(W / 2.0, 174), 10,
 		C_YELLOW if int(t * 2.0) % 2 == 0 else C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 
 

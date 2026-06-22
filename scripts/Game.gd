@@ -10,6 +10,7 @@ const PATH := "user://ramenya_save.json"
 var coins: int = 0
 var world_pos := Vector2.ZERO
 var has_pos := false
+var high_score: int = 0      # best 擊退 count in the shooter
 
 # upgrade levels (bought at the street's upgrade store)
 var up_tip := 0          # +15% tips per level
@@ -39,6 +40,7 @@ func save() -> void:
 	f.store_string(JSON.stringify({
 		"coins": coins, "x": world_pos.x, "y": world_pos.y, "has_pos": has_pos,
 		"up_tip": up_tip, "up_patience": up_patience, "up_day": up_day,
+		"high": high_score,
 	}))
 	f.close()
 
@@ -59,7 +61,14 @@ func load_game() -> bool:
 	up_tip = int(d.get("up_tip", 0))
 	up_patience = int(d.get("up_patience", 0))
 	up_day = int(d.get("up_day", 0))
+	high_score = int(d.get("high", 0))
 	return true
+
+
+func submit_score(n: int) -> void:
+	if n > high_score:
+		high_score = n
+		save()
 
 
 func add_coins(n: int) -> void:

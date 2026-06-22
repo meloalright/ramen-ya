@@ -7,8 +7,7 @@ extends Node2D
 const W := 480
 const H := 270
 
-const NEW_RECT := Rect2(170, 132, 140, 28)
-const CONT_RECT := Rect2(170, 170, 140, 28)
+const NEW_RECT := Rect2(160, 150, 160, 34)
 
 const COL_BG    := Color("231f28")
 const COL_WHITE := Color("f4f0e6")
@@ -62,29 +61,14 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_click(get_global_mouse_position())
+		_start()
 	elif event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_ENTER or event.keycode == KEY_SPACE:
-			_new_game()
-		elif event.keycode == KEY_C and Game.has_save():
-			_continue()
+		if event.keycode in [KEY_ENTER, KEY_SPACE]:
+			_start()
 
 
-func _click(p: Vector2) -> void:
-	if NEW_RECT.has_point(p):
-		_new_game()
-	elif CONT_RECT.has_point(p) and Game.has_save():
-		_continue()
-
-
-func _new_game() -> void:
-	Game.new_game()
-	get_tree().change_scene_to_file("res://scenes/World.tscn")
-
-
-func _continue() -> void:
-	Game.load_game()
-	get_tree().change_scene_to_file("res://scenes/World.tscn")
+func _start() -> void:
+	get_tree().change_scene_to_file("res://scenes/Tower.tscn")
 
 
 # =====================================================================
@@ -98,22 +82,17 @@ func _draw() -> void:
 	draw_rect(Rect2(0, 0, W, H), Color(0.07, 0.06, 0.09, 0.62))
 
 	# title
-	_ctext("拉 麵 屋", Vector2(240, 64), 30, COL_YELLOW)
-	_ctext("2D 卡通拉麵 RPG", Vector2(240, 92), 11, COL_WHITE)
+	_ctext("拉 麵 屋", Vector2(240, 60), 30, COL_YELLOW)
+	_ctext("紫金塔 · 縱向卷軸打怪", Vector2(240, 88), 11, COL_WHITE)
 
 	# walking chef on the left
 	_draw_chef(Vector2(78, 232), 92)
 
-	# buttons
-	_button(NEW_RECT, "新遊戲", COL_GREEN, true)
-	var has := Game.has_save()
-	_button(CONT_RECT, "繼續遊戲", COL_YELLOW if has else COL_GREY, has)
-	if has:
-		_ctext("存檔金幣 ￥" + str(Game.coins), Vector2(240, 212), 9, COL_WHITE)
-	else:
-		_ctext("（尚無存檔）", Vector2(240, 212), 9, Color(1, 1, 1, 0.55))
+	# start button + high score
+	_button(NEW_RECT, "開始遊戲", COL_GREEN, true)
+	_ctext("最高擊退  " + str(Game.high_score), Vector2(240, 208), 10, COL_YELLOW)
 
-	_ctext("點擊選擇 ・ Enter 新遊戲 ・ C 繼續", Vector2(240, 258), 9,
+	_ctext("點擊 或 Enter / 空白鍵 開始", Vector2(240, 258), 9,
 		COL_GREEN if int(blink * 2.0) % 2 == 0 else COL_WHITE)
 
 
