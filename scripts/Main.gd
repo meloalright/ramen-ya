@@ -31,7 +31,7 @@ const BOWL_HIT_RX := 56.0              # generous click radii (incl. rim)
 const BOWL_HIT_RY := 44.0
 
 # big pans: the sprite's liquid surface sits VAT_OPEN_Y down from its top
-const VAT_OPEN_Y := 32.0
+const VAT_OPEN_Y := 30.0
 
 # ---- game states ----------------------------------------------------
 enum State { TITLE, PLAY, OVER }
@@ -826,8 +826,8 @@ func _draw_ticket(i: int) -> void:
 func _draw_noodle_nest(ctr: Vector2) -> void:
 	var cream := Color("efe6cf")
 	var cream_d := Color("d6cbab")
-	var rx := 21.0
-	var ry := 8.0
+	var rx := 24.0
+	var ry := 6.0
 	var pts := PackedVector2Array()
 	var pts2 := PackedVector2Array()
 	for i in range(22):
@@ -863,7 +863,7 @@ func _draw_station(s: Dictionary) -> void:
 		var lit: bool = (s.item == "soup" and held == "soup") \
 			or (s.item == "noodles" and (held == "noodles" or noodle_state == "cooking"))
 		if lit:
-			draw_rect(Rect2(c.x - 50, c.y - 21, 100, 42), COL_YELLOW, false, 2.0)
+			_draw_ellipse_ring(c, 50, 14, COL_YELLOW)
 		if s.item == "noodles" and noodle_state == "cooking":
 			_draw_boil_gauge(Vector2(177, 350))
 		# bold label on the broth / basket

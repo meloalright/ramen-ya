@@ -69,24 +69,26 @@ def vat(name, liquid, liquid_d, hi, basket):
     # runs off behind the action buttons. liquid surface sits at y=32.
     extra = ""
     if basket:
-        extra = f'''<rect x="44" y="26" width="22" height="10" rx="1.5" fill="#cfcab4" stroke="{INK}" stroke-width="2.5"/>
-        <g stroke="#d7b25a" stroke-width="1.6"><path d="M47 29 h16 M47 31 h16 M47 33 h16"/></g>'''
+        extra = f'<ellipse cx="64" cy="30" rx="12" ry="5" fill="#cfcab4" stroke="{INK}" stroke-width="2.5"/>'
     else:
-        extra = f'<path d="M24 20 L44 20 L40 27 L22 27 Z" fill="{hi}" opacity="0.5"/>'
+        extra = f'<ellipse cx="40" cy="27" rx="9" ry="3" fill="{hi}" opacity="0.6"/>'
     body = f'''
-    <!-- square metal body (a bit taller than the bowl, but clears the buttons) -->
-    <path d="M6 50 L6 132 L100 132 L100 50 Z" fill="#a7afb7" stroke="{INK}" stroke-width="4.5" stroke-linejoin="round"/>
-    <rect x="10" y="52" width="12" height="80" fill="#c8ced4" opacity="0.5"/>
-    <rect x="36" y="54" width="6" height="78" fill="#dfe4e8" opacity="0.32"/>
-    <rect x="80" y="52" width="20" height="80" fill="#6f767e" opacity="0.45"/>
-    <path d="M6 86 L100 86 M6 114 L100 114" stroke="#80878f" stroke-width="2.5"/>
-    <!-- top rim frame (square opening) -->
-    <path d="M12 14 L94 14 L100 50 L6 50 Z" fill="#c4cad0" stroke="{INK}" stroke-width="4.5" stroke-linejoin="round"/>
-    <path d="M16 16 L38 16 L31 48 L10 48 Z" fill="#dfe4e8" opacity="0.32"/>
-    <!-- inner opening + liquid surface -->
-    <path d="M18 17 L88 17 L94 48 L12 48 Z" fill="#7d848c"/>
-    <path d="M21 19 L85 19 L90 46 L16 46 Z" fill="{liquid}"/>
-    <path d="M16 46 L90 46 L88 39 L18 39 Z" fill="{liquid_d}"/>
+    <defs>
+      <linearGradient id="cy_{name}" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#79818a"/>
+        <stop offset="0.32" stop-color="#c4cace"/>
+        <stop offset="0.62" stop-color="#a6aeb6"/>
+        <stop offset="1" stop-color="#6b737b"/>
+      </linearGradient>
+    </defs>
+    <!-- smooth cylinder body, plain undecorated walls -->
+    <path d="M5 30 L5 120 A48 12 0 0 0 101 120 L101 30 A48 13 0 0 1 5 30 Z"
+          fill="url(#cy_{name})" stroke="{INK}" stroke-width="4.5" stroke-linejoin="round"/>
+    <!-- round rim + liquid surface -->
+    <ellipse cx="53" cy="30" rx="48" ry="13" fill="#c4cad0" stroke="{INK}" stroke-width="4.5"/>
+    <ellipse cx="53" cy="30" rx="40" ry="9" fill="#888f97"/>
+    <ellipse cx="53" cy="30" rx="36" ry="7.5" fill="{liquid}"/>
+    <path d="M17 30 a36 7.5 0 0 0 72 0 a36 7.5 0 0 1 -72 0" fill="{liquid_d}"/>
     {extra}'''
     render(name, 106, 132, body)
 
