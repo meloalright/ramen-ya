@@ -126,18 +126,18 @@ def ladle():
 
 
 def noodle_clump():
-    # side view: long chopsticks held at an angle, white noodle strands off the tips
+    # side view: long chopsticks at an angle, long white noodle strands dangling
     body = f'''
-    <line x1="9" y1="48" x2="44" y2="4" stroke="{INK}" stroke-width="6.5" stroke-linecap="round"/>
-    <line x1="9" y1="48" x2="44" y2="4" stroke="#c98f54" stroke-width="3.8" stroke-linecap="round"/>
-    <line x1="15" y1="52" x2="48" y2="10" stroke="{INK}" stroke-width="6.5" stroke-linecap="round"/>
-    <line x1="15" y1="52" x2="48" y2="10" stroke="#b97f44" stroke-width="3.8" stroke-linecap="round"/>
+    <line x1="9" y1="50" x2="44" y2="6" stroke="{INK}" stroke-width="6.5" stroke-linecap="round"/>
+    <line x1="9" y1="50" x2="44" y2="6" stroke="#c98f54" stroke-width="3.8" stroke-linecap="round"/>
+    <line x1="15" y1="54" x2="48" y2="12" stroke="{INK}" stroke-width="6.5" stroke-linecap="round"/>
+    <line x1="15" y1="54" x2="48" y2="12" stroke="#b97f44" stroke-width="3.8" stroke-linecap="round"/>
     <g fill="none" stroke="#f2efe6" stroke-width="3" stroke-linecap="round">
-      <path d="M9 47 q-3 9 0 16"/><path d="M13 49 q-1 9 1 15"/>
-      <path d="M17 51 q1 9 -1 14"/><path d="M21 52 q2 8 0 13"/></g>
+      <path d="M9 49 q-4 22 0 44"/><path d="M14 51 q-2 24 2 42"/>
+      <path d="M19 52 q3 22 -1 41"/><path d="M24 51 q4 20 1 38"/></g>
     <g fill="none" stroke="#d3cdbd" stroke-width="1.2" stroke-linecap="round">
-      <path d="M13 49 q-1 9 1 15"/><path d="M17 51 q1 9 -1 14"/></g>'''
-    render("td_pot_noodle", 48, 64, body)
+      <path d="M14 51 q-2 24 2 42"/><path d="M19 52 q3 22 -1 41"/></g>'''
+    render("td_pot_noodle", 48, 100, body)
 
 
 def main():

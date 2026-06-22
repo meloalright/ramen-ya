@@ -1073,9 +1073,14 @@ func _draw_held(p: Vector2) -> void:
 		tool = "td_pot_noodle"
 	if tool != "" and ctex.has(tool):
 		var t: Texture2D = ctex[tool]
-		# the "business end" (broth / noodles) hangs at the cursor, grip above
-		draw_texture_rect(t, Rect2(p.x - t.get_width() / 2.0, p.y - t.get_height() + 14.0,
-			t.get_width(), t.get_height()), false)
+		var w: float = t.get_width()
+		var h: float = t.get_height()
+		if held == "noodles":
+			# chopstick grip sits at the cursor; the long noodles dangle below
+			draw_texture_rect(t, Rect2(p.x - w / 2.0, p.y - 52.0, w, h), false)
+		else:
+			# the ladle's bowl of broth sits at the cursor
+			draw_texture_rect(t, Rect2(p.x - w / 2.0, p.y - h + 14.0, w, h), false)
 		return
 	# beef / toppings: a small pinch of colour on the cursor
 	var col: Color = C_BEEF if held == "beef" else TOPPING[held].col
