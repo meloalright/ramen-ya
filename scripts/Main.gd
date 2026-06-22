@@ -125,14 +125,29 @@ func _compute_layout() -> void:
 	_safe_t = min(_safe_t, _vh * 0.2)
 	_safe_b = min(_safe_b, _vh * 0.2)
 	_oy = _safe_t
+	# the two steam patches sit low on the page, just above the action button
+	if stations.size() >= 2:
+		var sy: float = _avail() - 96.0
+		stations[0]["center"] = Vector2(75, sy)
+		stations[0]["rect"] = Rect2(22, sy - 52, 106, 100)
+		stations[1]["center"] = Vector2(195, sy)
+		stations[1]["rect"] = Rect2(142, sy - 52, 106, 100)
 
 
 # usable content height between the safe-area insets
 func _avail() -> float: return _vh - _safe_t - _safe_b
 
-# action buttons sit just above the bottom safe area; victory popup is centred
-func _clear_rect() -> Rect2: return Rect2(22, _avail() - 48.0, 106, 28)
-func _serve_rect() -> Rect2: return Rect2(142, _avail() - 48.0, 106, 28)
+# one action button at the bottom, shown only when it's relevant:
+#   上菜 once the bowl matches the order, 倒掉 once it's unrecoverably ruined
+func _action_rect() -> Rect2: return Rect2(69, _avail() - 48.0, 132, 30)
+func _can_serve() -> bool: return not order.is_empty() and _matches(order)
+func _is_ruined() -> bool:
+	if order.is_empty():
+		return false
+	for t in TOP_ORDER:
+		if bool(bowl[t]) and not bool(order.wants[t]):   # a topping was sprinkled that the order didn't want
+			return true
+	return false
 func _vic_top() -> float: return floor((_avail() - 250.0) / 2.0)
 func _menu_rect() -> Rect2: return Rect2(36, _vic_top() + 188.0, 92, 30)
 func _next_rect() -> Rect2: return Rect2(142, _vic_top() + 188.0, 92, 30)
@@ -304,10 +319,12 @@ func _process(delta: float) -> void:
 		steam_t -= delta
 		if steam_t <= 0.0:
 			steam_t = 0.16
-			_puff(64, 348)                            # 湯 steam (left)
-			_puff(86, 348)
-			_puff(184, 348)                           # 麵 steam (right)
-			_puff(206, 348)
+			var ss0: Vector2 = stations[0].center     # 湯 steam (left)
+			var ss1: Vector2 = stations[1].center     # 麵 steam (right)
+			_puff(ss0.x - 11, ss0.y - 2)
+			_puff(ss0.x + 11, ss0.y - 2)
+			_puff(ss1.x - 11, ss1.y - 2)
+			_puff(ss1.x + 11, ss1.y - 2)
 			if soup_fill > 0.0 or bowl.noodles or _base_ok():
 				_puff(BOWL_OPEN.x, BOWL_OPEN.y - 8)   # the bowl, once it holds hot broth/noodles
 
@@ -410,13 +427,14 @@ func _handle_click(p: Vector2) -> void:
 		return
 
 	# action buttons
-	if _serve_rect().has_point(p):
-		_serve()
-		return
-	if _clear_rect().has_point(p):
-		_reset_bowl()
-		_spawn_float(BOWL_C, "倒掉了", COL_YELLOW)
-		return
+	if _action_rect().has_point(p):
+		if _can_serve():
+			_serve()
+			return
+		if _is_ruined():
+			_reset_bowl()
+			_spawn_float(BOWL_C, "倒掉了", COL_YELLOW)
+			return
 
 	# over the bowl: sprinkle a topping, or drop an ingredient
 	if _in_bowl(p):
@@ -682,8 +700,11 @@ func _draw_play() -> void:
 		draw_rect(Rect2(p.pos.x - 2, p.pos.y - 2, 4, 4), Color(1, 1, 1, a))
 
 	# action buttons
-	_draw_button(_clear_rect(), "倒掉", COL_RED)
-	_draw_button(_serve_rect(), "上菜", COL_GREEN)
+	# the action button only appears when it matters
+	if _can_serve():
+		_draw_button(_action_rect(), "上菜", COL_GREEN)
+	elif _is_ruined():
+		_draw_button(_action_rect(), "倒掉", COL_RED)
 
 	_draw_hud()
 
