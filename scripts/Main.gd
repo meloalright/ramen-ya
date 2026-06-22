@@ -269,11 +269,10 @@ func _process(delta: float) -> void:
 		steam_t -= delta
 		if steam_t <= 0.0:
 			steam_t = 0.16
-			if _base_ok() or soup_fill > 0.0 or bowl.noodles:
-				_puff(BOWL_OPEN.x, BOWL_OPEN.y - 8)   # the assembled bowl
-			_puff(54, 94)                             # 湯 vat
-			if noodle_state == "cooking":
-				_puff(54, 186)                        # 麵 vat while boiling
+			_puff(54, 94)                             # 湯 vat — always boiling
+			_puff(54, 186)                            # 麵 vat — always boiling
+			if soup_fill > 0.0 or bowl.noodles or _base_ok():
+				_puff(BOWL_OPEN.x, BOWL_OPEN.y - 8)   # the bowl, once it holds hot broth/noodles
 
 	chef_anim += delta
 	if chef_anim > 0.22:
@@ -491,7 +490,9 @@ func _place_into_bowl() -> void:
 		bowl[held] = true
 		if held == "noodles":
 			bowl_nq = held_q
-		_sfx("plop")
+			_sfx("boil")          # the boiling/cooking sound as the noodles go in
+		else:
+			_sfx("plop")
 		var label := _item_name(held)
 		_spawn_float(Vector2(240, 126), "放入 " + label, COL_GREEN)
 	held = ""
