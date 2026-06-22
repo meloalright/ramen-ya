@@ -65,26 +65,30 @@ def beef():
 
 # ---- big vats (大缸) -------------------------------------------------
 def vat(name, liquid, liquid_d, hi, basket):
-    # a big, wide, very shallow thin-walled square metal pan, seen 3/4 overhead.
-    # the liquid surface sits at y=28 (VAT_OPEN_Y).
+    # a tall square metal pot, 3/4 overhead — taller than the bowl; the base
+    # runs off behind the action buttons. liquid surface sits at y=32.
     extra = ""
     if basket:
-        extra = f'''<rect x="82" y="28" width="28" height="12" rx="1.5" fill="#cfcab4" stroke="{INK}" stroke-width="2.5"/>
-        <g stroke="#d7b25a" stroke-width="1.6"><path d="M85 31 h22 M85 34 h22 M85 37 h22"/></g>'''
+        extra = f'''<rect x="44" y="26" width="22" height="10" rx="1.5" fill="#cfcab4" stroke="{INK}" stroke-width="2.5"/>
+        <g stroke="#d7b25a" stroke-width="1.6"><path d="M47 29 h16 M47 31 h16 M47 33 h16"/></g>'''
     else:
-        extra = f'<path d="M40 22 L72 22 L67 30 L36 30 Z" fill="{hi}" opacity="0.5"/>'
+        extra = f'<path d="M24 20 L44 20 L40 27 L22 27 Z" fill="{hi}" opacity="0.5"/>'
     body = f'''
-    <!-- front/side wall (some depth) -->
-    <path d="M12 56 L16 66 L176 66 L180 56 Z" fill="#828a92" stroke="{INK}" stroke-width="3.5" stroke-linejoin="round"/>
-    <!-- top metal frame (big wide foreshortened square) -->
-    <path d="M28 12 L164 12 L180 56 L12 56 Z" fill="#c4cad0" stroke="{INK}" stroke-width="3.5" stroke-linejoin="round"/>
-    <path d="M32 15 L64 15 L52 53 L16 53 Z" fill="#dfe4e8" opacity="0.32"/>
-    <!-- inner opening (thin wall) + liquid surface -->
-    <path d="M34 16 L158 16 L174 53 L18 53 Z" fill="#7d848c"/>
-    <path d="M38 18 L154 18 L170 51 L22 51 Z" fill="{liquid}"/>
-    <path d="M22 51 L170 51 L168 43 L24 43 Z" fill="{liquid_d}"/>
+    <!-- tall square metal body -->
+    <path d="M6 50 L6 160 L100 160 L100 50 Z" fill="#a7afb7" stroke="{INK}" stroke-width="4.5" stroke-linejoin="round"/>
+    <rect x="10" y="52" width="12" height="108" fill="#c8ced4" opacity="0.5"/>
+    <rect x="36" y="54" width="6" height="106" fill="#dfe4e8" opacity="0.32"/>
+    <rect x="80" y="52" width="20" height="108" fill="#6f767e" opacity="0.45"/>
+    <path d="M6 92 L100 92 M6 126 L100 126" stroke="#80878f" stroke-width="2.5"/>
+    <!-- top rim frame (square opening) -->
+    <path d="M12 14 L94 14 L100 50 L6 50 Z" fill="#c4cad0" stroke="{INK}" stroke-width="4.5" stroke-linejoin="round"/>
+    <path d="M16 16 L38 16 L31 48 L10 48 Z" fill="#dfe4e8" opacity="0.32"/>
+    <!-- inner opening + liquid surface -->
+    <path d="M18 17 L88 17 L94 48 L12 48 Z" fill="#7d848c"/>
+    <path d="M21 19 L85 19 L90 46 L16 46 Z" fill="{liquid}"/>
+    <path d="M16 46 L90 46 L88 39 L18 39 Z" fill="{liquid_d}"/>
     {extra}'''
-    render(name, 192, 72, body)
+    render(name, 106, 160, body)
 
 
 # ---- ingredient trays -----------------------------------------------

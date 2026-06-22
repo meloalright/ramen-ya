@@ -31,7 +31,7 @@ const BOWL_HIT_RX := 56.0              # generous click radii (incl. rim)
 const BOWL_HIT_RY := 44.0
 
 # big pans: the sprite's liquid surface sits VAT_OPEN_Y down from its top
-const VAT_OPEN_Y := 34.0
+const VAT_OPEN_Y := 32.0
 
 # ---- game states ----------------------------------------------------
 enum State { TITLE, PLAY, OVER }
@@ -211,11 +211,11 @@ func _make_font() -> Font:
 func _build_stations() -> void:
 	# portrait: two big vats (大缸) side by side under the bowl; toppings in a row below.
 	stations.clear()
-	# two big wide pans stacked: 湯 on top, 麵 below (both wider than the bowl)
-	stations.append({"item": "soup", "name": "湯", "center": Vector2(135, 322), "r": 32,
-		"rect": Rect2(36, 296, 198, 56), "cx": 135})
-	stations.append({"item": "noodles", "name": "麵", "center": Vector2(135, 392), "r": 32,
-		"rect": Rect2(36, 366, 198, 60), "cx": 135})
+	# two tall square pots side by side: 湯 left, 麵 right (taller than the bowl)
+	stations.append({"item": "soup", "name": "湯", "center": Vector2(75, 322), "r": 32,
+		"rect": Rect2(20, 300, 110, 130), "cx": 75})
+	stations.append({"item": "noodles", "name": "麵", "center": Vector2(195, 322), "r": 32,
+		"rect": Rect2(140, 300, 110, 130), "cx": 195})
 	var defs := [
 		["beef", "牛肉", Vector2(45, 250), 22],
 		["scallion", "蔥花", Vector2(105, 250), 22],
@@ -267,10 +267,10 @@ func _process(delta: float) -> void:
 		steam_t -= delta
 		if steam_t <= 0.0:
 			steam_t = 0.16
-			_puff(116, 312)                           # 湯 pan (top) — always boiling
-			_puff(156, 312)
-			_puff(116, 382)                           # 麵 pan (bottom) — always boiling
-			_puff(156, 382)
+			_puff(62, 310)                            # 湯 pot (left) — always boiling
+			_puff(88, 310)
+			_puff(182, 310)                           # 麵 pot (right) — always boiling
+			_puff(208, 310)
 			if soup_fill > 0.0 or bowl.noodles or _base_ok():
 				_puff(BOWL_OPEN.x, BOWL_OPEN.y - 8)   # the bowl, once it holds hot broth/noodles
 
@@ -826,8 +826,8 @@ func _draw_ticket(i: int) -> void:
 func _draw_noodle_nest(ctr: Vector2) -> void:
 	var cream := Color("efe6cf")
 	var cream_d := Color("d6cbab")
-	var rx := 28.0
-	var ry := 9.0
+	var rx := 21.0
+	var ry := 8.0
 	var pts := PackedVector2Array()
 	var pts2 := PackedVector2Array()
 	for i in range(22):
@@ -863,9 +863,9 @@ func _draw_station(s: Dictionary) -> void:
 		var lit: bool = (s.item == "soup" and held == "soup") \
 			or (s.item == "noodles" and (held == "noodles" or noodle_state == "cooking"))
 		if lit:
-			draw_rect(Rect2(c.x - 90, c.y - 22, 180, 44), COL_YELLOW, false, 2.0)
+			draw_rect(Rect2(c.x - 50, c.y - 21, 100, 42), COL_YELLOW, false, 2.0)
 		if s.item == "noodles" and noodle_state == "cooking":
-			_draw_boil_gauge(Vector2(117, 361))
+			_draw_boil_gauge(Vector2(177, 350))
 		# bold label on the broth / basket
 		_text(s.name, Vector2(c.x + 1, c.y + 5), 13, COL_INK, HORIZONTAL_ALIGNMENT_CENTER)
 		_text(s.name, Vector2(c.x, c.y + 4), 13, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
