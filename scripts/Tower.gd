@@ -1,29 +1,34 @@
 extends Node2D
 # =====================================================================
-#  RAMEN-YA — 紫金大廈: a horizontal-move VERTICAL SHOOTER.
-#  Move left/right (on-screen buttons or A/D/←/→), hold SHOOT (button or
-#  Space/W/↑) to fire shockwaves upward. Dodge the monsters' shots.
+#  RAMEN-YA — 紫金大廈: a PORTRAIT vertical-scrolling shooter.
+#  Play field is a tall central column; the tower shaft and the monsters
+#  scroll DOWNWARD. You stay at the bottom: move left/right and fire
+#  shockwaves upward, dodging the bullets the monsters aim back at you.
 # =====================================================================
 const W := 480
 const H := 270
 
+# central portrait column (the actual play field); side panels hold the UI
+const CX_L := 140.0
+const CX_R := 340.0
+
 const INK      := Color("241830")
-const C_BG     := Color("241a38")
+const C_BG     := Color("2a1f44")
+const C_PANEL  := Color("160f26")
 const C_GOLD   := Color("e7b84e")
 const C_WHITE  := Color("f4f0e6")
 const C_YELLOW := Color("f2c14e")
 const C_RED    := Color("e2533f")
 const C_MON    := Color("9a5ee0")
 const C_MON_HI := Color("c79bf0")
-const C_MON_EYE:= Color("ffe24e")
 const C_WAVE   := Color("6fe0ff")
 const C_EBALL  := Color("ff5f9e")
 
 # player
-const PLAYER_Y := 206.0
-const PMIN_X := 26.0
-const PMAX_X := 454.0
-const PLAYER_SPEED := 168.0
+const PLAYER_Y := 242.0
+const PMIN_X := 156.0
+const PMAX_X := 324.0
+const PLAYER_SPEED := 150.0
 const HP_MAX := 3
 const INVULN := 1.1
 var player_x := 240.0
@@ -32,20 +37,21 @@ var invuln := 0.0
 
 # shooting
 const SHOOT_DT := 0.26
-const SHOT_SPEED := 235.0
+const SHOT_SPEED := 240.0
 var shot_cd := 0.0
 var shots: Array = []          # {x, y, w}
 
-# enemies
+# enemies (descend the shaft)
 const ENEMY_HP := 2
-const EBALL_SPEED := 120.0
-var enemies: Array = []        # {pos, base_y, vx, hp, fire, bob, hurt}
+const EBALL_SPEED := 118.0
+var enemies: Array = []        # {pos, x0, vy, weave, hp, fire, bob, hurt}
 var eballs: Array = []         # {pos, vel}
-var spawn_cd := 0.8
-var spawn_dt := 1.7
+var spawn_cd := 0.7
+var spawn_dt := 1.5
+var enemy_vy := 30.0
 var defeated := 0
 var puffs: Array = []          # {pos, ttl}
-var bg_dashes: Array = []
+var bg_y := 0.0
 
 var game_over := false
 var font: Font
@@ -58,9 +64,9 @@ var anim_i := 0
 var t := 0.0
 var touch_pts := {}
 
-const LEFT_RECT  := Rect2(12, 226, 52, 40)
-const RIGHT_RECT := Rect2(70, 226, 52, 40)
-const SHOOT_RECT := Rect2(398, 222, 70, 44)
+const LEFT_RECT  := Rect2(16, 200, 52, 52)
+const RIGHT_RECT := Rect2(72, 200, 52, 52)
+const SHOOT_RECT := Rect2(396, 194, 70, 60)
 const BACK_RECT  := Rect2(W - 50, 4, 46, 16)
 
 @onready var cam: Camera2D = $Camera
@@ -82,8 +88,6 @@ func _ready() -> void:
 	cam.position_smoothing_enabled = false
 	cam.make_current()
 	cam.reset_smoothing()
-	for i in range(28):
-		bg_dashes.append(Vector2(randf() * W, randf() * H))
 	set_process(true)
 
 
@@ -138,11 +142,7 @@ func _process(delta: float) -> void:
 	if anim > 0.16:
 		anim -= 0.16
 		anim_i = (anim_i + 1) % 4
-	for d in bg_dashes:
-		d.y += 64.0 * delta
-		if d.y > H:
-			d.y -= H
-			d.x = randf() * W
+	bg_y = fmod(bg_y + 74.0 * delta, 40.0)
 	for p in puffs:
 		p.ttl -= delta
 	puffs = puffs.filter(func(p): return p.ttl > 0.0)
@@ -154,46 +154,50 @@ func _process(delta: float) -> void:
 	if invuln > 0.0:
 		invuln -= delta
 
-	# movement
+	# movement (within the column)
 	var lp := Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT) or _touch_in(LEFT_RECT)
 	var rp := Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT) or _touch_in(RIGHT_RECT)
 	var sp := Input.is_physical_key_pressed(KEY_SPACE) or Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP) or _touch_in(SHOOT_RECT)
 	var dir := (1.0 if rp else 0.0) - (1.0 if lp else 0.0)
 	player_x = clamp(player_x + dir * PLAYER_SPEED * delta, PMIN_X, PMAX_X)
 
-	# shooting (hold to auto-fire shockwaves)
+	# shoot shockwaves upward
 	shot_cd = max(0.0, shot_cd - delta)
 	if sp and shot_cd <= 0.0:
 		shots.append({"x": player_x, "y": PLAYER_Y - 16.0, "w": 9.0})
 		shot_cd = SHOOT_DT
 	for s in shots:
 		s.y -= SHOT_SPEED * delta
-		s.w = min(32.0, s.w + 42.0 * delta)
+		s.w = min(30.0, s.w + 42.0 * delta)
 
-	# spawn enemies (slowly ramping up)
+	# spawn enemies at the top of the shaft (ramping up)
 	spawn_cd -= delta
 	if spawn_cd <= 0.0:
 		_spawn_enemy()
-		spawn_dt = max(0.7, spawn_dt - 0.03)
+		spawn_dt = max(0.65, spawn_dt - 0.02)
+		enemy_vy = min(58.0, enemy_vy + 0.6)
 		spawn_cd = spawn_dt
 
-	# enemies move / bob / fire
+	# enemies descend, weave and fire
 	for e in enemies:
-		e.pos.x += e.vx * delta
-		if e.pos.x < 26.0:
-			e.pos.x = 26.0
-			e.vx = abs(e.vx)
-		elif e.pos.x > W - 26.0:
-			e.pos.x = W - 26.0
-			e.vx = -abs(e.vx)
-		e.pos.y = e.base_y + sin(t * 1.7 + e.bob) * 6.0
+		e.pos.y += e.vy * delta
+		e.pos.x = clamp(e.x0 + sin(t * 1.4 + e.bob) * e.weave, CX_L + 14.0, CX_R - 14.0)
 		if e.hurt > 0.0:
 			e.hurt -= delta
 		e.fire -= delta
-		if e.fire <= 0.0:
+		if e.fire <= 0.0 and e.pos.y > 8.0 and e.pos.y < PLAYER_Y - 24.0:
 			var aim: Vector2 = (Vector2(player_x, PLAYER_Y) - e.pos).normalized()
-			eballs.append({"pos": e.pos + Vector2(0, 10), "vel": Vector2(aim.x * 46.0, EBALL_SPEED)})
-			e.fire = randf_range(1.3, 2.6)
+			eballs.append({"pos": e.pos + Vector2(0, 10), "vel": Vector2(aim.x * 52.0, EBALL_SPEED)})
+			e.fire = randf_range(1.4, 2.8)
+		# crash into the player
+		if invuln <= 0.0 and e.hp > 0 and e.pos.distance_to(Vector2(player_x, PLAYER_Y)) < 17.0:
+			hp -= 1
+			invuln = INVULN
+			e.hp = 0
+			puffs.append({"pos": e.pos, "ttl": 0.4})
+			_sfx()
+			if hp <= 0:
+				game_over = true
 
 	# shockwaves vs enemies
 	for s in shots:
@@ -208,9 +212,9 @@ func _process(delta: float) -> void:
 					_sfx()
 				break
 	shots = shots.filter(func(s): return s.y > -24.0)
-	enemies = enemies.filter(func(e): return e.hp > 0)
+	enemies = enemies.filter(func(e): return e.hp > 0 and e.pos.y < H + 22.0)
 
-	# enemy shots vs player
+	# enemy bullets vs player
 	for b in eballs:
 		b.pos += b.vel * delta
 		if invuln <= 0.0 and abs(b.pos.x - player_x) < 11.0 and abs(b.pos.y - PLAYER_Y) < 14.0:
@@ -220,16 +224,16 @@ func _process(delta: float) -> void:
 			_sfx()
 			if hp <= 0:
 				game_over = true
-	eballs = eballs.filter(func(b): return b.pos.y < H + 12.0 and b.pos.x > -12.0 and b.pos.x < W + 12.0)
+	eballs = eballs.filter(func(b): return b.pos.y < H + 12.0 and b.pos.x > CX_L - 14.0 and b.pos.x < CX_R + 14.0)
 
 	queue_redraw()
 
 
 func _spawn_enemy() -> void:
-	var by := randf_range(34.0, 100.0)
-	var spd := randf_range(28.0, 52.0) * (1.0 if randf() < 0.5 else -1.0)
-	enemies.append({"pos": Vector2(randf_range(40.0, W - 40.0), by), "base_y": by,
-		"vx": spd, "hp": ENEMY_HP, "fire": randf_range(0.8, 2.0), "bob": randf() * TAU, "hurt": 0.0})
+	var ex := randf_range(CX_L + 24.0, CX_R - 24.0)
+	enemies.append({"pos": Vector2(ex, -14.0), "x0": ex, "vy": enemy_vy + randf_range(-4.0, 12.0),
+		"weave": randf_range(6.0, 22.0), "hp": ENEMY_HP, "fire": randf_range(0.6, 1.6),
+		"bob": randf() * TAU, "hurt": 0.0})
 
 
 func _restart() -> void:
@@ -238,8 +242,9 @@ func _restart() -> void:
 	player_x = 240.0
 	enemies.clear(); eballs.clear(); shots.clear(); puffs.clear()
 	defeated = 0
-	spawn_dt = 1.7
-	spawn_cd = 0.8
+	spawn_dt = 1.5
+	enemy_vy = 30.0
+	spawn_cd = 0.7
 	game_over = false
 
 
@@ -254,11 +259,20 @@ func _exit() -> void:
 
 # ---- draw -----------------------------------------------------------
 func _draw() -> void:
-	draw_rect(Rect2(0, 0, W, H), C_BG)
-	for d in bg_dashes:
-		draw_rect(Rect2(d.x, d.y, 2, 9), Color(1, 1, 1, 0.06))
-	draw_rect(Rect2(0, 0, W, 5), C_GOLD)
-	draw_rect(Rect2(0, H - 5, W, 5), C_GOLD)
+	# scrolling tower shaft inside the column
+	draw_rect(Rect2(CX_L, 0, CX_R - CX_L, H), C_BG)
+	var y := bg_y - 40.0
+	while y < H:
+		draw_rect(Rect2(CX_L, y, CX_R - CX_L, 2), Color(1, 1, 1, 0.05))
+		draw_rect(Rect2(CX_L + 40, y + 18, 2, 22), Color(1, 1, 1, 0.04))
+		draw_rect(Rect2(CX_R - 42, y + 18, 2, 22), Color(1, 1, 1, 0.04))
+		y += 40.0
+
+	# side panels (tower walls) + gold trim along the column
+	draw_rect(Rect2(0, 0, CX_L, H), C_PANEL)
+	draw_rect(Rect2(CX_R, 0, W - CX_R, H), C_PANEL)
+	draw_rect(Rect2(CX_L - 3, 0, 3, H), C_GOLD)
+	draw_rect(Rect2(CX_R, 0, 3, H), C_GOLD)
 
 	for e in enemies:
 		_draw_monster(e)
@@ -295,8 +309,8 @@ func _draw_monster(e: Dictionary) -> void:
 	draw_colored_polygon(PackedVector2Array([p + Vector2(9, -7), p + Vector2(12, -15), p + Vector2(4, -9)]), INK)
 	draw_circle(p + Vector2(-4.5, -1), 3.4, C_WHITE)
 	draw_circle(p + Vector2(4.5, -1), 3.4, C_WHITE)
-	draw_circle(p + Vector2(-4.5, 0), 1.7, INK)
-	draw_circle(p + Vector2(4.5, 0), 1.7, INK)
+	draw_circle(p + Vector2(-4.5, 1), 1.7, INK)
+	draw_circle(p + Vector2(4.5, 1), 1.7, INK)
 	draw_line(p + Vector2(-4, 6), p + Vector2(4, 6), INK, 1.6)
 	for i in range(int(e.hp)):
 		draw_rect(Rect2(p.x - 5 + i * 5, p.y - 20, 3, 2), C_YELLOW)
@@ -335,19 +349,19 @@ func _draw_heart(c: Vector2, full: bool) -> void:
 func _draw_buttons() -> void:
 	_btn(LEFT_RECT, _touch_in(LEFT_RECT) or Input.is_physical_key_pressed(KEY_LEFT) or Input.is_physical_key_pressed(KEY_A))
 	var lc := LEFT_RECT.get_center()
-	draw_colored_polygon(PackedVector2Array([lc + Vector2(6, -8), lc + Vector2(6, 8), lc + Vector2(-8, 0)]), C_WHITE)
+	draw_colored_polygon(PackedVector2Array([lc + Vector2(7, -9), lc + Vector2(7, 9), lc + Vector2(-9, 0)]), C_WHITE)
 	_btn(RIGHT_RECT, _touch_in(RIGHT_RECT) or Input.is_physical_key_pressed(KEY_RIGHT) or Input.is_physical_key_pressed(KEY_D))
 	var rc := RIGHT_RECT.get_center()
-	draw_colored_polygon(PackedVector2Array([rc + Vector2(-6, -8), rc + Vector2(-6, 8), rc + Vector2(8, 0)]), C_WHITE)
+	draw_colored_polygon(PackedVector2Array([rc + Vector2(-7, -9), rc + Vector2(-7, 9), rc + Vector2(9, 0)]), C_WHITE)
 	var shooting := _touch_in(SHOOT_RECT) or Input.is_physical_key_pressed(KEY_SPACE)
 	_btn(SHOOT_RECT, shooting, C_WAVE)
 	var sc := SHOOT_RECT.get_center()
-	draw_arc(sc, 13, PI * 1.15, PI * 1.85, 14, C_WHITE, 3.0)
-	draw_arc(sc, 8, PI * 1.2, PI * 1.8, 12, C_WHITE, 2.0)
+	draw_arc(sc, 14, PI * 1.15, PI * 1.85, 14, C_WHITE, 3.0)
+	draw_arc(sc, 9, PI * 1.2, PI * 1.8, 12, C_WHITE, 2.0)
 
 
 func _btn(r: Rect2, pressed: bool, base := Color(1, 1, 1, 1)) -> void:
-	var fill := Color(base.r, base.g, base.b, 0.5 if pressed else 0.22)
+	var fill := Color(base.r, base.g, base.b, 0.5 if pressed else 0.2)
 	draw_rect(r, fill)
 	draw_rect(r, Color(1, 1, 1, 0.7), false, 1.5)
 
