@@ -966,12 +966,9 @@ func _draw_station(s: Dictionary) -> void:
 	var rr: int = s.r
 	# 湯 / 麵: a pot mouth set into the counter (body off-frame below) + rising steam
 	if s.item == "soup" or s.item == "noodles":
-		var hot: bool = (s.item == "soup" and held == "soup") \
-			or (s.item == "noodles" and (held == "noodles" or noodle_state == "cooking"))
 		_draw_pot_mouth(c, s.item)
 		if s.item == "noodles" and noodle_state == "cooking":
 			_draw_noodle_nest(Vector2(c.x, c.y - 1))
-		_draw_steam_patch(Vector2(c.x, c.y - 6), hot)
 		if s.item == "noodles" and noodle_state == "cooking":
 			_draw_boil_gauge(Vector2(c.x - 18, c.y + 26))
 		# label tucked under the pot mouth
