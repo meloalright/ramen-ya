@@ -75,18 +75,18 @@ def vat(name, liquid, liquid_d, hi, basket):
     body = f'''
     <defs>
       <linearGradient id="cy_{name}" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stop-color="#79818a"/>
-        <stop offset="0.32" stop-color="#c4cace"/>
-        <stop offset="0.62" stop-color="#a6aeb6"/>
-        <stop offset="1" stop-color="#6b737b"/>
+        <stop offset="0" stop-color="#7a4324"/>
+        <stop offset="0.32" stop-color="#e6a868"/>
+        <stop offset="0.62" stop-color="#c17c42"/>
+        <stop offset="1" stop-color="#6b3a1e"/>
       </linearGradient>
     </defs>
-    <!-- smooth cylinder body, plain undecorated walls -->
+    <!-- smooth copper cylinder body, plain undecorated walls -->
     <path d="M5 30 L5 112 A48 16 0 0 0 101 112 L101 30 A48 22 0 0 1 5 30 Z"
           fill="url(#cy_{name})" stroke="{INK}" stroke-width="4.5" stroke-linejoin="round"/>
-    <!-- round rim + liquid surface (fuller 3/4 oval) -->
-    <ellipse cx="53" cy="30" rx="48" ry="22" fill="#c4cad0" stroke="{INK}" stroke-width="4.5"/>
-    <ellipse cx="53" cy="30" rx="40" ry="17" fill="#888f97"/>
+    <!-- round copper rim + liquid surface (fuller 3/4 oval) -->
+    <ellipse cx="53" cy="30" rx="48" ry="22" fill="#d2914f" stroke="{INK}" stroke-width="4.5"/>
+    <ellipse cx="53" cy="30" rx="40" ry="17" fill="#9a5c30"/>
     <ellipse cx="53" cy="30" rx="36" ry="15" fill="{liquid}"/>
     <path d="M17 30 a36 15 0 0 0 72 0 a36 15 0 0 1 -72 0" fill="{liquid_d}"/>
     {extra}'''
