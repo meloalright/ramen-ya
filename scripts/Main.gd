@@ -18,6 +18,9 @@ const BACK_RECT := Rect2(W - 52, 4, 48, 15)
 # action buttons
 const CLEAR_RECT := Rect2(118, 246, 96, 20)
 const SERVE_RECT := Rect2(266, 246, 96, 20)
+# victory screen buttons
+const NEXT_RECT := Rect2(250, 196, 132, 28)
+const MENU_RECT := Rect2(98, 196, 132, 28)
 
 # the assembly bowl (slightly-tilted overhead) — click target to add / sprinkle.
 # the 128px sprite is drawn centred at BOWL_C; its bowl opening sits a little
@@ -86,6 +89,10 @@ var customers: Array = []
 var selected_seat: int = 0
 
 var spawn_timer: float = 1.0
+
+# one order at a time + last result
+var order: Dictionary = {}
+var stars: int = 0
 var spawn_interval: float = 4.0
 
 # the bowl being assembled + what we're currently holding
@@ -147,7 +154,8 @@ func _ready() -> void:
 	_build_stations()
 	_load_cook()
 	_load_sfx()
-	_reset_bowl()
+	served = 0
+	_start_game()              # straight into making the one order
 	set_process(true)
 
 
@@ -285,8 +293,11 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 
-func _update_play(delta: float) -> void:
-	# relaxed craft: customers keep coming, no day timer, no fail state
+func _update_play(_delta: float) -> void:
+	pass  # single-order craft: nothing to tick; making the bowl is all in _process
+
+
+func _update_play_legacy(delta: float) -> void:
 	spawn_timer -= delta
 	if spawn_timer <= 0.0:
 		_try_spawn()
@@ -320,8 +331,7 @@ func _make_order() -> Dictionary:
 	var wants := {}
 	for k in TOP_ORDER:
 		wants[k] = (randi() % 2 == 0)
-	var pat := 45.0          # generous — no rush, it's about doing it well
-	return { "wants": wants, "patience": pat, "max_patience": pat, "face": randi() % 4 }
+	return { "wants": wants }
 
 
 # =====================================================================
@@ -345,27 +355,22 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _handle_key(key: int) -> void:
 	if key == KEY_ESCAPE or key == KEY_M:
-		get_tree().change_scene_to_file("res://scenes/Shop.tscn")
+		get_tree().change_scene_to_file("res://scenes/Menu.tscn")
 		return
-	if state == State.TITLE and (key == KEY_SPACE or key == KEY_ENTER):
-		_start_game()
-	elif state == State.OVER and (key == KEY_R or key == KEY_SPACE or key == KEY_ENTER):
+	if state == State.OVER and (key == KEY_R or key == KEY_SPACE or key == KEY_ENTER):
 		_start_game()
 
 
 func _handle_click(p: Vector2) -> void:
 	if BACK_RECT.has_point(p):
-		get_tree().change_scene_to_file("res://scenes/Shop.tscn")
+		get_tree().change_scene_to_file("res://scenes/Menu.tscn")
 		return
-	if state == State.TITLE or state == State.OVER:
-		_start_game()
+	if state == State.OVER:
+		if MENU_RECT.has_point(p):
+			get_tree().change_scene_to_file("res://scenes/Menu.tscn")
+		else:
+			_start_game()      # 再來一單 button, or tap anywhere
 		return
-
-	# pick an order ticket to fill
-	for i in SEATS:
-		if _ticket_rect(i).has_point(p) and customers[i] != null:
-			selected_seat = i
-			return
 
 	# action buttons
 	if SERVE_RECT.has_point(p):
@@ -494,38 +499,30 @@ func _place_into_bowl() -> void:
 
 
 func _serve() -> void:
-	var c = customers[selected_seat]
-	if c == null:
-		_spawn_float(Vector2(240, 150), "沒有客人", COL_YELLOW)
-		_sfx("no")
+	if order.is_empty():
 		return
 	if not _base_ok():
 		_spawn_float(Vector2(240, 150), "還沒做好！", COL_YELLOW)
 		_sfx("no")
 		return
-
-	if not _matches(c):
-		# wrong toppings — let the player try again, no penalty
-		_spawn_float(Vector2(seat_x[selected_seat], 60), "配料不對…", COL_YELLOW)
+	if not _matches(order):
+		_spawn_float(Vector2(240, 60), "配料不對…", COL_YELLOW)
 		_sfx("no")
 		flash = 0.18
 		flash_col = COL_YELLOW
 		return
 
-	# served! the bowl's quality is judged on the noodles' doneness
+	# success → victory! stars from the noodles' doneness
 	served += 1
-	var sx: int = seat_x[selected_seat]
-	if bowl_nq == "ok":
-		_spawn_float(Vector2(sx, 56), "完美的一碗！★", COL_GREEN)
-	elif bowl_nq == "raw":
-		_spawn_float(Vector2(sx, 56), "好吃，但麵有點生", COL_YELLOW)
-	else:
-		_spawn_float(Vector2(sx, 56), "好吃,下次麵別煮太久", COL_YELLOW)
+	stars = 3 if bowl_nq == "ok" else 2
 	_sfx("serve")
-	flash = 0.2
+	flash = 0.25
 	flash_col = COL_GREEN
-	customers[selected_seat] = null
-	_reset_bowl()
+	state = State.OVER          # victory / results screen (keeps the finished bowl on show)
+	var g = get_node_or_null("/root/Game")
+	if g:
+		g.high_score += 1       # persisted "completed orders" total
+		g.save()
 
 
 func _base_ok() -> bool:
@@ -554,10 +551,8 @@ func _item_name(item: String) -> String:
 # =====================================================================
 func _start_game() -> void:
 	state = State.PLAY
-	served = 0
-	spawn_timer = 0.8
-	selected_seat = 0
-	customers = [null, null, null]
+	order = _make_order()
+	stars = 0
 	noodle_state = "empty"
 	noodle_t = 0.0
 	_reset_bowl()
@@ -616,9 +611,8 @@ func _draw_play() -> void:
 	for y in range(0, H, 12):
 		draw_rect(Rect2(0, y, W, 1), COL_WOOD_D)
 
-	# order tickets along the top
-	for i in SEATS:
-		_draw_ticket(i)
+	# the single order ticket, pinned at the top
+	_draw_order_ticket()
 
 	# the bowl (top-down) in the middle of the counter
 	_draw_assembly(BOWL_C)
@@ -651,7 +645,30 @@ func _puff(x: float, y: float) -> void:
 func _draw_hud() -> void:
 	draw_rect(Rect2(0, 0, W, 22), COL_INK)
 	_text("拉麵屋 · 親手做一碗", Vector2(8, 16), 11, COL_YELLOW)
-	_text("今日已做 " + str(served) + " 碗", Vector2(W - 130, 16), 11, COL_WHITE)
+	_text("完成 " + str(served) + " 單", Vector2(W - 118, 16), 11, COL_WHITE)
+
+
+func _draw_order_ticket() -> void:
+	if order.is_empty():
+		return
+	var r := Rect2(176, 24, 128, 46)
+	draw_rect(Rect2(r.position.x + r.size.x / 2 - 2, r.position.y - 4, 4, 6), COL_RED)   # pin
+	draw_rect(r, Color("efe7d6"))
+	draw_rect(r, COL_INK, false, 1.5)
+	_text("今日訂單", Vector2(r.position.x + 10, r.position.y + 15), 9, Color("7a6a52"))
+	_text("牛肉麵", Vector2(r.position.x + 10, r.position.y + 33), 12, COL_INK)
+	var wants := []
+	for k in TOP_ORDER:
+		if order.wants[k]:
+			wants.append(k)
+	if wants.is_empty():
+		_text("原味", Vector2(r.position.x + 70, r.position.y + 33), 10, Color("7a6a52"))
+	else:
+		var ix := r.position.x + 66
+		for k in wants:
+			draw_rect(Rect2(ix, r.position.y + 23, 12, 12), TOPPING[k].col)
+			draw_rect(Rect2(ix, r.position.y + 23, 12, 12), COL_INK, false, 1.0)
+			ix += 15
 
 
 func _draw_seat(i: int) -> void:
@@ -967,18 +984,47 @@ func _draw_button(r: Rect2, label: String, base: Color) -> void:
 func _draw_back_button() -> void:
 	draw_rect(BACK_RECT, Color(0, 0, 0, 0.6))
 	draw_rect(BACK_RECT, COL_YELLOW, false, 1.0)
-	_text("← 店內", Vector2(BACK_RECT.position.x + BACK_RECT.size.x / 2, BACK_RECT.position.y + 12),
+	_text("← 選單", Vector2(BACK_RECT.position.x + BACK_RECT.size.x / 2, BACK_RECT.position.y + 12),
 		9, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 func _draw_over() -> void:
-	draw_rect(Rect2(0, 0, W, H), Color(0, 0, 0, 0.7))
-	var won := reputation > 0
-	var title := "打烊—今日結束！" if won else "遊戲結束"
-	_text(title, Vector2(240, 90), 22, (COL_GREEN if won else COL_RED), HORIZONTAL_ALIGNMENT_CENTER)
-	_text("今日收入  ￥" + str(money), Vector2(240, 130), 15, COL_YELLOW, HORIZONTAL_ALIGNMENT_CENTER)
-	_text("賣出拉麵  " + str(served), Vector2(240, 156), 12, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
-	_text("[ 點擊或按 R 再玩一次 ]", Vector2(240, 205), 12, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	draw_rect(Rect2(0, 0, W, H), Color(0.05, 0.04, 0.07, 0.72))
+	# a panel
+	draw_rect(Rect2(110, 40, 260, 196), Color("2a2030"))
+	draw_rect(Rect2(110, 40, 260, 196), COL_YELLOW, false, 2.0)
+	_text("上菜成功！", Vector2(240, 66), 19, COL_GREEN, HORIZONTAL_ALIGNMENT_CENTER)
+	# the finished bowl (scaled preview)
+	var bc := Vector2(240, 108)
+	var sz := 84.0
+	var dst := Rect2(bc.x - sz / 2.0, bc.y - sz / 2.0, sz, sz)
+	if ctex.has("td_bowl"):
+		draw_texture_rect(ctex["td_bowl"], dst, false)
+		if soup_fill > 0.0 and ctex.has("td_broth"):
+			draw_texture_rect(ctex["td_broth"], dst, false)
+		if bowl.noodles and ctex.has("td_noodles"):
+			draw_texture_rect(ctex["td_noodles"], dst, false)
+		if bowl.beef and ctex.has("td_beef"):
+			draw_texture_rect(ctex["td_beef"], dst, false)
+	# star rating (always 3 slots)
+	var sx0 := 240.0 - 3 * 18.0 / 2.0 + 9.0
+	for i in range(3):
+		_draw_star(Vector2(sx0 + i * 18.0, 162.0), i < stars)
+	var comment := "完美的一碗！" if stars >= 3 else "好吃,麵的火候再練練"
+	_text(comment, Vector2(240, 182), 10, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	# buttons
+	_draw_button(MENU_RECT, "回主選單", COL_PANEL_HI)
+	_draw_button(NEXT_RECT, "再來一單", COL_GREEN)
+
+
+func _draw_star(c: Vector2, full: bool) -> void:
+	var col := COL_YELLOW if full else Color(0.35, 0.3, 0.25)
+	var pts := PackedVector2Array()
+	for i in range(10):
+		var ang := -PI / 2.0 + i * PI / 5.0
+		var rad := 7.0 if i % 2 == 0 else 3.0
+		pts.append(c + Vector2(cos(ang), sin(ang)) * rad)
+	draw_colored_polygon(pts, col)
 
 
 func _draw_chef(center_bottom: Vector2, h: float) -> void:

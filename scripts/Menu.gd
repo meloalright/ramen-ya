@@ -68,7 +68,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _start() -> void:
-	get_tree().change_scene_to_file("res://scenes/Tower.tscn")
+	get_tree().change_scene_to_file("res://scenes/Main.tscn")
 
 
 # =====================================================================
@@ -83,14 +83,14 @@ func _draw() -> void:
 
 	# title
 	_ctext("拉 麵 屋", Vector2(240, 60), 30, COL_YELLOW)
-	_ctext("紫金塔 · 縱向卷軸打怪", Vector2(240, 88), 11, COL_WHITE)
+	_ctext("親手做一碗 · 手作拉麵", Vector2(240, 88), 11, COL_WHITE)
 
 	# walking chef on the left
 	_draw_chef(Vector2(78, 232), 92)
 
-	# start button + high score
-	_button(NEW_RECT, "開始遊戲", COL_GREEN, true)
-	_ctext("最高擊退  " + str(Game.high_score), Vector2(240, 208), 10, COL_YELLOW)
+	# start button + progress
+	_button(NEW_RECT, "開始製作", COL_GREEN, true)
+	_ctext("已完成  " + str(Game.high_score) + "  單", Vector2(240, 208), 10, COL_YELLOW)
 
 	_ctext("點擊 或 Enter / 空白鍵 開始", Vector2(240, 258), 9,
 		COL_GREEN if int(blink * 2.0) % 2 == 0 else COL_WHITE)
