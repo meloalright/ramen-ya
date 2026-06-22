@@ -32,7 +32,9 @@ func _ready() -> void:
 	font = _make_font()
 	if ResourceLoader.exists("res://assets/chef_sheet.png"):
 		chef_tex = load("res://assets/chef_sheet.png")
-	if ResourceLoader.exists("res://assets/env/ramen_stall.png"):
+	if ResourceLoader.exists("res://assets/env/cashier.png"):
+		stall_tex = load("res://assets/env/cashier.png")
+	elif ResourceLoader.exists("res://assets/env/ramen_stall.png"):
 		stall_tex = load("res://assets/env/ramen_stall.png")
 	if Game.has_save():
 		Game.load_game()        # pre-load so the menu can show the saved coins
@@ -74,25 +76,19 @@ func _start() -> void:
 # =====================================================================
 func _draw() -> void:
 	draw_rect(Rect2(0, 0, W, H), COL_BG)
-	# stall art as a faint full-width backdrop
+	# the cashier counter as the full cover (art is exactly 2x the menu size)
 	if stall_tex != null:
-		var sw := float(W)
-		var sh := sw * stall_tex.get_height() / float(stall_tex.get_width())
-		draw_texture_rect(stall_tex, Rect2(0, (H - sh) / 2.0, sw, sh), false, Color(1, 1, 1, 0.4))
-	draw_rect(Rect2(0, 0, W, H), Color(0.07, 0.06, 0.09, 0.62))
+		draw_texture_rect(stall_tex, Rect2(0, 0, W, H), false)
+	# faint darkening top & bottom so the overlaid text reads cleanly
+	draw_rect(Rect2(0, 0, W, 30), Color(0, 0, 0, 0.18))
 
-	# title
-	_ctext("拉 麵 屋", Vector2(135, 110), 30, COL_YELLOW)
-	_ctext("親手做一碗 · 手作拉麵", Vector2(135, 142), 11, COL_WHITE)
+	# shop name on the noren
+	_ctext("拉 麵 屋", Vector2(135, 40), 26, COL_YELLOW)
 
-	# walking chef, centered
-	_draw_chef(Vector2(135, 312), 120)
-
-	# start button + progress
+	# start button + progress (on the counter front)
 	_button(NEW_RECT, "開始製作", COL_GREEN, true)
-	_ctext("已完成  " + str(Game.high_score) + "  單", Vector2(135, 418), 10, COL_YELLOW)
-
-	_ctext("點擊 或 Enter / 空白鍵 開始", Vector2(135, 462), 9,
+	_ctext("已完成  " + str(Game.high_score) + "  單", Vector2(135, 416), 10, COL_YELLOW)
+	_ctext("點擊 或 Enter / 空白鍵 開始", Vector2(135, 460), 9,
 		COL_GREEN if int(blink * 2.0) % 2 == 0 else COL_WHITE)
 
 

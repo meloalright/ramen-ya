@@ -56,5 +56,89 @@ def bowl(cx, cy, s=1.0):
     </g>'''
 
 
+def register(cx, by):
+    # a cash register sitting with its base on the counter top (y=by)
+    return f'''<g>
+    <rect x="{cx-60}" y="{by-98}" width="120" height="98" rx="8" fill="#cf6b4e" stroke="{INK}" stroke-width="6"/>
+    <rect x="{cx-60}" y="{by-98}" width="120" height="16" rx="8" fill="#e08a6c"/>
+    <!-- display housing + screen -->
+    <rect x="{cx-44}" y="{by-142}" width="88" height="48" rx="6" fill="#6f4230" stroke="{INK}" stroke-width="6"/>
+    <rect x="{cx-34}" y="{by-134}" width="68" height="32" rx="3" fill="#bfe6c8"/>
+    <g fill="#2e6b3f"><rect x="{cx-25}" y="{by-126}" width="8" height="16"/><rect x="{cx-11}" y="{by-126}" width="8" height="16"/><rect x="{cx+3}" y="{by-126}" width="8" height="16"/><rect x="{cx+17}" y="{by-126}" width="8" height="16"/></g>
+    <!-- keypad -->
+    <g fill="#f0d9a0" stroke="{INK}" stroke-width="3">
+      <rect x="{cx-42}" y="{by-72}" width="22" height="19" rx="3"/><rect x="{cx-12}" y="{by-72}" width="22" height="19" rx="3"/><rect x="{cx+18}" y="{by-72}" width="22" height="19" rx="3"/>
+      <rect x="{cx-42}" y="{by-47}" width="22" height="19" rx="3"/><rect x="{cx-12}" y="{by-47}" width="22" height="19" rx="3"/><rect x="{cx+18}" y="{by-47}" width="22" height="19" rx="3"/>
+    </g>
+    <!-- drawer line + handle -->
+    <rect x="{cx-60}" y="{by-24}" width="120" height="4" fill="{INK}"/>
+    <rect x="{cx-15}" y="{by-18}" width="30" height="9" rx="3" fill="#6f4230" stroke="{INK}" stroke-width="3"/>
+    </g>'''
+
+
+def lucky_cat(cx, by):
+    # a maneki-neko sitting on the counter top (y=by)
+    return f'''<g>
+    <path d="M{cx-36} {by} C{cx-44} {by-78} {cx-26} {by-86} {cx} {by-86} C{cx+26} {by-86} {cx+44} {by-78} {cx+36} {by} Z" fill="#ffffff" stroke="{INK}" stroke-width="6"/>
+    <ellipse cx="{cx}" cy="{by-24}" rx="22" ry="14" fill="#f2c14e" stroke="{INK}" stroke-width="5"/>
+    <path d="M{cx-9} {by-24} h18" stroke="{INK}" stroke-width="3"/>
+    <path d="M{cx-34} {by-122} l-8 -24 l26 13 Z" fill="#ffffff" stroke="{INK}" stroke-width="5"/>
+    <path d="M{cx+34} {by-122} l8 -24 l-26 13 Z" fill="#ffffff" stroke="{INK}" stroke-width="5"/>
+    <path d="M{cx-29} {by-127} l-4 -12 l13 7 Z" fill="#f4a6a6"/>
+    <path d="M{cx+29} {by-127} l4 -12 l-13 7 Z" fill="#f4a6a6"/>
+    <circle cx="{cx}" cy="{by-104}" r="37" fill="#ffffff" stroke="{INK}" stroke-width="6"/>
+    <ellipse cx="{cx+35}" cy="{by-58}" rx="13" ry="18" fill="#ffffff" stroke="{INK}" stroke-width="6"/>
+    <path d="M{cx-25} {by-80} Q{cx} {by-69} {cx+25} {by-80}" fill="none" stroke="#e23b3b" stroke-width="7"/>
+    <circle cx="{cx}" cy="{by-73}" r="6" fill="#f2c14e" stroke="{INK}" stroke-width="3"/>
+    <ellipse cx="{cx-14}" cy="{by-107}" rx="3.5" ry="5" fill="{INK}"/>
+    <ellipse cx="{cx+14}" cy="{by-107}" rx="3.5" ry="5" fill="{INK}"/>
+    <path d="M{cx-4} {by-97} q4 4 8 0" fill="none" stroke="{INK}" stroke-width="2.5"/>
+    <g stroke="{INK}" stroke-width="2"><path d="M{cx-17} {by-99} h-13 M{cx+17} {by-99} h13 M{cx-17} {by-93} h-12 M{cx+17} {by-93} h12"/></g>
+    </g>'''
+
+
+def cashier():
+    W2, H2 = 540, 960
+    cy = 560                       # counter top
+    rows = ""
+    for i, col in enumerate(["#b5582f", "#5f8f4a", "#3f7bbd", "#b5582f"]):
+        y = 250 + i * 34
+        w = [78, 62, 84, 58][i]
+        rows += (f'<rect x="200" y="{y}" width="{w}" height="15" rx="3" fill="{col}"/>'
+                 f'<rect x="300" y="{y}" width="46" height="15" rx="3" fill="#cba978"/>')
+    body = f'''
+    <!-- wall -->
+    <rect width="{W2}" height="{H2}" fill="#e3cba0"/>
+    <rect y="430" width="{W2}" height="{H2-430}" fill="#d8bd8e"/>
+    <path d="M0 430 H{W2}" stroke="#c8a874" stroke-width="3"/>
+    <!-- top green noren -->
+    <rect x="0" y="0" width="{W2}" height="116" fill="#3f8f6a" stroke="{INK}" stroke-width="6"/>
+    <g stroke="{INK}" stroke-width="5"><path d="M90 116 V40 M180 116 V40 M270 116 V40 M360 116 V40 M450 116 V40"/></g>
+    <!-- hanging paper lanterns -->
+    <path d="M96 0 V52" stroke="{INK}" stroke-width="5"/>
+    <ellipse cx="96" cy="132" rx="38" ry="50" fill="#e2533f" stroke="{INK}" stroke-width="6"/>
+    <path d="M84 132 h24" stroke="{INK}" stroke-width="4" opacity="0.5"/>
+    <path d="M444 0 V52" stroke="{INK}" stroke-width="5"/>
+    <ellipse cx="444" cy="132" rx="38" ry="50" fill="#e2533f" stroke="{INK}" stroke-width="6"/>
+    <path d="M432 132 h24" stroke="{INK}" stroke-width="4" opacity="0.5"/>
+    <!-- hanging menu / price board -->
+    <g stroke="{INK}" stroke-width="4"><path d="M206 216 V190 M334 216 V190"/></g>
+    <rect x="170" y="214" width="200" height="178" rx="10" fill="#5a3b26" stroke="{INK}" stroke-width="7"/>
+    <rect x="186" y="230" width="168" height="146" rx="4" fill="#f0e6cf"/>
+    {rows}
+    <!-- wooden counter -->
+    <rect x="0" y="{cy}" width="{W2}" height="{H2-cy}" fill="#a9743f" stroke="{INK}" stroke-width="8"/>
+    <rect x="0" y="{cy}" width="{W2}" height="20" fill="#c08a4e"/>
+    <g stroke="#8c5d30" stroke-width="3" opacity="0.55"><path d="M0 {cy+120} H{W2} M0 {cy+240} H{W2}"/></g>
+    {register(150, cy)}
+    {lucky_cat(414, cy)}
+    '''
+    svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W2} {H2}">{body}</svg>'
+    cairosvg.svg2png(bytestring=svg.encode(), write_to=os.path.join(OUT, "cashier.png"),
+                     output_width=W2, output_height=H2)
+    print("wrote cashier.png", (W2, H2))
+
+
 if __name__ == "__main__":
     main()
+    cashier()
