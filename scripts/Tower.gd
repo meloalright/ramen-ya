@@ -1,74 +1,67 @@
 extends Node2D
 # =====================================================================
-#  紫金大廈  —  PURPLE-GOLD TOWER (a little action room)
-#  Walk in through the open gate. Small monsters (小怪) roam the hall;
-#  click one to attack it — two hits defeats it. Leave by the door.
+#  RAMEN-YA — 紫金大廈: a horizontal-move VERTICAL SHOOTER.
+#  Move left/right (on-screen buttons or A/D/←/→), hold SHOOT (button or
+#  Space/W/↑) to fire shockwaves upward. Dodge the monsters' shots.
 # =====================================================================
+const W := 480
+const H := 270
 
-const TILE := 16
-const MAP_W := 16
-const MAP_H := 24
+const INK      := Color("241830")
+const C_BG     := Color("241a38")
+const C_GOLD   := Color("e7b84e")
+const C_WHITE  := Color("f4f0e6")
+const C_YELLOW := Color("f2c14e")
+const C_RED    := Color("e2533f")
+const C_MON    := Color("9a5ee0")
+const C_MON_HI := Color("c79bf0")
+const C_MON_EYE:= Color("ffe24e")
+const C_WAVE   := Color("6fe0ff")
+const C_EBALL  := Color("ff5f9e")
 
-enum { FLOOR, WALL, PILLAR, DOOR }
-var map: Array = []
-var door_cell := Vector2i(-1, -1)
+# player
+const PLAYER_Y := 206.0
+const PMIN_X := 26.0
+const PMAX_X := 454.0
+const PLAYER_SPEED := 168.0
+const HP_MAX := 3
+const INVULN := 1.1
+var player_x := 240.0
+var hp := HP_MAX
+var invuln := 0.0
 
-# ---- palette --------------------------------------------------------
-const C_FLOOR    := Color("3a2e4a")
-const C_FLOOR_D  := Color("2e2440")
-const C_FLOOR_HI := Color("463858")
-const C_WALL     := Color("241c30")
-const C_WALL_HI  := Color("3a2e4a")
-const C_GOLD     := Color("d2aa4c")
-const C_GOLD_D   := Color("a8842e")
-const C_DOOR     := Color("141018")
-const C_INK      := Color("141018")
-const C_WHITE    := Color("f4f0e6")
-const C_YELLOW   := Color("f2c14e")
-const C_RED      := Color("d94f4f")
-const C_MON      := Color("8a4ec8")
-const C_MON_D    := Color("6a36a0")
-const C_MON_HI   := Color("a86ee0")
-const C_MON_EYE  := Color("f2e24e")
+# shooting
+const SHOOT_DT := 0.26
+const SHOT_SPEED := 235.0
+var shot_cd := 0.0
+var shots: Array = []          # {x, y, w}
 
-# ---- player ---------------------------------------------------------
-var player_pos := Vector2.ZERO
-const PLAYER_SPEED := 74.0
-const PLAYER_H := 26.0
-const FEET_W := 11.0
-const FEET_H := 7.0
-var facing := 3
-var moving := false
-var anim_t := 0.0
-var anim_i := 0
-const STEP_SEQ := [0, 1, 2, 3]
+# enemies
+const ENEMY_HP := 2
+const EBALL_SPEED := 120.0
+var enemies: Array = []        # {pos, base_y, vx, hp, fire, bob, hurt}
+var eballs: Array = []         # {pos, vel}
+var spawn_cd := 0.8
+var spawn_dt := 1.7
+var defeated := 0
+var puffs: Array = []          # {pos, ttl}
+var bg_dashes: Array = []
 
-# sword swing
-var swing := 0.0
-var swing_ang := 0.0
-const SWING_T := 0.2
-var sfx: AudioStreamPlayer
-
+var game_over := false
+var font: Font
 var chef_tex: Texture2D
+var sfx: AudioStreamPlayer
 const CHEF_FW := 52
 const CHEF_FH := 68
-const ROW_DOWN := 0
-const ROW_SIDE := 1
-const ROW_UP := 2
+var anim := 0.0
+var anim_i := 0
+var t := 0.0
+var touch_pts := {}
 
-# ---- click / touch --------------------------------------------------
-var move_target := Vector2.ZERO
-var has_target := false
-var exit_on_arrive := false
-
-# ---- monsters -------------------------------------------------------
-var monsters: Array = []        # {pos, hp, alive, hurt, bob, dead_t}
-var defeated := 0
-const MON_HP := 2
-
-var near_exit := false
-var font: Font
-var blink := 0.0
+const LEFT_RECT  := Rect2(12, 226, 52, 40)
+const RIGHT_RECT := Rect2(70, 226, 52, 40)
+const SHOOT_RECT := Rect2(398, 222, 70, 44)
+const BACK_RECT  := Rect2(W - 50, 4, 46, 16)
 
 @onready var cam: Camera2D = $Camera
 
@@ -80,15 +73,17 @@ func _ready() -> void:
 		chef_tex = load("res://assets/chef_sheet.png")
 	sfx = AudioStreamPlayer.new()
 	sfx.bus = "Master"
-	sfx.volume_db = -3.0
+	sfx.volume_db = -4.0
 	add_child(sfx)
 	if ResourceLoader.exists("res://assets/audio/hit.wav"):
 		sfx.stream = load("res://assets/audio/hit.wav")
-	_build_room()
-	_spawn_monsters(6)
-	player_pos = Vector2(door_cell.x * TILE + TILE / 2.0, (door_cell.y - 1) * TILE + 12)
-	facing = 3
-	_setup_camera()
+	cam.zoom = Vector2.ONE
+	cam.position = Vector2(W / 2.0, H / 2.0)
+	cam.position_smoothing_enabled = false
+	cam.make_current()
+	cam.reset_smoothing()
+	for i in range(28):
+		bg_dashes.append(Vector2(randf() * W, randf() * H))
 	set_process(true)
 
 
@@ -103,387 +98,268 @@ func _make_font() -> Font:
 	return ThemeDB.fallback_font
 
 
-func _setup_camera() -> void:
-	var room := Vector2(MAP_W * TILE, MAP_H * TILE)
-	var vp := get_viewport_rect().size
-	var z: float = min(vp.x / room.x, vp.y / room.y) * 0.995
-	cam.zoom = Vector2(z, z)
-	cam.position_smoothing_enabled = false
-	cam.position = room / 2.0
-	cam.reset_smoothing()
-
-
-func _build_room() -> void:
-	map = []
-	for y in MAP_H:
-		var row := []
-		for x in MAP_W:
-			if x == 0 or y == 0 or x == MAP_W - 1 or y == MAP_H - 1:
-				row.append(WALL)
-			else:
-				row.append(FLOOR)
-		map.append(row)
-	# a few pillars for character
-	for p in [Vector2i(4, 7), Vector2i(11, 7), Vector2i(4, 15), Vector2i(11, 15)]:
-		map[p.y][p.x] = PILLAR
-	# exit door at the bottom
-	var dx := MAP_W / 2
-	map[MAP_H - 1][dx] = DOOR
-	door_cell = Vector2i(dx, MAP_H - 1)
-
-
-func _spawn_monsters(n: int) -> void:
-	monsters.clear()
-	var cells := []
-	for y in range(3, MAP_H - 4):
-		for x in range(2, MAP_W - 2):
-			if map[y][x] == FLOOR:
-				cells.append(Vector2i(x, y))
-	cells.shuffle()
-	for i in min(n, cells.size()):
-		var c: Vector2i = cells[i]
-		monsters.append({
-			"pos": Vector2(c.x * TILE + TILE / 2.0, c.y * TILE + TILE / 2.0),
-			"hp": MON_HP, "alive": true, "hurt": 0.0, "bob": randf() * TAU, "dead_t": 0.0,
-		})
-
-
-# =====================================================================
-#  COLLISION
-# =====================================================================
-func _tile_at(wx: float, wy: float) -> int:
-	var tx := int(floor(wx / TILE))
-	var ty := int(floor(wy / TILE))
-	if tx < 0 or ty < 0 or tx >= MAP_W or ty >= MAP_H:
-		return WALL
-	return map[ty][tx]
-
-
-func _blocked(t: int) -> bool:
-	return t == WALL or t == PILLAR
-
-
-func _can_stand(cx: float, feet_y: float) -> bool:
-	for px in [cx - FEET_W / 2.0, cx + FEET_W / 2.0]:
-		for py in [feet_y - FEET_H, feet_y]:
-			if _blocked(_tile_at(px, py)):
-				return false
-	return true
-
-
-# =====================================================================
-#  LOOP
-# =====================================================================
-func _process(delta: float) -> void:
-	blink += delta
-	if swing > 0.0:
-		swing = max(0.0, swing - delta)
-
-	var dir := Vector2.ZERO
-	if Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT):
-		dir.x -= 1.0
-	if Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT):
-		dir.x += 1.0
-	if Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP):
-		dir.y -= 1.0
-	if Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN):
-		dir.y += 1.0
-
-	if dir != Vector2.ZERO:
-		has_target = false
-		exit_on_arrive = false
-	elif has_target:
-		var to: Vector2 = move_target - player_pos
-		if to.length() <= 2.5:
-			has_target = false
+# ---- input ----------------------------------------------------------
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		if event.pressed:
+			var wp: Vector2 = get_canvas_transform().affine_inverse() * event.position
+			touch_pts[event.index] = wp
+			_on_press(wp)
 		else:
-			dir = to.normalized()
+			touch_pts.erase(event.index)
+	elif event is InputEventScreenDrag:
+		var wp: Vector2 = get_canvas_transform().affine_inverse() * event.position
+		touch_pts[event.index] = wp
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE or event.keycode == KEY_M:
+			_exit()
+		elif game_over and event.keycode in [KEY_R, KEY_SPACE, KEY_ENTER]:
+			_restart()
 
-	var prev := player_pos
-	moving = dir != Vector2.ZERO
-	if moving:
-		dir = dir.normalized()
-		# deadband: only switch facing when one axis clearly dominates, so
-		# near-diagonal / near-target jitter doesn't flicker the sprite
-		if abs(dir.x) - abs(dir.y) > 0.34:
-			facing = 1 if dir.x < 0.0 else 2
-		elif abs(dir.y) - abs(dir.x) > 0.34:
-			facing = 3 if dir.y < 0.0 else 0
-	var step := dir * PLAYER_SPEED * delta
-	if _can_stand(player_pos.x + step.x, player_pos.y):
-		player_pos.x += step.x
-	if _can_stand(player_pos.x, player_pos.y + step.y):
-		player_pos.y += step.y
-	if has_target and dir != Vector2.ZERO and player_pos.distance_to(prev) < 0.05:
-		has_target = false
-		exit_on_arrive = false
 
-	if moving:
-		anim_t += delta
-		if anim_t > 0.16:
-			anim_t -= 0.16
-			anim_i = (anim_i + 1) % STEP_SEQ.size()
-	else:
-		anim_i = 0
-		anim_t = 0.0
-
-	# monster timers
-	for m in monsters:
-		m.bob += delta * 3.0
-		if m.hurt > 0.0:
-			m.hurt = max(0.0, m.hurt - delta)
-		if not m.alive and m.dead_t > 0.0:
-			m.dead_t = max(0.0, m.dead_t - delta)
-	monsters = monsters.filter(func(m): return m.alive or m.dead_t > 0.0)
-
-	# exit proximity
-	var dcenter := Vector2(door_cell.x * TILE + TILE / 2.0, door_cell.y * TILE)
-	near_exit = player_pos.distance_to(dcenter) < 22.0
-	if exit_on_arrive and near_exit:
+func _on_press(p: Vector2) -> void:
+	if BACK_RECT.has_point(p):
 		_exit()
+	elif game_over:
+		_restart()
+
+
+func _touch_in(r: Rect2) -> bool:
+	for k in touch_pts:
+		if r.has_point(touch_pts[k]):
+			return true
+	return false
+
+
+# ---- update ---------------------------------------------------------
+func _process(delta: float) -> void:
+	t += delta
+	anim += delta
+	if anim > 0.16:
+		anim -= 0.16
+		anim_i = (anim_i + 1) % 4
+	for d in bg_dashes:
+		d.y += 64.0 * delta
+		if d.y > H:
+			d.y -= H
+			d.x = randf() * W
+	for p in puffs:
+		p.ttl -= delta
+	puffs = puffs.filter(func(p): return p.ttl > 0.0)
+
+	if game_over:
+		queue_redraw()
 		return
+
+	if invuln > 0.0:
+		invuln -= delta
+
+	# movement
+	var lp := Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT) or _touch_in(LEFT_RECT)
+	var rp := Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT) or _touch_in(RIGHT_RECT)
+	var sp := Input.is_physical_key_pressed(KEY_SPACE) or Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP) or _touch_in(SHOOT_RECT)
+	var dir := (1.0 if rp else 0.0) - (1.0 if lp else 0.0)
+	player_x = clamp(player_x + dir * PLAYER_SPEED * delta, PMIN_X, PMAX_X)
+
+	# shooting (hold to auto-fire shockwaves)
+	shot_cd = max(0.0, shot_cd - delta)
+	if sp and shot_cd <= 0.0:
+		shots.append({"x": player_x, "y": PLAYER_Y - 16.0, "w": 9.0})
+		shot_cd = SHOOT_DT
+	for s in shots:
+		s.y -= SHOT_SPEED * delta
+		s.w = min(32.0, s.w + 42.0 * delta)
+
+	# spawn enemies (slowly ramping up)
+	spawn_cd -= delta
+	if spawn_cd <= 0.0:
+		_spawn_enemy()
+		spawn_dt = max(0.7, spawn_dt - 0.03)
+		spawn_cd = spawn_dt
+
+	# enemies move / bob / fire
+	for e in enemies:
+		e.pos.x += e.vx * delta
+		if e.pos.x < 26.0:
+			e.pos.x = 26.0
+			e.vx = abs(e.vx)
+		elif e.pos.x > W - 26.0:
+			e.pos.x = W - 26.0
+			e.vx = -abs(e.vx)
+		e.pos.y = e.base_y + sin(t * 1.7 + e.bob) * 6.0
+		if e.hurt > 0.0:
+			e.hurt -= delta
+		e.fire -= delta
+		if e.fire <= 0.0:
+			var aim: Vector2 = (Vector2(player_x, PLAYER_Y) - e.pos).normalized()
+			eballs.append({"pos": e.pos + Vector2(0, 10), "vel": Vector2(aim.x * 46.0, EBALL_SPEED)})
+			e.fire = randf_range(1.3, 2.6)
+
+	# shockwaves vs enemies
+	for s in shots:
+		for e in enemies:
+			if e.hp > 0 and abs(e.pos.x - s.x) < s.w * 0.6 + 4.0 and abs(e.pos.y - s.y) < 12.0:
+				e.hp -= 1
+				e.hurt = 0.14
+				s.y = -999.0
+				if e.hp <= 0:
+					defeated += 1
+					puffs.append({"pos": e.pos, "ttl": 0.4})
+					_sfx()
+				break
+	shots = shots.filter(func(s): return s.y > -24.0)
+	enemies = enemies.filter(func(e): return e.hp > 0)
+
+	# enemy shots vs player
+	for b in eballs:
+		b.pos += b.vel * delta
+		if invuln <= 0.0 and abs(b.pos.x - player_x) < 11.0 and abs(b.pos.y - PLAYER_Y) < 14.0:
+			hp -= 1
+			invuln = INVULN
+			b.pos.y = 9999.0
+			_sfx()
+			if hp <= 0:
+				game_over = true
+	eballs = eballs.filter(func(b): return b.pos.y < H + 12.0 and b.pos.x > -12.0 and b.pos.x < W + 12.0)
 
 	queue_redraw()
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_ESCAPE or event.keycode == KEY_M or (event.keycode == KEY_E and near_exit):
-			_exit()
-	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_on_pointer(get_global_mouse_position())
+func _spawn_enemy() -> void:
+	var by := randf_range(34.0, 100.0)
+	var spd := randf_range(28.0, 52.0) * (1.0 if randf() < 0.5 else -1.0)
+	enemies.append({"pos": Vector2(randf_range(40.0, W - 40.0), by), "base_y": by,
+		"vx": spd, "hp": ENEMY_HP, "fire": randf_range(0.8, 2.0), "bob": randf() * TAU, "hurt": 0.0})
 
 
-func _on_pointer(p: Vector2) -> void:
-	# attack a monster if one was clicked
-	for m in monsters:
-		if m.alive and p.distance_to(m.pos) < 13.0:
-			_attack(m)
-			return
-	# tap the exit door
-	if door_cell.x >= 0 and Rect2(door_cell.x * TILE, (door_cell.y - 1) * TILE, TILE, TILE * 2).has_point(p):
-		if near_exit:
-			_exit()
-		else:
-			move_target = Vector2(door_cell.x * TILE + TILE / 2.0, (door_cell.y - 1) * TILE + 12)
-			has_target = true
-			exit_on_arrive = true
-		return
-	# otherwise walk
-	move_target = p
-	has_target = true
-	exit_on_arrive = false
+func _restart() -> void:
+	hp = HP_MAX
+	invuln = 0.0
+	player_x = 240.0
+	enemies.clear(); eballs.clear(); shots.clear(); puffs.clear()
+	defeated = 0
+	spawn_dt = 1.7
+	spawn_cd = 0.8
+	game_over = false
 
 
-func _attack(m: Dictionary) -> void:
-	# face the monster and swing the sword
-	var d: Vector2 = m.pos - player_pos
-	if abs(d.x) > abs(d.y):
-		facing = 1 if d.x < 0.0 else 2
-	else:
-		facing = 3 if d.y < 0.0 else 0
-	swing_ang = d.angle()
-	swing = SWING_T
-	if sfx != null and sfx.stream != null:
+func _sfx() -> void:
+	if sfx and sfx.stream:
 		sfx.play()
-	m.hp -= 1
-	m.hurt = 0.22
-	# knock the monster a little away from the player
-	var kb: Vector2 = (m.pos - player_pos)
-	if kb.length() > 0.1:
-		m.pos += kb.normalized() * 3.0
-	if m.hp <= 0:
-		m.alive = false
-		m.dead_t = 0.4
-		defeated += 1
 
 
 func _exit() -> void:
 	get_tree().change_scene_to_file("res://scenes/World.tscn")
 
 
-# =====================================================================
-#  DRAWING
-# =====================================================================
+# ---- draw -----------------------------------------------------------
 func _draw() -> void:
-	for ty in MAP_H:
-		for tx in MAP_W:
-			_draw_ground(tx, ty)
+	draw_rect(Rect2(0, 0, W, H), C_BG)
+	for d in bg_dashes:
+		draw_rect(Rect2(d.x, d.y, 2, 9), Color(1, 1, 1, 0.06))
+	draw_rect(Rect2(0, 0, W, 5), C_GOLD)
+	draw_rect(Rect2(0, H - 5, W, 5), C_GOLD)
 
-	# Y-sorted: pillars, monsters, player
-	var objs: Array = []
-	for ty in MAP_H:
-		for tx in MAP_W:
-			if map[ty][tx] == PILLAR:
-				objs.append({"y": ty * TILE + TILE, "kind": "pillar", "x": tx, "ty": ty})
-	for m in monsters:
-		objs.append({"y": m.pos.y + 8, "kind": "mon", "m": m})
-	objs.append({"y": player_pos.y, "kind": "player"})
-	objs.sort_custom(func(a, b): return a.y < b.y)
-	for o in objs:
-		match o.kind:
-			"pillar": _draw_pillar(o.x, o.ty)
-			"mon": _draw_monster(o.m)
-			"player": _draw_player()
-
-	if swing > 0.0:
-		_draw_swing()
-
-	if has_target:
-		_draw_target()
-	if near_exit:
-		_draw_prompt("[E] 離開")
+	for e in enemies:
+		_draw_monster(e)
+	for b in eballs:
+		draw_circle(b.pos, 6.0, INK)
+		draw_circle(b.pos, 5.0, C_EBALL)
+		draw_circle(b.pos + Vector2(-1.4, -1.4), 1.6, Color(1, 1, 1, 0.85))
+	for s in shots:
+		_draw_wave(s)
+	_draw_player()
+	for p in puffs:
+		var a: float = clamp(p.ttl / 0.4, 0.0, 1.0)
+		draw_arc(p.pos, (1.0 - a) * 18.0 + 4.0, 0.0, TAU, 18, Color(1, 1, 1, a * 0.6), 2.5)
 
 	_draw_hud()
+	_draw_buttons()
+	if game_over:
+		_draw_over()
 
 
-func _draw_swing() -> void:
-	var hand := Vector2(player_pos.x, player_pos.y - PLAYER_H / 2.0 + 2)
-	var p: float = 1.0 - swing / SWING_T          # 0 → 1 across the swing
-	var a0 := swing_ang - 1.0
-	var cur := a0 + 2.0 * p
-	var fwd := Vector2(cos(cur), sin(cur))
-	# slash trail
-	draw_arc(hand, 15.0, a0, cur, 16, Color(1, 1, 1, 0.55 * (1.0 - p) + 0.15), 3.0)
-	# blade
-	var tip := hand + fwd * 19.0
-	draw_line(hand, tip, Color("e8e8f2"), 2.0)
-	draw_line(hand, hand + fwd * 16.0, Color("ffffff"), 1.0)
-	# gold crossguard
-	var perp := Vector2(-sin(cur), cos(cur)) * 3.0
-	var guard := hand + fwd * 5.0
-	draw_line(guard - perp, guard + perp, C_GOLD, 2.0)
+func _draw_wave(s: Dictionary) -> void:
+	var c := Vector2(s.x, s.y + 5.0)
+	draw_arc(c, s.w, PI * 1.12, PI * 1.88, 18, C_WAVE, 4.0)
+	draw_arc(c, s.w, PI * 1.12, PI * 1.88, 18, Color(1, 1, 1, 0.9), 1.8)
+	draw_arc(c, s.w * 0.6, PI * 1.2, PI * 1.8, 12, C_WAVE.lightened(0.2), 2.0)
 
 
-func _draw_ground(tx: int, ty: int) -> void:
-	var px := tx * TILE
-	var py := ty * TILE
-	var r := Rect2(px, py, TILE, TILE)
-	match map[ty][tx]:
-		WALL:
-			draw_rect(r, C_WALL)
-			draw_rect(Rect2(px, py, TILE, 3), C_WALL_HI)
-			if ty == 0:
-				draw_rect(Rect2(px, py + TILE - 2, TILE, 2), C_GOLD_D)   # gold cornice
-		DOOR:
-			draw_rect(r, C_WALL)
-			draw_rect(Rect2(px + 2, py + 1, TILE - 4, TILE - 1), C_DOOR)
-			draw_rect(Rect2(px + 1, py, TILE - 2, 2), C_GOLD_D)
-		_:
-			draw_rect(r, C_FLOOR)
-			if (tx + ty) % 2 == 0:
-				draw_rect(Rect2(px, py, TILE, TILE), C_FLOOR_D)
-			draw_rect(Rect2(px, py, TILE, 1), C_FLOOR_HI)
-			# faint gold inlay grid
-			if tx % 4 == 0 and ty % 4 == 0:
-				draw_rect(Rect2(px + TILE - 2, py + TILE - 2, 2, 2), C_GOLD_D)
-
-
-func _draw_pillar(tx: int, ty: int) -> void:
-	var px := tx * TILE
-	var py := ty * TILE
-	draw_rect(Rect2(px + 2, py - 8, TILE - 4, TILE + 8), C_WALL)
-	draw_rect(Rect2(px + 2, py - 8, TILE - 4, 3), C_GOLD_D)       # gold capital
-	draw_rect(Rect2(px + 2, py + TILE - 3, TILE - 4, 3), C_GOLD_D)
-	draw_rect(Rect2(px + 3, py - 6, 2, TILE + 4), C_WALL_HI)
-
-
-func _draw_monster(m: Dictionary) -> void:
-	var bobf := sin(m.bob) * 1.5
-	var cx: float = m.pos.x
-	var cy: float = m.pos.y + bobf
-	if not m.alive:
-		# poof: expanding fading ring
-		var t: float = 1.0 - m.dead_t / 0.4
-		var rad: float = 4.0 + t * 10.0
-		draw_arc(Vector2(cx, cy), rad, 0.0, TAU, 16, Color(0.66, 0.4, 0.85, 1.0 - t), 2.0)
-		return
-	var body := C_MON
-	var bd := C_MON_D
-	if m.hurt > 0.0 and int(m.hurt * 40) % 2 == 0:
-		body = C_WHITE
-		bd = C_WHITE
-	# shadow
-	draw_rect(Rect2(cx - 7, m.pos.y + 8, 14, 3), Color(0, 0, 0, 0.22))
-	# body (blob)
-	draw_rect(Rect2(cx - 8, cy - 6, 16, 14), body)
-	draw_rect(Rect2(cx - 6, cy - 8, 12, 4), body)
-	draw_rect(Rect2(cx - 8, cy - 6, 16, 2), C_MON_HI if body != C_WHITE else C_WHITE)
-	draw_rect(Rect2(cx - 8, cy + 5, 16, 3), bd)
-	# horns
-	draw_rect(Rect2(cx - 7, cy - 11, 2, 4), bd)
-	draw_rect(Rect2(cx + 5, cy - 11, 2, 4), bd)
-	# eyes
-	draw_rect(Rect2(cx - 5, cy - 4, 3, 4), C_MON_EYE)
-	draw_rect(Rect2(cx + 2, cy - 4, 3, 4), C_MON_EYE)
-	draw_rect(Rect2(cx - 4, cy - 3, 1, 2), C_INK)
-	draw_rect(Rect2(cx + 3, cy - 3, 1, 2), C_INK)
-	# little fangs
-	draw_rect(Rect2(cx - 3, cy + 2, 2, 2), C_WHITE)
-	draw_rect(Rect2(cx + 1, cy + 2, 2, 2), C_WHITE)
-	# hp pips above
-	for i in MON_HP:
-		var col := C_RED if i < m.hp else Color(0.3, 0.2, 0.3)
-		draw_rect(Rect2(cx - 5 + i * 6, cy - 16, 4, 3), col)
+func _draw_monster(e: Dictionary) -> void:
+	var p: Vector2 = e.pos
+	var col: Color = C_MON_HI if e.hurt > 0.0 else C_MON
+	draw_circle(p, 14.0, INK)
+	draw_circle(p, 12.0, col)
+	draw_colored_polygon(PackedVector2Array([p + Vector2(-9, -7), p + Vector2(-12, -15), p + Vector2(-4, -9)]), INK)
+	draw_colored_polygon(PackedVector2Array([p + Vector2(9, -7), p + Vector2(12, -15), p + Vector2(4, -9)]), INK)
+	draw_circle(p + Vector2(-4.5, -1), 3.4, C_WHITE)
+	draw_circle(p + Vector2(4.5, -1), 3.4, C_WHITE)
+	draw_circle(p + Vector2(-4.5, 0), 1.7, INK)
+	draw_circle(p + Vector2(4.5, 0), 1.7, INK)
+	draw_line(p + Vector2(-4, 6), p + Vector2(4, 6), INK, 1.6)
+	for i in range(int(e.hp)):
+		draw_rect(Rect2(p.x - 5 + i * 5, p.y - 20, 3, 2), C_YELLOW)
 
 
 func _draw_player() -> void:
-	var w := CHEF_FW / float(CHEF_FH) * PLAYER_H
-	var dst := Rect2(player_pos.x - w / 2.0, player_pos.y - PLAYER_H, w, PLAYER_H)
-	draw_rect(Rect2(player_pos.x - 6, player_pos.y - 2, 12, 4), Color(0, 0, 0, 0.22))
-	if chef_tex == null:
-		draw_rect(dst, C_YELLOW)
+	if invuln > 0.0 and int(t * 18.0) % 2 == 0:
 		return
-	var row := ROW_DOWN
-	var flip := false
-	match facing:
-		0: row = ROW_DOWN
-		3: row = ROW_UP
-		1: row = ROW_SIDE
-		2: row = ROW_SIDE; flip = true
-	var col: int = STEP_SEQ[anim_i] if moving else 0
-	var src := Rect2(col * CHEF_FW, row * CHEF_FH, CHEF_FW, CHEF_FH)
-	if flip:
-		# mirror via a transform (clean per-frame sampling, no boundary bleed)
-		var cx := dst.position.x + dst.size.x / 2.0
-		draw_set_transform(Vector2(cx * 2.0, 0.0), 0.0, Vector2(-1.0, 1.0))
-		draw_texture_rect_region(chef_tex, dst, src)
-		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	draw_rect(Rect2(player_x - 9, PLAYER_Y + 1, 18, 4), Color(0, 0, 0, 0.2))
+	if chef_tex != null:
+		var h := 32.0
+		var w := CHEF_FW / float(CHEF_FH) * h
+		var col: int = anim_i
+		var src := Rect2(col * CHEF_FW, 0, CHEF_FW, CHEF_FH)
+		draw_texture_rect_region(chef_tex, Rect2(player_x - w / 2.0, PLAYER_Y - h, w, h), src)
 	else:
-		draw_texture_rect_region(chef_tex, dst, src)
+		draw_circle(Vector2(player_x, PLAYER_Y - 10), 9, C_WHITE)
 
 
 func _draw_hud() -> void:
-	var w := MAP_W * TILE
-	draw_rect(Rect2(0, 0, w, 16), Color(0.08, 0.06, 0.12, 0.92))
-	draw_rect(Rect2(0, 15, w, 1), C_GOLD_D)
-	_wtext("紫金大廈", Vector2(w / 2.0, 11), 9, C_YELLOW, HORIZONTAL_ALIGNMENT_CENTER)
-	_wtext("擊倒 " + str(defeated), Vector2(6, 11), 8, C_WHITE)
-	var alive := 0
-	for m in monsters:
-		if m.alive:
-			alive += 1
-	if alive == 0:
-		_wtext("全部擊倒！", Vector2(w / 2.0, 30), 10, C_YELLOW, HORIZONTAL_ALIGNMENT_CENTER)
+	for i in range(HP_MAX):
+		_draw_heart(Vector2(14 + i * 16, 14), i < hp)
+	_text("擊退 " + str(defeated), Vector2(W / 2.0, 16), 10, C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	draw_rect(BACK_RECT, Color(0, 0, 0, 0.4))
+	draw_rect(BACK_RECT, C_WHITE, false, 1.0)
+	_text("離開", Vector2(BACK_RECT.position.x + 23, BACK_RECT.position.y + 12), 9, C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 
 
-func _draw_prompt(label: String) -> void:
-	if int(blink * 2.0) % 2 != 0:
-		return
-	var hx := player_pos.x
-	var hy := player_pos.y - PLAYER_H - 6
-	var fs := 8
-	var tw: float = font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	draw_rect(Rect2(hx - tw / 2.0 - 4, hy - fs, tw + 8, fs + 4), Color(0, 0, 0, 0.72))
-	_wtext(label, Vector2(hx, hy), fs, C_YELLOW, HORIZONTAL_ALIGNMENT_CENTER)
+func _draw_heart(c: Vector2, full: bool) -> void:
+	var col := C_RED if full else Color(0.3, 0.2, 0.3)
+	draw_circle(c + Vector2(-2.4, -1), 3.0, col)
+	draw_circle(c + Vector2(2.4, -1), 3.0, col)
+	draw_colored_polygon(PackedVector2Array([c + Vector2(-5, 0), c + Vector2(5, 0), c + Vector2(0, 6)]), col)
 
 
-func _draw_target() -> void:
-	var a: float = 0.4 + 0.35 * sin(blink * 8.0)
-	var col := Color(1, 1, 0.4, a)
-	draw_arc(move_target, 5.0, 0.0, TAU, 18, col, 1.2)
+func _draw_buttons() -> void:
+	_btn(LEFT_RECT, _touch_in(LEFT_RECT) or Input.is_physical_key_pressed(KEY_LEFT) or Input.is_physical_key_pressed(KEY_A))
+	var lc := LEFT_RECT.get_center()
+	draw_colored_polygon(PackedVector2Array([lc + Vector2(6, -8), lc + Vector2(6, 8), lc + Vector2(-8, 0)]), C_WHITE)
+	_btn(RIGHT_RECT, _touch_in(RIGHT_RECT) or Input.is_physical_key_pressed(KEY_RIGHT) or Input.is_physical_key_pressed(KEY_D))
+	var rc := RIGHT_RECT.get_center()
+	draw_colored_polygon(PackedVector2Array([rc + Vector2(-6, -8), rc + Vector2(-6, 8), rc + Vector2(8, 0)]), C_WHITE)
+	var shooting := _touch_in(SHOOT_RECT) or Input.is_physical_key_pressed(KEY_SPACE)
+	_btn(SHOOT_RECT, shooting, C_WAVE)
+	var sc := SHOOT_RECT.get_center()
+	draw_arc(sc, 13, PI * 1.15, PI * 1.85, 14, C_WHITE, 3.0)
+	draw_arc(sc, 8, PI * 1.2, PI * 1.8, 12, C_WHITE, 2.0)
 
 
-func _wtext(s: String, pos: Vector2, size: int, col: Color, align := HORIZONTAL_ALIGNMENT_LEFT) -> void:
-	draw_string(font, pos + Vector2(0.6, 0.6), s, align, -1, size, C_INK)
+func _btn(r: Rect2, pressed: bool, base := Color(1, 1, 1, 1)) -> void:
+	var fill := Color(base.r, base.g, base.b, 0.5 if pressed else 0.22)
+	draw_rect(r, fill)
+	draw_rect(r, Color(1, 1, 1, 0.7), false, 1.5)
+
+
+func _draw_over() -> void:
+	draw_rect(Rect2(0, 0, W, H), Color(0.06, 0.04, 0.09, 0.72))
+	_text("被打倒了…", Vector2(W / 2.0, 116), 18, C_RED, HORIZONTAL_ALIGNMENT_CENTER)
+	_text("擊退了 " + str(defeated) + " 隻", Vector2(W / 2.0, 140), 11, C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	_text("點擊重來  ·  ESC 離開", Vector2(W / 2.0, 162), 10,
+		C_YELLOW if int(t * 2.0) % 2 == 0 else C_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+
+
+func _text(s: String, pos: Vector2, size: int, col: Color, align := HORIZONTAL_ALIGNMENT_LEFT) -> void:
+	draw_string(font, pos + Vector2(1, 1), s, align, -1, size, INK)
 	draw_string(font, pos, s, align, -1, size, col)
