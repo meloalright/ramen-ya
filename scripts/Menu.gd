@@ -4,10 +4,10 @@ extends Node2D
 #  新遊戲 (New Game) starts fresh; 繼續遊戲 (Continue) loads the save.
 # =====================================================================
 
-const W := 480
-const H := 270
+const W := 270
+const H := 480
 
-const NEW_RECT := Rect2(160, 150, 160, 34)
+const NEW_RECT := Rect2(55, 356, 160, 40)
 
 const COL_BG    := Color("231f28")
 const COL_WHITE := Color("f4f0e6")
@@ -82,17 +82,17 @@ func _draw() -> void:
 	draw_rect(Rect2(0, 0, W, H), Color(0.07, 0.06, 0.09, 0.62))
 
 	# title
-	_ctext("拉 麵 屋", Vector2(240, 60), 30, COL_YELLOW)
-	_ctext("親手做一碗 · 手作拉麵", Vector2(240, 88), 11, COL_WHITE)
+	_ctext("拉 麵 屋", Vector2(135, 110), 30, COL_YELLOW)
+	_ctext("親手做一碗 · 手作拉麵", Vector2(135, 142), 11, COL_WHITE)
 
-	# walking chef on the left
-	_draw_chef(Vector2(78, 232), 92)
+	# walking chef, centered
+	_draw_chef(Vector2(135, 312), 120)
 
 	# start button + progress
 	_button(NEW_RECT, "開始製作", COL_GREEN, true)
-	_ctext("已完成  " + str(Game.high_score) + "  單", Vector2(240, 208), 10, COL_YELLOW)
+	_ctext("已完成  " + str(Game.high_score) + "  單", Vector2(135, 418), 10, COL_YELLOW)
 
-	_ctext("點擊 或 Enter / 空白鍵 開始", Vector2(240, 258), 9,
+	_ctext("點擊 或 Enter / 空白鍵 開始", Vector2(135, 462), 9,
 		COL_GREEN if int(blink * 2.0) % 2 == 0 else COL_WHITE)
 
 
@@ -114,5 +114,7 @@ func _draw_chef(center_bottom: Vector2, h: float) -> void:
 
 
 func _ctext(s: String, pos: Vector2, size: int, col: Color) -> void:
-	draw_string(font, pos + Vector2(1, 1), s, HORIZONTAL_ALIGNMENT_CENTER, -1, size, COL_INK)
-	draw_string(font, pos, s, HORIZONTAL_ALIGNMENT_CENTER, -1, size, col)
+	var w: float = font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	var p := Vector2(pos.x - w * 0.5, pos.y)
+	draw_string(font, p + Vector2(1, 1), s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, COL_INK)
+	draw_string(font, p, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)

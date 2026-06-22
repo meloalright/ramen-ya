@@ -8,25 +8,23 @@ extends Node2D
 #  cares whether to add 蔥花 / 香菜 / 辣椒.  Match their order and serve.
 # =====================================================================
 
-# ---- screen ---------------------------------------------------------
-const W := 480
-const H := 270
+# ---- screen (portrait) ----------------------------------------------
+const W := 270
+const H := 480
 
-# on-screen "back to shop" button (also bound to ESC / M)
+# on-screen "back to menu" button (also bound to ESC / M)
 const BACK_RECT := Rect2(W - 52, 4, 48, 15)
 
 # action buttons
-const CLEAR_RECT := Rect2(118, 246, 96, 20)
-const SERVE_RECT := Rect2(266, 246, 96, 20)
+const CLEAR_RECT := Rect2(22, 440, 106, 28)
+const SERVE_RECT := Rect2(142, 440, 106, 28)
 # victory screen buttons
-const NEXT_RECT := Rect2(250, 196, 132, 28)
-const MENU_RECT := Rect2(98, 196, 132, 28)
+const MENU_RECT := Rect2(36, 300, 92, 30)
+const NEXT_RECT := Rect2(142, 300, 92, 30)
 
 # the assembly bowl (slightly-tilted overhead) — click target to add / sprinkle.
-# the 128px sprite is drawn centred at BOWL_C; its bowl opening sits a little
-# higher than the sprite centre (opening centre at sprite y=50, centre y=64).
-const BOWL_C := Vector2(235, 142)
-const BOWL_OPEN := Vector2(235, 128)   # = BOWL_C + (0, -14)
+const BOWL_C := Vector2(135, 152)
+const BOWL_OPEN := Vector2(135, 138)    # = BOWL_C + (0, -14)
 const BOWL_RX := 50.0                  # opening (sprinkle) radii
 const BOWL_RY := 38.0
 const BOWL_HIT_RX := 56.0              # generous click radii (incl. rim)
@@ -211,18 +209,17 @@ func _make_font() -> Font:
 
 
 func _build_stations() -> void:
-	# two big separate vats (大缸) stacked on the left; ingredient boxes on the right.
-	# center = the vat's opening (where labels/clicks/steam go)
+	# portrait: two big vats (大缸) side by side under the bowl; toppings in a row below.
 	stations.clear()
-	stations.append({"item": "soup", "name": "湯", "center": Vector2(54, 100), "r": 30,
-		"rect": Rect2(8, 62, 92, 88), "cx": 54})
-	stations.append({"item": "noodles", "name": "麵", "center": Vector2(54, 192), "r": 30,
-		"rect": Rect2(8, 154, 92, 88), "cx": 54})
+	stations.append({"item": "soup", "name": "湯", "center": Vector2(66, 270), "r": 32,
+		"rect": Rect2(18, 230, 96, 84), "cx": 66})
+	stations.append({"item": "noodles", "name": "麵", "center": Vector2(204, 270), "r": 32,
+		"rect": Rect2(156, 230, 96, 84), "cx": 204})
 	var defs := [
-		["beef", "牛肉", Vector2(434, 80), 22],
-		["scallion", "蔥花", Vector2(434, 126), 22],
-		["cilantro", "香菜", Vector2(434, 172), 22],
-		["chili", "辣椒", Vector2(434, 218), 22],
+		["beef", "牛肉", Vector2(45, 360), 22],
+		["scallion", "蔥花", Vector2(105, 360), 22],
+		["cilantro", "香菜", Vector2(165, 360), 22],
+		["chili", "辣椒", Vector2(225, 360), 22],
 	]
 	for d in defs:
 		var c: Vector2 = d[2]
@@ -269,8 +266,8 @@ func _process(delta: float) -> void:
 		steam_t -= delta
 		if steam_t <= 0.0:
 			steam_t = 0.16
-			_puff(54, 94)                             # 湯 vat — always boiling
-			_puff(54, 186)                            # 麵 vat — always boiling
+			_puff(66, 262)                            # 湯 vat — always boiling
+			_puff(204, 262)                           # 麵 vat — always boiling
 			if soup_fill > 0.0 or bowl.noodles or _base_ok():
 				_puff(BOWL_OPEN.x, BOWL_OPEN.y - 8)   # the bowl, once it holds hot broth/noodles
 
@@ -472,20 +469,20 @@ func _sprinkle(p: Vector2) -> void:
 
 func _place_into_bowl() -> void:
 	if held == "":
-		_spawn_float(Vector2(240, 150), "先點材料提起", COL_YELLOW)
+		_spawn_float(Vector2(135,150), "先點材料提起", COL_YELLOW)
 		return
 	if held == "soup":
 		if soup_fill >= 0.9:
-			_spawn_float(Vector2(240, 128), "湯夠了", COL_YELLOW)
+			_spawn_float(Vector2(135,128), "湯夠了", COL_YELLOW)
 		else:
 			soup_fill = 1.0                       # one ladle fills the bowl
 			_sfx("pour")
-			_spawn_float(Vector2(240, 128), "下湯！", COL_GREEN)
+			_spawn_float(Vector2(135,128), "下湯！", COL_GREEN)
 		held = ""
 		held_q = ""
 		return
 	if bowl[held]:
-		_spawn_float(Vector2(240, 130), "已經放過了", COL_YELLOW)
+		_spawn_float(Vector2(135,130), "已經放過了", COL_YELLOW)
 	else:
 		bowl[held] = true
 		if held == "noodles":
@@ -494,7 +491,7 @@ func _place_into_bowl() -> void:
 		else:
 			_sfx("plop")
 		var label := _item_name(held)
-		_spawn_float(Vector2(240, 126), "放入 " + label, COL_GREEN)
+		_spawn_float(Vector2(135,126), "放入 " + label, COL_GREEN)
 	held = ""
 	held_q = ""
 
@@ -503,11 +500,11 @@ func _serve() -> void:
 	if order.is_empty():
 		return
 	if not _base_ok():
-		_spawn_float(Vector2(240, 150), "還沒做好！", COL_YELLOW)
+		_spawn_float(Vector2(135,150), "還沒做好！", COL_YELLOW)
 		_sfx("no")
 		return
 	if not _matches(order):
-		_spawn_float(Vector2(240, 60), "配料不對…", COL_YELLOW)
+		_spawn_float(Vector2(135,60), "配料不對…", COL_YELLOW)
 		_sfx("no")
 		flash = 0.18
 		flash_col = COL_YELLOW
@@ -645,14 +642,14 @@ func _puff(x: float, y: float) -> void:
 
 func _draw_hud() -> void:
 	draw_rect(Rect2(0, 0, W, 22), COL_INK)
-	_text("拉麵屋 · 親手做一碗", Vector2(8, 16), 11, COL_YELLOW)
-	_text("完成 " + str(served) + " 單", Vector2(W - 118, 16), 11, COL_WHITE)
+	_text("拉麵屋", Vector2(8, 16), 11, COL_YELLOW)
+	_text("完成 " + str(served) + " 單", Vector2(W - 134, 16), 11, COL_WHITE)
 
 
 func _draw_order_ticket() -> void:
 	if order.is_empty():
 		return
-	var r := Rect2(176, 24, 128, 46)
+	var r := Rect2(16, 28, 238, 44)
 	draw_rect(Rect2(r.position.x + r.size.x / 2 - 2, r.position.y - 4, 4, 6), COL_RED)   # pin
 	draw_rect(r, Color("efe7d6"))
 	draw_rect(r, COL_INK, false, 1.5)
@@ -843,7 +840,7 @@ func _draw_station(s: Dictionary) -> void:
 		if lit:
 			_draw_ellipse_ring(c, 38, 28, COL_YELLOW)
 		if s.item == "noodles" and noodle_state == "cooking":
-			_draw_boil_gauge(Vector2(104, 188))
+			_draw_boil_gauge(Vector2(117, 268))
 		# bold label on the broth / basket
 		_text(s.name, Vector2(c.x + 1, c.y + 5), 13, COL_INK, HORIZONTAL_ALIGNMENT_CENTER)
 		_text(s.name, Vector2(c.x, c.y + 4), 13, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
@@ -856,7 +853,7 @@ func _draw_station(s: Dictionary) -> void:
 			t.get_width(), t.get_height()), false)
 	if held == s.item:
 		draw_arc(c, rr + 2, 0.0, TAU, 24, COL_YELLOW, 2.0)
-	_text(s.name, Vector2(c.x - rr - 5, c.y + 4), 10, COL_WHITE, HORIZONTAL_ALIGNMENT_RIGHT)
+	_text(s.name, Vector2(c.x, c.y + rr + 12), 10, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 func _draw_boil_gauge(at: Vector2) -> void:
@@ -998,12 +995,12 @@ func _draw_back_button() -> void:
 func _draw_over() -> void:
 	draw_rect(Rect2(0, 0, W, H), Color(0.05, 0.04, 0.07, 0.72))
 	# a panel
-	draw_rect(Rect2(110, 40, 260, 196), Color("2a2030"))
-	draw_rect(Rect2(110, 40, 260, 196), COL_YELLOW, false, 2.0)
-	_text("上菜成功！", Vector2(240, 66), 19, COL_GREEN, HORIZONTAL_ALIGNMENT_CENTER)
+	draw_rect(Rect2(24, 112, 222, 250), Color("2a2030"))
+	draw_rect(Rect2(24, 112, 222, 250), COL_YELLOW, false, 2.0)
+	_text("上菜成功！", Vector2(135, 142), 19, COL_GREEN, HORIZONTAL_ALIGNMENT_CENTER)
 	# the finished bowl (scaled preview)
-	var bc := Vector2(240, 108)
-	var sz := 84.0
+	var bc := Vector2(135, 200)
+	var sz := 86.0
 	var dst := Rect2(bc.x - sz / 2.0, bc.y - sz / 2.0, sz, sz)
 	if ctex.has("td_bowl"):
 		draw_texture_rect(ctex["td_bowl"], dst, false)
@@ -1014,11 +1011,11 @@ func _draw_over() -> void:
 		if bowl.beef and ctex.has("td_beef"):
 			draw_texture_rect(ctex["td_beef"], dst, false)
 	# star rating (always 3 slots)
-	var sx0 := 240.0 - 3 * 18.0 / 2.0 + 9.0
+	var sx0 := 135.0 - 3 * 18.0 / 2.0 + 9.0
 	for i in range(3):
-		_draw_star(Vector2(sx0 + i * 18.0, 162.0), i < stars)
+		_draw_star(Vector2(sx0 + i * 18.0, 258.0), i < stars)
 	var comment := "完美的一碗！" if stars >= 3 else "好吃,麵的火候再練練"
-	_text(comment, Vector2(240, 182), 10, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	_text(comment, Vector2(135, 278), 10, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 	# buttons
 	_draw_button(MENU_RECT, "回主選單", COL_PANEL_HI)
 	_draw_button(NEXT_RECT, "再來一單", COL_GREEN)
@@ -1053,4 +1050,11 @@ func _blink() -> bool:
 
 
 func _text(s: String, pos: Vector2, size: int, col: Color, align := HORIZONTAL_ALIGNMENT_LEFT) -> void:
-	draw_string(font, pos, s, align, -1, size, col)
+	var p := pos
+	if align != HORIZONTAL_ALIGNMENT_LEFT:
+		var w: float = font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+		if align == HORIZONTAL_ALIGNMENT_CENTER:
+			p.x -= w * 0.5
+		else:
+			p.x -= w
+	draw_string(font, p, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
