@@ -611,6 +611,9 @@ func _draw_play() -> void:
 	for y in range(0, H, 12):
 		draw_rect(Rect2(0, y, W, 1), COL_WOOD_D)
 
+	# the shop interior behind the prep counter (玄关 + dining tables)
+	_draw_shopfront()
+
 	# the single order ticket, pinned at the top
 	_draw_order_ticket()
 
@@ -648,10 +651,54 @@ func _draw_hud() -> void:
 	_text("完成 " + str(served) + " 單", Vector2(W - 118, 16), 11, COL_WHITE)
 
 
+func _draw_shopfront() -> void:
+	var by := 64.0                              # counter front edge (dining ↑ / desk ↓)
+	# back wall + a subtle tile trim
+	draw_rect(Rect2(0, 22, W, by - 22), Color("cdb78c"))
+	draw_rect(Rect2(0, 22, W, 3), Color("bda474"))
+	for x in range(2, W, 18):
+		draw_rect(Rect2(x, 28, 9, 2), Color("b49a6a"))
+	# dining floor
+	draw_rect(Rect2(0, 41, W, by - 41), Color("9c7a4e"))
+	draw_rect(Rect2(0, 41, W, 2), Color("866840"))
+	# dining tables flanking the entrance
+	_draw_dine_table(Vector2(150, 52), Color("8a5e9a"))
+	_draw_dine_table(Vector2(330, 52), Color("5e8a6a"))
+	# 玄关 entrance: doorway + green noren + paper lanterns + mat
+	var dx := 240.0
+	draw_rect(Rect2(dx - 22, 24, 44, by - 24), Color("2c2018"))
+	draw_rect(Rect2(dx - 25, 22, 50, 14), Color("3f8f6a"))
+	draw_rect(Rect2(dx - 25, 22, 50, 14), COL_INK, false, 1.0)
+	for s in [-12, 0, 12]:
+		draw_rect(Rect2(dx + s, 22, 1, 14), Color("2f6e50"))
+	for lx in [dx - 34, dx + 34]:
+		draw_rect(Rect2(lx - 1, 22, 2, 5), Color("7a5230"))
+		draw_circle(Vector2(lx, 33), 6, COL_INK)
+		draw_circle(Vector2(lx, 33), 5, Color("e2533f"))
+	draw_rect(Rect2(dx - 15, by - 6, 30, 5), Color("b5704a"))
+	# counter front ledge
+	draw_rect(Rect2(0, by, W, 9), Color("875c34"))
+	draw_rect(Rect2(0, by, W, 2), Color("a87a48"))
+	draw_rect(Rect2(0, by + 9, W, 2), Color("6a4628"))
+
+
+func _draw_dine_table(c: Vector2, cloth: Color) -> void:
+	# a seated diner behind a small top-down table with a bowl
+	draw_rect(Rect2(c.x - 6, c.y - 13, 12, 8), cloth)
+	draw_rect(Rect2(c.x - 6, c.y - 13, 12, 8), COL_INK, false, 1.0)
+	draw_circle(c + Vector2(0, -13), 6, COL_INK)
+	draw_circle(c + Vector2(0, -13), 5, Color("ecc096"))
+	draw_rect(Rect2(c.x - 13, c.y - 5, 26, 12), Color("a9743f"))
+	draw_rect(Rect2(c.x - 13, c.y - 5, 26, 12), COL_INK, false, 1.0)
+	draw_rect(Rect2(c.x - 13, c.y - 5, 26, 3), Color("c08a4e"))
+	draw_circle(c + Vector2(0, 1), 5, Color("dc4a44"))
+	draw_circle(c + Vector2(0, 1), 3, Color("eaa43e"))
+
+
 func _draw_order_ticket() -> void:
 	if order.is_empty():
 		return
-	var r := Rect2(176, 24, 128, 46)
+	var r := Rect2(8, 26, 110, 40)
 	draw_rect(Rect2(r.position.x + r.size.x / 2 - 2, r.position.y - 4, 4, 6), COL_RED)   # pin
 	draw_rect(r, Color("efe7d6"))
 	draw_rect(r, COL_INK, false, 1.5)
