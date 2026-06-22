@@ -1052,9 +1052,11 @@ func _blink() -> bool:
 func _text(s: String, pos: Vector2, size: int, col: Color, align := HORIZONTAL_ALIGNMENT_LEFT) -> void:
 	var p := pos
 	if align != HORIZONTAL_ALIGNMENT_LEFT:
+		# advance width carries a ~1px trailing gap per glyph; center on the ink
 		var w: float = font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+		var ink: float = w - s.length() * max(1.0, round(size / 8.0))
 		if align == HORIZONTAL_ALIGNMENT_CENTER:
-			p.x -= w * 0.5
+			p.x -= ink * 0.5
 		else:
-			p.x -= w
+			p.x -= ink
 	draw_string(font, p, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)

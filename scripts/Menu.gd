@@ -115,6 +115,7 @@ func _draw_chef(center_bottom: Vector2, h: float) -> void:
 
 func _ctext(s: String, pos: Vector2, size: int, col: Color) -> void:
 	var w: float = font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-	var p := Vector2(pos.x - w * 0.5, pos.y)
+	var ink: float = w - s.length() * max(1.0, round(size / 8.0))
+	var p := Vector2(pos.x - ink * 0.5, pos.y)
 	draw_string(font, p + Vector2(1, 1), s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, COL_INK)
 	draw_string(font, p, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
