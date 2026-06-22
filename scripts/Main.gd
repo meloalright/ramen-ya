@@ -612,6 +612,10 @@ func _draw_play() -> void:
 	# the single order ticket, pinned at the top
 	_draw_order_ticket()
 
+	# raised little wooden platforms the bowl & toppings sit on
+	_draw_riser(Rect2(54, 178, 162, 46), 11.0)     # under the bowl
+	_draw_riser(Rect2(14, 350, 242, 30), 10.0)     # under the topping trays
+
 	# the bowl (top-down) in the middle of the counter
 	_draw_assembly(BOWL_C)
 
@@ -633,6 +637,24 @@ func _draw_play() -> void:
 	# held ingredient follows the cursor
 	if held != "":
 		_draw_held(mouse_pos)
+
+
+func _draw_riser(r: Rect2, depth: float) -> void:
+	var top := Color("c79355")
+	var top_hi := Color("dcab69")
+	var side := Color("7c5128")
+	var seam := Color("a9743f")
+	# front thickness (the "height")
+	draw_rect(Rect2(r.position.x, r.position.y + r.size.y - 2, r.size.x, depth + 2), side)
+	# top surface
+	draw_rect(r, top)
+	draw_rect(Rect2(r.position.x, r.position.y, r.size.x, 2), top_hi)
+	# plank seams running front-to-back
+	for i in range(1, 4):
+		var sx := r.position.x + r.size.x * i / 4.0
+		draw_rect(Rect2(sx, r.position.y + 1, 1, r.size.y - 1), seam)
+	# ink outline of the whole block
+	draw_rect(Rect2(r.position.x, r.position.y, r.size.x, r.size.y + depth), COL_INK, false, 1.5)
 
 
 func _puff(x: float, y: float) -> void:
