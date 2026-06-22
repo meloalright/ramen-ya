@@ -65,35 +65,29 @@ def beef():
 
 # ---- big vats (大缸) -------------------------------------------------
 def vat(name, liquid, liquid_d, hi, basket):
-    # a tall metal stockpot: flat oval mouth, straight steel walls, side loop
-    # handles, and a flat-cut bottom that runs off the frame (no base shown).
-    # opening surface sits at y=36.
+    # a very shallow square metal pan with thin walls, seen 3/4 overhead.
+    # the liquid surface sits at y=25 (VAT_OPEN_Y).
     extra = ""
     if basket:
-        extra = f'''<ellipse cx="54" cy="36" rx="13" ry="7" fill="#cfcab4" stroke="{INK}" stroke-width="3"/>
-        <g stroke="#d7b25a" stroke-width="2"><path d="M43 36 h22 M43 40 h22 M43 32 h22"/></g>'''
+        extra = f'''<rect x="38" y="21" width="22" height="8" rx="1" fill="#cfcab4" stroke="{INK}" stroke-width="2.5"/>
+        <g stroke="#d7b25a" stroke-width="1.6"><path d="M40 23 h18 M40 25 h18 M40 27 h18"/></g>'''
     else:
-        extra = f'<ellipse cx="34" cy="31" rx="7" ry="3.5" fill="{hi}" opacity="0.75"/>'
+        extra = f'<path d="M22 20 L36 20 L34 24 L21 24 Z" fill="{hi}" opacity="0.6"/>'
     body = f'''
-    <!-- side loop handles -->
-    <ellipse cx="4" cy="48" rx="4" ry="7" fill="none" stroke="#7e868e" stroke-width="4"/>
-    <ellipse cx="84" cy="48" rx="4" ry="7" fill="none" stroke="#7e868e" stroke-width="4"/>
-    <!-- pot body: straight metal walls, flat-cut bottom (hidden off frame) -->
-    <path d="M6 36 L6 104 L82 104 L82 36 A38 22 0 0 1 6 36 Z"
-          fill="#a7afb7" stroke="{INK}" stroke-width="5" stroke-linejoin="round"/>
-    <!-- metal shading: left sheen, centre highlight, right shadow -->
-    <rect x="9" y="42" width="12" height="62" fill="#c8ced4" opacity="0.55"/>
-    <rect x="40" y="46" width="7" height="58" fill="#dfe4e8" opacity="0.4"/>
-    <rect x="64" y="42" width="16" height="62" fill="#6f767e" opacity="0.5"/>
-    <!-- welded band ring around the body -->
-    <path d="M7 86 Q44 96 81 86" fill="none" stroke="#80878f" stroke-width="3"/>
-    <!-- rim + liquid surface (3/4 overhead: a fuller oval mouth) -->
-    <ellipse cx="44" cy="36" rx="38" ry="22" fill="#c4cad0" stroke="{INK}" stroke-width="5"/>
-    <ellipse cx="44" cy="36" rx="31" ry="16" fill="#888f97"/>
-    <ellipse cx="44" cy="36" rx="28" ry="14" fill="{liquid}"/>
-    <path d="M16 36 a28 14 0 0 0 56 0 a28 14 0 0 1 -56 0" fill="{liquid_d}"/>
+    <!-- side handle tabs -->
+    <rect x="2" y="22" width="8" height="6" rx="1.5" fill="#9aa2aa" stroke="{INK}" stroke-width="2.5"/>
+    <rect x="78" y="22" width="8" height="6" rx="1.5" fill="#9aa2aa" stroke="{INK}" stroke-width="2.5"/>
+    <!-- thin shallow front/side wall -->
+    <path d="M9 36 L11 45 L79 45 L81 36 Z" fill="#828a92" stroke="{INK}" stroke-width="3.5" stroke-linejoin="round"/>
+    <!-- top metal frame (foreshortened square) -->
+    <path d="M13 14 L75 14 L81 36 L9 36 Z" fill="#c4cad0" stroke="{INK}" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M16 16 L33 16 L30 34 L13 34 Z" fill="#dfe4e8" opacity="0.38"/>
+    <!-- inner opening (thin wall) + liquid surface -->
+    <path d="M16 17 L72 17 L77 33 L13 33 Z" fill="#7d848c"/>
+    <path d="M18 18.5 L70 18.5 L74 31.5 L16 31.5 Z" fill="{liquid}"/>
+    <path d="M16 31.5 L74 31.5 L73 27 L17 27 Z" fill="{liquid_d}"/>
     {extra}'''
-    render(name, 88, 104, body)
+    render(name, 88, 52, body)
 
 
 # ---- ingredient trays -----------------------------------------------
