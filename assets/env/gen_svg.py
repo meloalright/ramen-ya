@@ -75,10 +75,8 @@ def register(cx, by):
     <!-- screen -->
     <rect x="{cx-44}" y="{by-156}" width="88" height="46" rx="6" fill="#23303a" stroke="{INK}" stroke-width="4"/>
     <rect x="{cx-37}" y="{by-149}" width="74" height="32" rx="3" fill="#3fa7c4"/>
-    <!-- battery icon on the screen -->
-    <rect x="{cx-15}" y="{by-141}" width="26" height="15" rx="2" fill="#eef4ee" stroke="{INK}" stroke-width="2"/>
-    <rect x="{cx+11}" y="{by-138}" width="3" height="9" rx="1" fill="{INK}"/>
-    <rect x="{cx-12}" y="{by-138}" width="16" height="9" fill="#4fae5f"/>
+    <!-- charging lightning bolt on the screen -->
+    <path d="M{cx+4} {by-147} L{cx-8} {by-132} L{cx-1} {by-132} L{cx-5} {by-119} L{cx+9} {by-135} L{cx+1} {by-135} Z" fill="#f2c14e" stroke="{INK}" stroke-width="1.5" stroke-linejoin="round"/>
     <!-- power-bank slots (2 x 3) -->
     {slots}
     <!-- base -->
