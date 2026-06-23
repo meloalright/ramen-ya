@@ -1143,16 +1143,8 @@ func _draw_held(p: Vector2) -> void:
 			# the ladle's bowl of broth sits at the cursor
 			draw_texture_rect(t, Rect2(p.x - w / 2.0, p.y - h + 14.0, w, h), false)
 		return
-	# toppings (蔥花/香菜/辣椒): no carried-item cursor visual at all
-	if held in TOP_ORDER:
-		return
-	# beef: a slice shown only when over the bowl
-	if held == "beef":
-		if not _in_bowl(p):
-			return
-		draw_rect(Rect2(p.x - 9, p.y - 6, 18, 11), C_BEEF)
-		draw_rect(Rect2(p.x - 6, p.y - 4, 8, 3), C_BEEF_HI)
-		draw_rect(Rect2(p.x - 9, p.y - 6, 18, 11), COL_INK, false, 1.0)
+	# beef + toppings (蔥花/香菜/辣椒): no carried-item cursor visual at all —
+	# they only appear once dropped into the bowl
 
 
 # --- buttons ---------------------------------------------------------
