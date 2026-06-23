@@ -739,12 +739,10 @@ func _puff(x: float, y: float) -> void:
 
 
 func _draw_hud() -> void:
-	# no top bar — the labels sit straight on the table with a soft shadow
-	_text("拉麵屋", Vector2(9, 17), 11, COL_INK)
-	_text("拉麵屋", Vector2(8, 16), 11, COL_YELLOW)
+	# no top bar — the completed-orders count sits top-left on the table
 	var s := "完成 " + str(served) + " 單"
-	_text(s, Vector2(W - 133, 17), 11, COL_INK)
-	_text(s, Vector2(W - 134, 16), 11, COL_WHITE)
+	_text(s, Vector2(9, 17), 11, COL_INK)
+	_text(s, Vector2(8, 16), 11, COL_YELLOW)
 
 
 func _draw_order_ticket() -> void:
