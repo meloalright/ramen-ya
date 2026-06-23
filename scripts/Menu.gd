@@ -105,7 +105,7 @@ func _draw() -> void:
 		draw_texture_rect(stall_tex, Rect2(0, 0, W, H), false)
 
 	# shop name on the noren
-	_ctext("拉 麵 屋", Vector2(135, 40), 26, COL_YELLOW)
+	_ctext("拉麵怪奇物語", Vector2(135, 40), 22, COL_YELLOW)
 
 	# start button + progress (on the counter front)
 	_button(NEW_RECT, "開始製作", COL_GREEN, true)
