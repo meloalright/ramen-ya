@@ -7,7 +7,7 @@ extends Node2D
 const W := 270
 const H := 480
 
-const NEW_RECT := Rect2(55, 356, 160, 40)
+const START_RECT := Rect2(75, 372, 120, 40)
 
 const COL_BG    := Color("231f28")
 const COL_WHITE := Color("f4f0e6")
@@ -64,10 +64,16 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_start()
+		if START_RECT.has_point(get_global_mouse_position() - _offset()):
+			_start()
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode in [KEY_ENTER, KEY_SPACE]:
 			_start()
+
+
+func _offset() -> Vector2:
+	var vp: Vector2 = get_viewport_rect().size
+	return Vector2(floor(max(0.0, (vp.x - W) / 2.0)), floor(max(0.0, (vp.y - H) / 2.0)))
 
 
 func _start() -> void:
@@ -109,11 +115,10 @@ func _draw() -> void:
 	# shop name on the noren
 	_ctext("拉麵怪奇物語", Vector2(135, 40), 22, COL_YELLOW)
 
-	# tap anywhere to start — no button (hidden when rendering the splash)
+	# start button (hidden when rendering the splash)
 	if not _splash:
-		_ctext("點擊畫面開始", Vector2(135, 374), 15,
-			COL_GREEN if int(blink * 2.0) % 2 == 0 else COL_WHITE)
-		_ctext("已完成  " + str(Game.high_score) + "  單", Vector2(135, 430), 10, COL_YELLOW)
+		_button(START_RECT, "開 始", COL_GREEN, true)
+		_ctext("已完成  " + str(Game.high_score) + "  單", Vector2(135, 445), 10, COL_YELLOW)
 
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
