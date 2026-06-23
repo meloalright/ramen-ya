@@ -139,41 +139,48 @@ func _draw() -> void:
 	var ox: float = floor(max(0.0, (vp.x - W) / 2.0))
 	var oy: float = floor(max(0.0, (vp.y - H) / 2.0))
 	var ct: float = oy + 280.0   # counter top
-	# --- shop background drawn full-width so it extends to any screen size ---
-	draw_rect(Rect2(0, 0, vp.x, vp.y), Color("e3cba0"))                          # wall
+	# layered back-to-front: wall(1) → sticker(2) → board(10) → table(20)
+	# → register(30) → garland(40); switch coord spaces between full-width
+	# bands (viewport) and centred props (content) as needed.
+
+	# z1 — wall (full-width)
+	draw_rect(Rect2(0, 0, vp.x, vp.y), Color("e3cba0"))
 	draw_rect(Rect2(0, oy + 215.0, vp.x, ct - (oy + 215.0)), Color("d8bd8e"))    # lower wall
 	draw_rect(Rect2(0, oy + 215.0, vp.x, 1.0), Color("c8a874"))
-	# flower garland + shop name across the top (replaces the noren cloth)
-	_draw_garland(vp.x)
-	if _drag == "":
-		_ctext("拉麵怪奇物語", Vector2(vp.x / 2.0, 69.0), 28, COL_SOUP)
-	# wooden counter that extends infinitely wide
+
+	draw_set_transform(Vector2(ox, oy), 0.0, Vector2.ONE)
+	# z2 — version sticker
+	_draw_version_note()
+	# z10 — price board
+	if board_tex != null:
+		var bs := _board_size()
+		draw_texture_rect(board_tex, Rect2(_board_pos - bs / 2.0, bs), false)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+	# z20 — wooden counter (full-width)
 	draw_rect(Rect2(0, ct, vp.x, vp.y - ct), Color("a9743f"))
 	draw_rect(Rect2(0, ct, vp.x, 6), Color("c08a4e"))
 	draw_rect(Rect2(0, ct + 60.0, vp.x, 2), Color("8c5d30"))
 	draw_rect(Rect2(0, ct + 120.0, vp.x, 2), Color("8c5d30"))
-	draw_set_transform(Vector2(ox, oy), 0.0, Vector2.ONE)
 
-	# centred props (board / register) overlaid on the bands
+	draw_set_transform(Vector2(ox, oy), 0.0, Vector2.ONE)
+	# z30 — register
 	if stall_tex != null:
 		draw_texture_rect(stall_tex, Rect2(0, 0, W, H), false)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
-	# draggable price board on the wall
-	if board_tex != null:
-		var bs := _board_size()
-		draw_texture_rect(board_tex, Rect2(_board_pos - bs / 2.0, bs), false)
+	# z40 — flower garland + shop name (full-width, on top)
+	_draw_garland(vp.x)
+	if _drag == "":
+		_ctext("拉麵怪奇物語", Vector2(vp.x / 2.0, 69.0), 28, COL_SOUP)
 
-	# white paper note taped on the wall (draggable): app logo + version
-	_draw_version_note()
-
-	# start button + tally — hidden on the splash and while arranging (dragging)
+	# UI on top — start button + tally (hidden on splash / while dragging)
+	draw_set_transform(Vector2(ox, oy), 0.0, Vector2.ONE)
 	if not _splash and _drag == "":
 		_button(START_RECT, "開 始", COL_GREEN, true)
-		# completed-orders tally, blinking through rainbow hues
 		var hue: float = fmod(blink * 0.4, 1.0)
 		var tally := Color.from_hsv(hue, 0.7, 1.0)
 		_ctext("已完成  " + str(Game.high_score) + "  單", Vector2(135, 445), 10, tally)
-
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
