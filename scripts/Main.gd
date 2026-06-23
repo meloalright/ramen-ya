@@ -739,10 +739,14 @@ func _puff(x: float, y: float) -> void:
 
 
 func _draw_hud() -> void:
-	# no top bar — the completed-orders count sits top-left on the table
+	# no top bar — completed-orders count sits top-left, sharing the back
+	# button's centre line (vertically centred on BACK_RECT's mid-y)
 	var s := "完成 " + str(served) + " 單"
-	_text(s, Vector2(9, 17), 11, COL_INK)
-	_text(s, Vector2(8, 16), 11, COL_YELLOW)
+	var sz := 11
+	var cy: float = BACK_RECT.position.y + BACK_RECT.size.y / 2.0
+	var by: float = cy + (font.get_ascent(sz) - font.get_descent(sz)) / 2.0
+	_text(s, Vector2(9, by + 1), sz, COL_INK)
+	_text(s, Vector2(8, by), sz, COL_YELLOW)
 
 
 func _draw_order_ticket() -> void:
