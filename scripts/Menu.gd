@@ -140,7 +140,8 @@ func _draw() -> void:
 	draw_rect(Rect2(0, oy + 215.0, vp.x, 1.0), Color("c8a874"))
 	# flower garland + shop name across the top (replaces the noren cloth)
 	_draw_garland(vp.x)
-	_ctext("拉麵怪奇物語", Vector2(vp.x / 2.0, 69.0), 28, COL_SOUP)
+	if _drag == "":
+		_ctext("拉麵怪奇物語", Vector2(vp.x / 2.0, 69.0), 28, COL_SOUP)
 	# wooden counter that extends infinitely wide
 	draw_rect(Rect2(0, ct, vp.x, vp.y - ct), Color("a9743f"))
 	draw_rect(Rect2(0, ct, vp.x, 6), Color("c08a4e"))
@@ -160,8 +161,8 @@ func _draw() -> void:
 	# white paper note taped on the wall (draggable): app logo + version
 	_draw_version_note()
 
-	# start button (hidden when rendering the splash)
-	if not _splash:
+	# start button + tally — hidden on the splash and while arranging (dragging)
+	if not _splash and _drag == "":
 		_button(START_RECT, "開 始", COL_GREEN, true)
 		# completed-orders tally, blinking through rainbow hues
 		var hue: float = fmod(blink * 0.4, 1.0)
