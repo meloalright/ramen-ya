@@ -704,7 +704,7 @@ func _draw_play() -> void:
 	# action buttons
 	# the action button only appears when it matters
 	if _can_serve():
-		_draw_button(_action_rect(), "上菜", COL_GREEN)
+		_draw_button(_action_rect(), "完成", COL_GREEN)
 	elif _is_ruined():
 		_draw_button(_action_rect(), "倒掉", COL_RED)
 
@@ -1163,7 +1163,7 @@ func _draw_over() -> void:
 	var pt := _vic_top()
 	draw_rect(Rect2(24, pt, 222, 250), Color("2a2030"))
 	draw_rect(Rect2(24, pt, 222, 250), COL_YELLOW, false, 2.0)
-	_text("上菜成功！", Vector2(135, pt + 30.0), 19, COL_GREEN, HORIZONTAL_ALIGNMENT_CENTER)
+	_text("製作成功！", Vector2(135, pt + 30.0), 19, COL_GREEN, HORIZONTAL_ALIGNMENT_CENTER)
 	# the finished bowl (scaled preview)
 	var bc := Vector2(135, pt + 88.0)
 	var sz := 86.0
