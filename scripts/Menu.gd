@@ -179,13 +179,13 @@ func _draw_chef(center_bottom: Vector2, h: float) -> void:
 
 func _ctext(s: String, pos: Vector2, size: int, col: Color) -> void:
 	var w: float = font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-	# only CJK/full-width glyphs carry the ~trailing advance gap; ASCII (spaces,
-	# digits, arrows) don't — counting them over-shifts mixed strings off-centre
-	var wide := 0
-	for i in s.length():
-		if s.unicode_at(i) >= 0x2000:
-			wide += 1
-	var ink: float = w - wide * max(1.0, round(size / 8.0))
+	# centre on the ink, not the advance box: the offset is just the last
+	# CJK/full-width glyph's trailing advance gap (~size/4), independent of length;
+	# ASCII-terminated strings (e.g. v0.0.1) need no correction
+	var corr := 0.0
+	if s.length() > 0 and s.unicode_at(s.length() - 1) >= 0x2000:
+		corr = size * 0.25
+	var ink: float = w - corr
 	var p := Vector2(pos.x - ink * 0.5, pos.y)
 	draw_string(font, p + Vector2(1, 1), s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, COL_INK)
 	draw_string(font, p, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
