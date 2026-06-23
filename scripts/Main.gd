@@ -13,7 +13,7 @@ const W := 270
 const H := 480
 
 # on-screen "back to menu" button (also bound to ESC / M)
-const BACK_RECT := Rect2(W - 52, 4, 48, 15)
+const BACK_RECT := Rect2(4, 4, 48, 15)
 
 # action buttons + victory buttons are anchored to the live screen — see
 # _clear_rect()/_serve_rect()/_menu_rect()/_next_rect()
@@ -739,14 +739,14 @@ func _puff(x: float, y: float) -> void:
 
 
 func _draw_hud() -> void:
-	# no top bar — completed-orders count sits top-left, sharing the back
+	# no top bar — completed-orders count sits top-right, sharing the back
 	# button's centre line (vertically centred on BACK_RECT's mid-y)
 	var s := "完成 " + str(served) + " 單"
 	var sz := 11
 	var cy: float = BACK_RECT.position.y + BACK_RECT.size.y / 2.0
 	var by: float = cy + (font.get_ascent(sz) - font.get_descent(sz)) / 2.0
-	_text(s, Vector2(9, by + 1), sz, COL_INK)
-	_text(s, Vector2(8, by), sz, COL_YELLOW)
+	_text(s, Vector2(W - 7, by + 1), sz, COL_INK, HORIZONTAL_ALIGNMENT_RIGHT)
+	_text(s, Vector2(W - 8, by), sz, COL_YELLOW, HORIZONTAL_ALIGNMENT_RIGHT)
 
 
 func _draw_order_ticket() -> void:
