@@ -1193,7 +1193,7 @@ func _draw_over() -> void:
 	var sx0 := 135.0 - 3 * 18.0 / 2.0 + 9.0
 	for i in range(3):
 		_draw_star(Vector2(sx0 + i * 18.0, pt + 146.0), i < stars)
-	var comment := "完美的一碗！" if stars >= 3 else "好吃,麵的火候再練練"
+	var comment := "完美的一碗" if stars >= 3 else "好吃，麵的火候再練練"
 	_text(comment, Vector2(135, pt + 166.0), 10, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 	# buttons
 	_draw_button(_menu_rect(), "回主選單", COL_PANEL_HI)
