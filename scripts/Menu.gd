@@ -16,6 +16,7 @@ const COL_YELLOW:= Color("f2c14e")
 const COL_GREEN := Color("5fae5f")
 const COL_GREY  := Color("4a3c54")
 const COL_RED   := Color("c23b3b")
+const COL_SOUP  := Color("e9b63a")   # yellow oily broth colour
 
 var font: Font
 var stall_tex: Texture2D
@@ -98,8 +99,9 @@ func _draw() -> void:
 	draw_rect(Rect2(0, 0, vp.x, vp.y), Color("e3cba0"))                          # wall
 	draw_rect(Rect2(0, oy + 215.0, vp.x, ct - (oy + 215.0)), Color("d8bd8e"))    # lower wall
 	draw_rect(Rect2(0, oy + 215.0, vp.x, 1.0), Color("c8a874"))
-	# flower garland across the top (replaces the noren cloth)
+	# flower garland + shop name across the top (replaces the noren cloth)
 	_draw_garland(vp.x)
+	_ctext("拉麵怪奇物語", Vector2(vp.x / 2.0, 60.0), 28, COL_SOUP)
 	# wooden counter that extends infinitely wide
 	draw_rect(Rect2(0, ct, vp.x, vp.y - ct), Color("a9743f"))
 	draw_rect(Rect2(0, ct, vp.x, 6), Color("c08a4e"))
