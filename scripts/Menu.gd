@@ -118,7 +118,10 @@ func _draw() -> void:
 	# start button (hidden when rendering the splash)
 	if not _splash:
 		_button(START_RECT, "開 始", COL_GREEN, true)
-		_ctext("已完成  " + str(Game.high_score) + "  單", Vector2(135, 445), 10, COL_YELLOW)
+		# completed-orders tally, blinking white
+		var pulse: float = 0.5 + 0.5 * sin(blink * 5.0)
+		var tally := Color(0.5, 0.5, 0.5).lerp(COL_WHITE, pulse)
+		_ctext("已完成  " + str(Game.high_score) + "  單", Vector2(135, 445), 10, tally)
 
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
