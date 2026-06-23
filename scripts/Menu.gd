@@ -142,29 +142,25 @@ func _poly(pts: PackedVector2Array, fill: Color) -> void:
 
 
 func _draw_plaque() -> void:
-	# a small easel-style sign standing on the counter (where the lucky cat was):
-	# triangular kickstand support, a sliver of the board's right side showing,
-	# app logo on the left + version number after it
+	# a small triangular-prism (wedge) sign standing on the counter where the
+	# lucky cat was: the front face carries the app logo + version, the right
+	# end shows the triangular cross-section, the back slopes down to the table
 	var pw := 80.0
 	var ph := 34.0
-	var cxp := 205.0           # sign centre x
-	var px := cxp - pw / 2.0   # 165
-	var py := 250.0
-	var bottom := py + ph      # 284, front edge on the counter
-	var rx := px + pw          # board right edge
-	# triangular kickstand (drawn first, peeks out behind the board's right)
+	var depth := 15.0
+	var cxp := 200.0
+	var px := cxp - pw / 2.0   # front face left
+	var py := 248.0            # ridge (top of front face)
+	var by := py + ph          # base on the counter
+	var rx := px + pw          # front face right edge
+	# right end cap = the triangular cross-section (the "三棱" side), sloping
+	# from the front-top corner back-down to the table
 	_poly(PackedVector2Array([
-		Vector2(rx - 4.0, py + 6.0), Vector2(rx + 2.0, py + 5.0),
-		Vector2(rx + 22.0, bottom + 5.0), Vector2(rx + 13.0, bottom + 5.0)]), Color("5f3f24"))
-	# right side edge (board thickness — the "side" showing)
-	_poly(PackedVector2Array([
-		Vector2(rx, py), Vector2(rx + 5.0, py + 4.0),
-		Vector2(rx + 5.0, bottom + 4.0), Vector2(rx, bottom)]), Color("6b4a2e"))
-	# board face
-	draw_rect(Rect2(px, py, pw, ph), Color("8c5d34"))              # face
+		Vector2(rx, py), Vector2(rx + depth, by), Vector2(rx, by)]), Color("5f3f24"))
+	# front face (content)
+	draw_rect(Rect2(px, py, pw, ph), Color("8c5d34"))
 	draw_rect(Rect2(px, py, pw, 5.0), Color("a06c3e"))            # top highlight
-	draw_rect(Rect2(px, bottom - 4.0, pw, 4.0), Color("6f4a2a"))  # bottom lip
-	draw_rect(Rect2(px, py, pw, ph), COL_INK, false, 1.5)         # outline
+	draw_rect(Rect2(px, py, pw, ph), COL_INK, false, 1.5)        # outline
 	if logo_tex != null:
 		draw_texture_rect(logo_tex, Rect2(px + 5.0, py + 5.0, 24.0, 24.0), false)
 	_ctext("v" + VERSION, Vector2(px + 55.0, py + 23.0), 12, COL_WHITE)
