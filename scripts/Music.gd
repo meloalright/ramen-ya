@@ -7,12 +7,34 @@ extends Node
 
 var player: AudioStreamPlayer
 var click_player: AudioStreamPlayer   # persistent UI click — survives scene changes
+var pick_player: AudioStreamPlayer    # pick-up / put-down blips (menu dragging)
+var drop_player: AudioStreamPlayer
 
 
 func click() -> void:
 	# short button-click blip shared by every button across all scenes
 	if click_player != null and click_player.stream != null:
 		click_player.play()
+
+
+func pick() -> void:
+	if pick_player != null and pick_player.stream != null:
+		pick_player.play()
+
+
+func drop() -> void:
+	if drop_player != null and drop_player.stream != null:
+		drop_player.play()
+
+
+func _make_sfx(path: String, vol: float) -> AudioStreamPlayer:
+	var p := AudioStreamPlayer.new()
+	p.bus = "Master"
+	p.volume_db = vol
+	add_child(p)
+	if ResourceLoader.exists(path):
+		p.stream = load(path)
+	return p
 
 
 func _ready() -> void:
@@ -22,6 +44,8 @@ func _ready() -> void:
 	add_child(click_player)
 	if ResourceLoader.exists("res://assets/audio/click.wav"):
 		click_player.stream = load("res://assets/audio/click.wav")
+	pick_player = _make_sfx("res://assets/audio/pick.wav", -3.0)
+	drop_player = _make_sfx("res://assets/audio/plop.wav", -3.0)
 
 	player = AudioStreamPlayer.new()
 	player.bus = "Master"

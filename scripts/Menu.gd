@@ -99,6 +99,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				_drag = "note"
 				_drag_off = _note_pos - m
 				_reg_taps = 0
+				Music.pick()
 			elif START_RECT.has_point(m):
 				_reg_taps = 0
 				_start()
@@ -114,6 +115,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			if _drag != "":
 				Game.save_layout(_board_pos, _note_pos)   # persist the arrangement
+				Music.drop()
 			_drag = ""
 	elif event is InputEventMouseMotion and _drag != "":
 		var np: Vector2 = (get_global_mouse_position() - _offset()) + _drag_off
