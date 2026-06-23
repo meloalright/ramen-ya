@@ -125,7 +125,7 @@ def cashier():
     cy = 560                       # counter top
     rows = ""
     for i, col in enumerate(["#b5582f", "#5f8f4a", "#3f7bbd", "#b5582f"]):
-        y = 250 + i * 34
+        y = 214 + i * 34
         w = [78, 62, 84, 58][i]
         rows += (f'<rect x="200" y="{y}" width="{w}" height="15" rx="3" fill="{col}"/>'
                  f'<rect x="300" y="{y}" width="46" height="15" rx="3" fill="#cba978"/>')
@@ -133,8 +133,8 @@ def cashier():
     # are drawn procedurally full-width in Menu.gd so they extend to any width.
     body = f'''
     <!-- menu / price board mounted flat on the wall (no hanging cords) -->
-    <rect x="170" y="214" width="200" height="178" rx="10" fill="#5a3b26" stroke="{INK}" stroke-width="4.6"/>
-    <rect x="186" y="230" width="168" height="146" rx="4" fill="#f0e6cf"/>
+    <rect x="170" y="178" width="200" height="178" rx="10" fill="#5a3b26" stroke="{INK}" stroke-width="4.6"/>
+    <rect x="186" y="194" width="168" height="146" rx="4" fill="#f0e6cf"/>
     {rows}
     {register(150, cy)}
     '''
