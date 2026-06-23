@@ -130,8 +130,8 @@ def ladle():
     <path d="M31 40 L43 4" stroke="{INK}" stroke-width="6.5" stroke-linecap="round"/>
     <path d="M31 40 L43 4" stroke="#9a6a3a" stroke-width="4" stroke-linecap="round"/>
     <path d="M8 41 L8 45 Q8 61 23 61 Q38 61 38 45 L38 41 Z" fill="#c9c4b4" stroke="{INK}" stroke-width="3.5" stroke-linejoin="round"/>
-    <path d="M11 42 Q11 58 23 58 Q35 58 35 42 Z" fill="#e9b63a"/>
-    <ellipse cx="23" cy="42" rx="14.5" ry="3.6" fill="#f6cf5a" stroke="{INK}" stroke-width="2.6"/>'''
+    <path d="M12 43 Q12 54 23 54 Q34 54 34 43 Z" fill="#e9b63a"/>
+    <ellipse cx="23" cy="43" rx="11" ry="3" fill="#f6cf5a" stroke="{INK}" stroke-width="2.4"/>'''
     render("td_pot_soup", 48, 64, body)
 
 
