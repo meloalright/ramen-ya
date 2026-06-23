@@ -108,12 +108,11 @@ func _draw() -> void:
 	# shop name on the noren
 	_ctext("拉麵怪奇物語", Vector2(135, 40), 22, COL_YELLOW)
 
-	# start button + progress (on the counter front) — hidden when rendering the splash
+	# tap anywhere to start — no button (hidden when rendering the splash)
 	if not _splash:
-		_button(NEW_RECT, "開始製作", COL_GREEN, true)
-		_ctext("已完成  " + str(Game.high_score) + "  單", Vector2(135, 416), 10, COL_YELLOW)
-		_ctext("點擊開始", Vector2(135, 460), 10,
+		_ctext("點擊畫面開始", Vector2(135, 374), 15,
 			COL_GREEN if int(blink * 2.0) % 2 == 0 else COL_WHITE)
+		_ctext("已完成  " + str(Game.high_score) + "  單", Vector2(135, 430), 10, COL_YELLOW)
 
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
