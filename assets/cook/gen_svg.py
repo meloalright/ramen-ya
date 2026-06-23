@@ -145,8 +145,20 @@ def noodle_clump():
     render("td_pot_noodle", 48, 100, body)
 
 
+def bowl_pot(name, fill, fill_d):
+    # a wide ceramic bowl (same style as the topping trays) of broth / water
+    body = f'''
+    <path d="M6 20 C6 8 110 8 110 20 C110 40 98 48 58 48 C18 48 6 40 6 20 Z"
+          fill="#6b4a2e" stroke="{INK}" stroke-width="4.5" stroke-linejoin="round"/>
+    <ellipse cx="58" cy="20" rx="52" ry="14" fill="{fill}" stroke="{INK}" stroke-width="4.5"/>
+    <path d="M6 22 a52 14 0 0 0 104 0 a52 14 0 0 1 -104 0" fill="{fill_d}"/>'''
+    render(name, 116, 50, body)
+
+
 def main():
     bowl_empty(); broth(); noodles(); beef(); ladle(); noodle_clump()
+    bowl_pot("td_bowl_soup", "#e9b63a", "#cf9a28")
+    bowl_pot("td_bowl_noodle", "#e3e9ea", "#c4cfd0")
     vat("td_vat_soup", "#e9b63a", "#cf9a28", "#f6cf5a", False)
     vat("td_vat_noodle", "#ece8dc", "#d6d1c0", "#f8f5ee", False)   # 白汤 (noodles appear only while cooking)
     tray("td_box_beef", "#b06246", "#8a4a33", "beef")

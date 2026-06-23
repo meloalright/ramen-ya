@@ -127,11 +127,11 @@ func _compute_layout() -> void:
 	_oy = _safe_t
 	# the two steam patches sit low on the page, just above the action button
 	if stations.size() >= 2:
-		var sy: float = _avail() - 96.0
+		var sy: float = _avail() - 104.0
 		stations[0]["center"] = Vector2(75, sy)
-		stations[0]["rect"] = Rect2(18, sy - 54, 116, 104)
+		stations[0]["rect"] = Rect2(17, sy - 30, 116, 72)
 		stations[1]["center"] = Vector2(195, sy)
-		stations[1]["rect"] = Rect2(136, sy - 54, 116, 104)
+		stations[1]["rect"] = Rect2(137, sy - 30, 116, 72)
 
 
 # usable content height between the safe-area insets
@@ -231,7 +231,8 @@ func _load_cook() -> void:
 			"b_chili", "sbowl_beef", "sbowl_scallion", "sbowl_cilantro", "sbowl_chili",
 			"pot_soup", "pot_noodle", "bowl_mini",
 			"td_bowl", "td_broth", "td_noodles", "td_beef", "td_pot_soup", "td_pot_noodle",
-			"td_vat_soup", "td_vat_noodle", "td_box_beef", "td_box_scallion", "td_box_cilantro", "td_box_chili"]:
+			"td_vat_soup", "td_vat_noodle", "td_bowl_soup", "td_bowl_noodle",
+			"td_box_beef", "td_box_scallion", "td_box_cilantro", "td_box_chili"]:
 		var p := "res://assets/cook/%s.png" % key
 		if ResourceLoader.exists(p):
 			ctex[key] = load(p)
@@ -963,14 +964,26 @@ func _draw_station(s: Dictionary) -> void:
 	var rr: int = s.r
 	# 湯 / 麵: a pot mouth set into the counter (body off-frame below) + rising steam
 	if s.item == "soup" or s.item == "noodles":
-		_draw_pot_mouth(c, s.item)
+		var bk := "td_bowl_soup" if s.item == "soup" else "td_bowl_noodle"
+		if ctex.has(bk):
+			var bt: Texture2D = ctex[bk]
+			# liquid surface (sprite y=20) lands at the station centre
+			draw_texture_rect(bt, Rect2(c.x - bt.get_width() / 2.0, c.y - 20.0,
+				bt.get_width(), bt.get_height()), false)
+		if s.item == "soup":
+			# a few simmering bubbles on the broth
+			var bcol: Color = C_SOUP.lightened(0.35)
+			var t := Time.get_ticks_msec() / 1000.0
+			for i in range(3):
+				var bx := c.x + sin(t * 1.3 + i * 2.1) * (12.0 + i * 7.0)
+				var by := c.y + cos(t * 1.1 + i * 1.7) * 4.0
+				draw_circle(Vector2(bx, by), 1.8, bcol)
 		if s.item == "noodles" and noodle_state == "cooking":
 			_draw_noodle_nest(Vector2(c.x, c.y - 1))
-		if s.item == "noodles" and noodle_state == "cooking":
-			_draw_boil_gauge(Vector2(c.x - 18, c.y + 26))
-		# label tucked under the pot mouth
-		_text(s.name, Vector2(c.x + 1, c.y + 27), 12, COL_INK, HORIZONTAL_ALIGNMENT_CENTER)
-		_text(s.name, Vector2(c.x, c.y + 26), 12, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+			_draw_boil_gauge(Vector2(c.x - 18, c.y + 4))
+		# label under the bowl
+		_text(s.name, Vector2(c.x + 1, c.y + 39), 12, COL_INK, HORIZONTAL_ALIGNMENT_CENTER)
+		_text(s.name, Vector2(c.x, c.y + 38), 12, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 		return
 	# ingredient boxes on the right
 	var spr := _item_sprite(s.item)
