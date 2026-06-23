@@ -71,6 +71,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _start() -> void:
+	Music.click()
 	get_tree().change_scene_to_file("res://scenes/Main.tscn")
 
 

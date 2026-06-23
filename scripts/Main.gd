@@ -418,9 +418,11 @@ func _handle_key(key: int) -> void:
 
 func _handle_click(p: Vector2) -> void:
 	if BACK_RECT.has_point(p):
+		Music.click()
 		get_tree().change_scene_to_file("res://scenes/Menu.tscn")
 		return
 	if state == State.OVER:
+		Music.click()
 		if _menu_rect().has_point(p):
 			get_tree().change_scene_to_file("res://scenes/Menu.tscn")
 		else:
@@ -430,9 +432,11 @@ func _handle_click(p: Vector2) -> void:
 	# action buttons
 	if _action_rect().has_point(p):
 		if _can_serve():
+			Music.click()
 			_serve()
 			return
 		if _is_ruined():
+			Music.click()
 			_reset_bowl()
 			_spawn_float(BOWL_C, "倒掉了", COL_YELLOW)
 			return

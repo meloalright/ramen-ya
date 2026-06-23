@@ -6,9 +6,23 @@ extends Node
 # =====================================================================
 
 var player: AudioStreamPlayer
+var click_player: AudioStreamPlayer   # persistent UI click — survives scene changes
+
+
+func click() -> void:
+	# short button-click blip shared by every button across all scenes
+	if click_player != null and click_player.stream != null:
+		click_player.play()
 
 
 func _ready() -> void:
+	click_player = AudioStreamPlayer.new()
+	click_player.bus = "Master"
+	click_player.volume_db = -4.0
+	add_child(click_player)
+	if ResourceLoader.exists("res://assets/audio/click.wav"):
+		click_player.stream = load("res://assets/audio/click.wav")
+
 	player = AudioStreamPlayer.new()
 	player.bus = "Master"
 	player.volume_db = -9.0
