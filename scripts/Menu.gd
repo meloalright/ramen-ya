@@ -89,9 +89,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.pressed:
 			# the reset-data dialog intercepts all clicks while open
 			if _confirm_reset:
+				# only the dialog's own buttons close it (no dismiss-on-outside)
 				if _reset_yes().has_point(m):
 					_do_reset()
-				_confirm_reset = false
+					_confirm_reset = false
+				elif _reset_no().has_point(m):
+					_confirm_reset = false
 				queue_redraw()
 				return
 			# pick up the sticker to drag, else the start button
