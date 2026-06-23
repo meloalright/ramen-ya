@@ -135,19 +135,27 @@ func _draw() -> void:
 
 
 func _draw_plaque() -> void:
-	# a flat, long wooden plaque sitting on the counter (right side, where the
-	# lucky cat used to be): the app logo on the left, version number after it
-	var px := 150.0
-	var py := 298.0
-	var pw := 110.0
+	# a small wooden sign standing on the counter (right side, where the lucky
+	# cat used to be): app logo on the left, version number after it
+	var pw := 84.0
 	var ph := 30.0
+	var cxp := 205.0           # sign centre x
+	var px := cxp - pw / 2.0
+	var py := 246.0            # board top
+	var base_y := 289.0        # foot rests on the counter
+	# stake + base foot (drawn first, behind the board)
+	draw_rect(Rect2(cxp - 4.0, py + ph - 2.0, 8.0, base_y - (py + ph) + 2.0), Color("6b4a2e"))
+	draw_rect(Rect2(cxp - 4.0, py + ph - 2.0, 8.0, base_y - (py + ph) + 2.0), COL_INK, false, 1.0)
+	draw_rect(Rect2(cxp - 16.0, base_y - 4.0, 32.0, 6.0), Color("7a5230"))
+	draw_rect(Rect2(cxp - 16.0, base_y - 4.0, 32.0, 6.0), COL_INK, false, 1.0)
+	# board face
 	draw_rect(Rect2(px, py + ph - 4.0, pw, 6.0), Color("5f3f24"))   # bottom edge
-	draw_rect(Rect2(px, py, pw, ph), Color("8c5d34"))               # board face
+	draw_rect(Rect2(px, py, pw, ph), Color("8c5d34"))               # face
 	draw_rect(Rect2(px, py, pw, 5.0), Color("a06c3e"))             # top highlight
 	draw_rect(Rect2(px, py, pw, ph), COL_INK, false, 1.5)          # outline
 	if logo_tex != null:
-		draw_texture_rect(logo_tex, Rect2(px + 5.0, py + 3.0, 24.0, 24.0), false)
-	_ctext("v" + VERSION, Vector2(px + 71.0, py + 20.0), 12, COL_WHITE)
+		draw_texture_rect(logo_tex, Rect2(px + 4.0, py + 3.0, 24.0, 24.0), false)
+	_ctext("v" + VERSION, Vector2(px + 56.0, py + 20.0), 12, COL_WHITE)
 
 
 func _button(r: Rect2, label: String, base: Color, enabled: bool) -> void:
