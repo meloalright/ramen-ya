@@ -27,8 +27,8 @@ def main():
       <path d="M320 455 q95 50 190 0 q95 -50 185 0"/>
       <path d="M330 490 q95 45 185 0 q95 -45 170 0"/></g>
     <g stroke="#5e2c20" stroke-width="16">
-      <ellipse cx="440" cy="455" rx="78" ry="44" fill="#a8503a"/>
-      <ellipse cx="440" cy="455" rx="40" ry="20" fill="#c46b4f"/></g>
+      <ellipse cx="440" cy="455" rx="78" ry="44" fill="#a8503a"/></g>
+    <ellipse cx="440" cy="455" rx="40" ry="20" fill="#c46b4f"/>
     '''
     svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">{body}</svg>'
     cairosvg.svg2png(bytestring=svg.encode(), write_to=os.path.join(OUT, "icon_1024.png"),
