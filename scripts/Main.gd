@@ -1147,8 +1147,11 @@ func _draw_button(r: Rect2, label: String, base: Color) -> void:
 func _draw_back_button() -> void:
 	draw_rect(BACK_RECT, Color(0, 0, 0, 0.6))
 	draw_rect(BACK_RECT, COL_YELLOW, false, 1.0)
-	_text("← 選單", Vector2(BACK_RECT.position.x + BACK_RECT.size.x / 2, BACK_RECT.position.y + 12),
-		9, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	var bs := 9
+	# vertically centre the label in the button: baseline = top + (h + asc - desc)/2
+	var by: float = BACK_RECT.position.y + (BACK_RECT.size.y + font.get_ascent(bs) - font.get_descent(bs)) / 2.0
+	_text("← 選單", Vector2(BACK_RECT.position.x + BACK_RECT.size.x / 2, by),
+		bs, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 func _draw_over() -> void:
@@ -1213,9 +1216,14 @@ func _blink() -> bool:
 func _text(s: String, pos: Vector2, size: int, col: Color, align := HORIZONTAL_ALIGNMENT_LEFT) -> void:
 	var p := pos
 	if align != HORIZONTAL_ALIGNMENT_LEFT:
-		# advance width carries a ~1px trailing gap per glyph; center on the ink
+		# only CJK/full-width glyphs carry the trailing advance gap; ASCII
+		# (spaces, digits, arrows) don't — so count just the wide glyphs
 		var w: float = font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-		var ink: float = w - s.length() * max(1.0, round(size / 8.0))
+		var wide := 0
+		for i in s.length():
+			if s.unicode_at(i) >= 0x2000:
+				wide += 1
+		var ink: float = w - wide * max(1.0, round(size / 8.0))
 		if align == HORIZONTAL_ALIGNMENT_CENTER:
 			p.x -= ink * 0.5
 		else:

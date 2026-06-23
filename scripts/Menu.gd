@@ -145,7 +145,13 @@ func _draw_chef(center_bottom: Vector2, h: float) -> void:
 
 func _ctext(s: String, pos: Vector2, size: int, col: Color) -> void:
 	var w: float = font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-	var ink: float = w - s.length() * max(1.0, round(size / 8.0))
+	# only CJK/full-width glyphs carry the ~trailing advance gap; ASCII (spaces,
+	# digits, arrows) don't — counting them over-shifts mixed strings off-centre
+	var wide := 0
+	for i in s.length():
+		if s.unicode_at(i) >= 0x2000:
+			wide += 1
+	var ink: float = w - wide * max(1.0, round(size / 8.0))
 	var p := Vector2(pos.x - ink * 0.5, pos.y)
 	draw_string(font, p + Vector2(1, 1), s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, COL_INK)
 	draw_string(font, p, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
