@@ -138,7 +138,6 @@ def cashier():
     <rect x="186" y="230" width="168" height="146" rx="4" fill="#f0e6cf"/>
     {rows}
     {register(150, cy)}
-    {lucky_cat(414, cy)}
     '''
     svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W2} {H2}">{body}</svg>'
     cairosvg.svg2png(bytestring=svg.encode(), write_to=os.path.join(OUT, "cashier.png"),

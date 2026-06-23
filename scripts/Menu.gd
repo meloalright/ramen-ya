@@ -19,8 +19,11 @@ const COL_RED   := Color("c23b3b")
 
 var font: Font
 var stall_tex: Texture2D
+var logo_tex: Texture2D
 var chef_tex: Texture2D
 var _splash := false   # when true, render just the counter scene (for the boot splash)
+
+const VERSION := "0.0.1"
 const CHEF_FW := 52
 const CHEF_FH := 68
 const CHEF_SEQ := [0, 1, 2, 3]
@@ -37,6 +40,8 @@ func _ready() -> void:
 		stall_tex = load("res://assets/env/cashier.png")
 	elif ResourceLoader.exists("res://assets/env/ramen_stall.png"):
 		stall_tex = load("res://assets/env/ramen_stall.png")
+	if ResourceLoader.exists("res://assets/splash/logo_circle.png"):
+		logo_tex = load("res://assets/splash/logo_circle.png")
 	if Game.has_save():
 		Game.load_game()        # pre-load so the menu can show the saved coins
 	set_process(true)
@@ -108,9 +113,12 @@ func _draw() -> void:
 	draw_rect(Rect2(0, ct + 120.0, vp.x, 2), Color("8c5d30"))
 	draw_set_transform(Vector2(ox, oy), 0.0, Vector2.ONE)
 
-	# centred props (lanterns / board / register / cat) overlaid on the bands
+	# centred props (board / register) overlaid on the bands
 	if stall_tex != null:
 		draw_texture_rect(stall_tex, Rect2(0, 0, W, H), false)
+
+	# flat wooden sign on the counter: iOS app logo + white version number
+	_draw_plaque()
 
 	# shop name on the noren
 	_ctext("拉麵怪奇物語", Vector2(135, 40), 22, COL_YELLOW)
@@ -124,6 +132,22 @@ func _draw() -> void:
 		_ctext("已完成  " + str(Game.high_score) + "  單", Vector2(135, 445), 10, tally)
 
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _draw_plaque() -> void:
+	# a flat, long wooden plaque sitting on the counter (right side, where the
+	# lucky cat used to be): the app logo on the left, version number after it
+	var px := 150.0
+	var py := 298.0
+	var pw := 110.0
+	var ph := 30.0
+	draw_rect(Rect2(px, py + ph - 4.0, pw, 6.0), Color("5f3f24"))   # bottom edge
+	draw_rect(Rect2(px, py, pw, ph), Color("8c5d34"))               # board face
+	draw_rect(Rect2(px, py, pw, 5.0), Color("a06c3e"))             # top highlight
+	draw_rect(Rect2(px, py, pw, ph), COL_INK, false, 1.5)          # outline
+	if logo_tex != null:
+		draw_texture_rect(logo_tex, Rect2(px + 5.0, py + 3.0, 24.0, 24.0), false)
+	_ctext("v" + VERSION, Vector2(px + 71.0, py + 20.0), 12, COL_WHITE)
 
 
 func _button(r: Rect2, label: String, base: Color, enabled: bool) -> void:
