@@ -933,26 +933,33 @@ func _draw_ticket(i: int) -> void:
 
 
 func _draw_noodle_nest(ctr: Vector2) -> void:
-	var cream := Color("efe6cf")
-	var cream_d := Color("d6cbab")
+	# a tangle of noodle strands (not a solid dough blob)
+	var noodle := Color("f1e6bf")
+	var noodle_d := Color("dbcb98")
 	var rx := 26.0
-	var ry := 10.0
-	var pts := PackedVector2Array()
-	var pts2 := PackedVector2Array()
-	for i in range(22):
-		var a := TAU * i / 22.0
-		pts.append(ctr + Vector2(cos(a) * rx, sin(a) * ry))
-		pts2.append(ctr + Vector2(cos(a) * (rx - 2.5), sin(a) * (ry - 2.5)))
-	draw_colored_polygon(pts, cream_d)
-	draw_colored_polygon(pts2, cream)
-	# wavy noodle strands
-	for yy in [-4.0, 0.0, 4.0]:
+	var ry := 9.0
+	# faint clump shadow so the strands read as a nest in the water
+	var sh := PackedVector2Array()
+	for i in range(20):
+		var a := TAU * i / 20.0
+		sh.append(ctr + Vector2(cos(a) * rx, 1.5 + sin(a) * ry))
+	draw_colored_polygon(sh, Color(0.42, 0.37, 0.27, 0.22))
+	# wavy noodle strands, clipped to the oval at each row
+	var n := 11
+	for i in range(n):
+		var yy := -ry + 2.0 + float(i) / float(n - 1) * (2.0 * ry - 4.0)
+		var halfw: float = rx * sqrt(max(0.0, 1.0 - pow(yy / ry, 2.0))) - 1.0
+		if halfw < 2.0:
+			continue
+		var col := noodle if i % 2 == 0 else noodle_d
+		var phase := float(i) * 1.7
+		var amp := 1.3 + float(i % 3) * 0.7
 		var sp := PackedVector2Array()
-		var x := -14.0
-		while x <= 14.0:
-			sp.append(ctr + Vector2(x, yy + sin(x * 0.55) * 1.6))
-			x += 2.0
-		draw_polyline(sp, cream_d, 1.6)
+		var x := -halfw
+		while x <= halfw:
+			sp.append(ctr + Vector2(x, yy + sin(x * 0.5 + phase) * amp))
+			x += 1.8
+		draw_polyline(sp, col, 2.0)
 
 
 func _draw_steam_patch(c: Vector2, hot: bool) -> void:
