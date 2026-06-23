@@ -67,9 +67,9 @@ def beef():
     body = f'''
     <g stroke="#5e2c20" stroke-width="5">
      <ellipse cx="50" cy="46" rx="20" ry="12" fill="#a8503a"/>
-     <ellipse cx="50" cy="46" rx="10" ry="5" fill="#c46b4f"/>
-     <ellipse cx="78" cy="58" rx="19" ry="11" fill="#a8503a"/>
-     <ellipse cx="78" cy="58" rx="9" ry="4" fill="#c46b4f"/></g>'''
+     <ellipse cx="78" cy="58" rx="19" ry="11" fill="#a8503a"/></g>
+    <ellipse cx="50" cy="46" rx="10" ry="5" fill="#c46b4f"/>
+    <ellipse cx="78" cy="58" rx="9" ry="4" fill="#c46b4f"/>'''
     render("td_beef", 128, 128, body)
 
 
@@ -113,7 +113,7 @@ def tray(name, fill, fill_d, chunky):
     else:
         import_dots = ""
         for cx, cy in ((14, 15), (24, 13), (33, 18), (18, 22), (28, 23)):
-            import_dots += f'<circle cx="{cx}" cy="{cy}" r="3.4" fill="{c[1]}" stroke="{c[0]}" stroke-width="1.5"/>'
+            import_dots += f'<circle cx="{cx}" cy="{cy}" r="3.4" fill="{c[1]}"/>'
         bits = import_dots
     body = f'''
     <path d="M4 18 C4 10 44 10 44 18 C44 34 38 40 24 40 C10 40 4 34 4 18 Z"
