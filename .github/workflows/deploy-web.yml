@@ -55,6 +55,7 @@ jobs:
 
       - name: Prepare site for static hosting
         run: |
+          cp assets/splash/logo_circle.png build/loading.png
           rm -f build/*.import build/.gitkeep
           touch build/.nojekyll
 
