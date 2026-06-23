@@ -93,19 +93,14 @@ func _draw() -> void:
 	var vp: Vector2 = get_viewport_rect().size
 	var ox: float = floor(max(0.0, (vp.x - W) / 2.0))
 	var oy: float = floor(max(0.0, (vp.y - H) / 2.0))
-	var nb: float = oy + 58.0    # noren bottom
 	var ct: float = oy + 280.0   # counter top
 	# --- shop background drawn full-width so it extends to any screen size ---
 	draw_rect(Rect2(0, 0, vp.x, vp.y), Color("e3cba0"))                          # wall
 	draw_rect(Rect2(0, oy + 215.0, vp.x, ct - (oy + 215.0)), Color("d8bd8e"))    # lower wall
 	draw_rect(Rect2(0, oy + 215.0, vp.x, 1.0), Color("c8a874"))
-	# noren curtain with slats
-	draw_rect(Rect2(0, 0, vp.x, nb), Color("3f8f6a"))
-	var sx: float = 0.0
-	while sx < vp.x:
-		draw_rect(Rect2(sx, oy + 8.0, 2, nb - (oy + 8.0)), COL_INK)
-		sx += 28.0
-	draw_rect(Rect2(0, nb - 2.0, vp.x, 2), COL_INK)
+	# flower garland + shop name across the top (replaces the noren cloth)
+	_draw_garland(vp.x)
+	_ctext("拉麵怪奇物語", Vector2(vp.x / 2.0, 46.0), 22, COL_RED)
 	# wooden counter that extends infinitely wide
 	draw_rect(Rect2(0, ct, vp.x, vp.y - ct), Color("a9743f"))
 	draw_rect(Rect2(0, ct, vp.x, 6), Color("c08a4e"))
@@ -120,9 +115,6 @@ func _draw() -> void:
 	# white paper note taped on the wall (right side): app logo + version
 	_draw_version_note()
 
-	# shop name on the noren
-	_ctext("拉麵怪奇物語", Vector2(135, 40), 22, COL_YELLOW)
-
 	# start button (hidden when rendering the splash)
 	if not _splash:
 		_button(START_RECT, "開 始", COL_GREEN, true)
@@ -132,6 +124,35 @@ func _draw() -> void:
 		_ctext("已完成  " + str(Game.high_score) + "  單", Vector2(135, 445), 10, tally)
 
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _flower(c: Vector2, r: float, col: Color) -> void:
+	for i in 5:
+		var a := -PI / 2.0 + float(i) * TAU / 5.0
+		draw_circle(c + Vector2(cos(a), sin(a)) * r * 0.9, r * 0.62, col)
+	draw_circle(c, r * 0.5, COL_YELLOW)
+
+
+func _draw_garland(w: float) -> void:
+	# a leafy flower garland hanging across the top of the shop, full-width
+	var greens := [Color("4f9e4f"), Color("5fae5f"), Color("3f8e4f")]
+	var blooms := [Color("e2533f"), Color("e88aa0"), Color("e8a23a"), Color("f4ede0"), Color("c8508f")]
+	var lx := -8.0
+	var i := 0
+	while lx < w + 14.0:
+		draw_circle(Vector2(lx, 12.0 + float(i % 3) * 3.0), 8.5, greens[i % greens.size()])
+		lx += 12.0
+		i += 1
+	var fx := 2.0
+	var k := 0
+	while fx < w + 10.0:
+		var fy := 10.0 + float(k % 3) * 4.0
+		_flower(Vector2(fx, fy), 7.0, blooms[k % blooms.size()])
+		if k % 4 == 1:
+			draw_line(Vector2(fx, fy + 5.0), Vector2(fx + 2.0, fy + 17.0), greens[0], 1.5)
+			_flower(Vector2(fx + 2.0, fy + 20.0), 4.5, blooms[(k + 2) % blooms.size()])
+		fx += 18.0
+		k += 1
 
 
 func _draw_version_note() -> void:
