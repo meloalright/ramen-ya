@@ -127,37 +127,49 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
-func _flower(c: Vector2, r: float, col: Color) -> void:
+# deterministic pseudo-random in [0,1) — stable per seed so the garland
+# doesn't jitter every frame
+func _hash(n: float) -> float:
+	var f: float = sin(n * 12.9898) * 43758.5453
+	return f - floor(f)
+
+
+func _flower(c: Vector2, r: float, col: Color, rot := 0.0) -> void:
 	for i in 5:
-		var a := -PI / 2.0 + float(i) * TAU / 5.0
+		var a := -PI / 2.0 + rot + float(i) * TAU / 5.0
 		draw_circle(c + Vector2(cos(a), sin(a)) * r * 0.9, r * 0.62, col)
 	draw_circle(c, r * 0.5, COL_YELLOW)
 
 
 func _draw_garland(w: float) -> void:
-	# a thick, lush leafy flower garland hanging across the top, full-width
+	# a thick, lush leafy flower garland hanging across the top, full-width;
+	# flowers scattered with deterministic randomness (position/size/colour/spin)
 	var greens := [Color("4f9e4f"), Color("5fae5f"), Color("3f8e4f")]
 	var blooms := [Color("e2533f"), Color("e88aa0"), Color("e8a23a"), Color("f4ede0"), Color("c8508f")]
 	# two stacked rows of leafy base for depth
 	for row in 2:
 		var ly := 4.0 + float(row) * 16.0
 		var lx := -8.0
-		var i := 0
 		while lx < w + 14.0:
-			draw_circle(Vector2(lx, ly + float(i % 3) * 3.0), 9.0, greens[(i + row) % greens.size()])
+			var jy: float = _hash(lx * 0.21 + float(row) * 7.0) * 5.0
+			draw_circle(Vector2(lx, ly + jy), 9.0, greens[int(_hash(lx + row) * 100.0) % greens.size()])
 			lx += 11.0
-			i += 1
-	# flowers spread over a taller band, denser
+	# flowers
 	var fx := 2.0
 	var k := 0
-	while fx < w + 10.0:
-		var fy := 1.0 + float(k % 4) * 7.0
-		_flower(Vector2(fx, fy), 7.0, blooms[k % blooms.size()])
-		if k % 3 == 1:
-			# a hanging bud on a longer stem
-			draw_line(Vector2(fx, fy + 6.0), Vector2(fx + 2.0, fy + 26.0), greens[0], 1.5)
-			_flower(Vector2(fx + 2.0, fy + 29.0), 5.0, blooms[(k + 2) % blooms.size()])
-		fx += 16.0
+	while fx < w + 12.0:
+		var h1: float = _hash(float(k) * 1.7)
+		var h2: float = _hash(float(k) * 3.3 + 5.0)
+		var h3: float = _hash(float(k) * 0.9 + 11.0)
+		var fy: float = -2.0 + h1 * 26.0
+		var fr: float = 6.0 + h2 * 3.5
+		_flower(Vector2(fx + (h2 - 0.5) * 7.0, fy), fr, blooms[int(h3 * 100.0) % blooms.size()], h1 * TAU)
+		if h3 > 0.62:
+			# a hanging bud on a stem
+			var bl: float = 22.0 + h1 * 10.0
+			draw_line(Vector2(fx, fy + 6.0), Vector2(fx + 2.0, fy + bl), greens[0], 1.5)
+			_flower(Vector2(fx + 2.0, fy + bl + 3.0), 4.5 + h2 * 1.5, blooms[int(h1 * 100.0) % blooms.size()], h2 * TAU)
+		fx += 12.0 + h1 * 6.0
 		k += 1
 
 
