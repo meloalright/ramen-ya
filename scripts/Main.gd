@@ -422,11 +422,13 @@ func _handle_click(p: Vector2) -> void:
 		get_tree().change_scene_to_file("res://scenes/Menu.tscn")
 		return
 	if state == State.OVER:
-		Music.click()
+		# only the two buttons act — no dismiss/restart on outside taps
 		if _menu_rect().has_point(p):
+			Music.click()
 			get_tree().change_scene_to_file("res://scenes/Menu.tscn")
-		else:
-			_start_game()      # 再來一單 button, or tap anywhere
+		elif _next_rect().has_point(p):
+			Music.click()
+			_start_game()      # 再來一單
 		return
 
 	# action buttons
