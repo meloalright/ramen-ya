@@ -129,9 +129,11 @@ def ladle():
     body = f'''
     <path d="M31 40 L43 4" stroke="{INK}" stroke-width="6.5" stroke-linecap="round"/>
     <path d="M31 40 L43 4" stroke="#9a6a3a" stroke-width="4" stroke-linecap="round"/>
-    <path d="M8 41 L8 45 Q8 61 23 61 Q38 61 38 45 L38 41 Z" fill="#c9c4b4" stroke="{INK}" stroke-width="3.5" stroke-linejoin="round"/>
-    <path d="M12 43 Q12 54 23 54 Q34 54 34 43 Z" fill="#e9b63a"/>
-    <ellipse cx="23" cy="43" rx="11" ry="3" fill="#f6cf5a" stroke="{INK}" stroke-width="2.4"/>'''
+    <path d="M8 40 Q8 62 23 62 Q38 62 38 40 Z" fill="#c9c4b4" stroke="{INK}" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M30 46 Q32 56 24 60" fill="none" stroke="#aca695" stroke-width="2.5" opacity="0.55"/>
+    <ellipse cx="23" cy="40" rx="15" ry="4.6" fill="#c9c4b4" stroke="{INK}" stroke-width="3"/>
+    <ellipse cx="23" cy="40" rx="10.5" ry="3" fill="#e9b63a" stroke="{INK}" stroke-width="2"/>
+    <ellipse cx="21.5" cy="39.4" rx="5" ry="1.3" fill="#f6cf5a"/>'''
     render("td_pot_soup", 48, 64, body)
 
 
