@@ -64,23 +64,16 @@ def register(cx, by):
             sx = cx - 44 + c * 48
             sy = by - 100 + r * 30
             slots += (
-                f'<rect x="{sx}" y="{sy}" width="40" height="24" rx="3" fill="#7a2c1f"/>'
-                f'<rect x="{sx+4}" y="{sy+4}" width="32" height="16" rx="2" fill="#f0e6cf" stroke="{INK}" stroke-width="2"/>'
+                f'<rect x="{sx}" y="{sy}" width="40" height="24" rx="3" fill="#c99f30"/>'
+                f'<rect x="{sx+4}" y="{sy+4}" width="32" height="16" rx="2" fill="#f8edc0" stroke="{INK}" stroke-width="2"/>'
                 f'<circle cx="{sx+31}" cy="{sy+12}" r="2.6" fill="#4fae5f"/>'
             )
     return f'''<g>
-    <!-- cabinet -->
-    <rect x="{cx-58}" y="{by-168}" width="116" height="168" rx="12" fill="#e0583f" stroke="{INK}" stroke-width="4"/>
-    <rect x="{cx-58}" y="{by-168}" width="116" height="13" rx="12" fill="#ef7b5f"/>
-    <!-- screen -->
-    <rect x="{cx-44}" y="{by-156}" width="88" height="46" rx="6" fill="#23303a" stroke="{INK}" stroke-width="4"/>
-    <rect x="{cx-37}" y="{by-149}" width="74" height="32" rx="3" fill="#3fa7c4"/>
-    <!-- charging lightning bolt on the screen -->
-    <path d="M{cx+4} {by-147} L{cx-8} {by-132} L{cx-1} {by-132} L{cx-5} {by-119} L{cx+9} {by-135} L{cx+1} {by-135} Z" fill="#f2c14e" stroke="{INK}" stroke-width="1.5" stroke-linejoin="round"/>
-    <!-- power-bank slots (2 x 3) -->
+    <!-- all-yellow power-bank dispenser (no screen / banner) -->
+    <rect x="{cx-58}" y="{by-116}" width="116" height="116" rx="12" fill="#f0bf45" stroke="{INK}" stroke-width="4"/>
     {slots}
     <!-- base -->
-    <rect x="{cx-62}" y="{by-10}" width="124" height="12" rx="4" fill="#a8412e" stroke="{INK}" stroke-width="4"/>
+    <rect x="{cx-62}" y="{by-10}" width="124" height="12" rx="4" fill="#d2a233" stroke="{INK}" stroke-width="4"/>
     </g>'''
 
 
