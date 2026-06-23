@@ -31,9 +31,12 @@ const CHEF_SEQ := [0, 1, 2, 3]
 var anim := 0.0
 var idx := 0
 var blink := 0.0
+var _garland_seed := 0.0   # randomised per menu visit so the flowers vary
 
 
 func _ready() -> void:
+	randomize()
+	_garland_seed = randf() * 9999.0
 	font = _make_font()
 	if ResourceLoader.exists("res://assets/chef_sheet.png"):
 		chef_tex = load("res://assets/chef_sheet.png")
@@ -151,16 +154,16 @@ func _draw_garland(w: float) -> void:
 		var ly := 4.0 + float(row) * 16.0
 		var lx := -8.0
 		while lx < w + 14.0:
-			var jy: float = _hash(lx * 0.21 + float(row) * 7.0) * 5.0
-			draw_circle(Vector2(lx, ly + jy), 9.0, greens[int(_hash(lx + row) * 100.0) % greens.size()])
+			var jy: float = _hash(lx * 0.21 + float(row) * 7.0 + _garland_seed) * 5.0
+			draw_circle(Vector2(lx, ly + jy), 9.0, greens[int(_hash(lx + row + _garland_seed) * 100.0) % greens.size()])
 			lx += 11.0
 	# flowers
 	var fx := 2.0
 	var k := 0
 	while fx < w + 12.0:
-		var h1: float = _hash(float(k) * 1.7)
-		var h2: float = _hash(float(k) * 3.3 + 5.0)
-		var h3: float = _hash(float(k) * 0.9 + 11.0)
+		var h1: float = _hash(float(k) * 1.7 + _garland_seed)
+		var h2: float = _hash(float(k) * 3.3 + 5.0 + _garland_seed)
+		var h3: float = _hash(float(k) * 0.9 + 11.0 + _garland_seed)
 		var fy: float = -2.0 + h1 * 26.0
 		var fr: float = 6.0 + h2 * 3.5
 		_flower(Vector2(fx + (h2 - 0.5) * 7.0, fy), fr, blooms[int(h3 * 100.0) % blooms.size()], h1 * TAU)
