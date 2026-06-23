@@ -21,6 +21,7 @@ const COL_SOUP  := Color("e9b63a")   # yellow oily broth colour
 var font: Font
 var stall_tex: Texture2D
 var logo_tex: Texture2D
+var board_tex: Texture2D
 var chef_tex: Texture2D
 var _splash := false   # when true, render just the counter scene (for the boot splash)
 
@@ -32,6 +33,10 @@ var anim := 0.0
 var idx := 0
 var blink := 0.0
 var _garland_seed := 0.0   # randomised per menu visit so the flowers vary
+var _board_pos := Vector2(135.0, 134.0)   # draggable price-board centre
+var _note_pos := Vector2(220.0, 221.0)    # draggable version-note centre
+var _drag := ""                            # "", "board" or "note"
+var _drag_off := Vector2.ZERO
 
 
 func _ready() -> void:
@@ -46,6 +51,8 @@ func _ready() -> void:
 		stall_tex = load("res://assets/env/ramen_stall.png")
 	if ResourceLoader.exists("res://assets/splash/logo_rounded.png"):
 		logo_tex = load("res://assets/splash/logo_rounded.png")
+	if ResourceLoader.exists("res://assets/env/board.png"):
+		board_tex = load("res://assets/env/board.png")
 	if Game.has_save():
 		Game.load_game()        # pre-load so the menu can show the saved coins
 	set_process(true)
@@ -72,9 +79,29 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		if START_RECT.has_point(get_global_mouse_position() - _offset()):
-			_start()
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		var m: Vector2 = get_global_mouse_position() - _offset()
+		if event.pressed:
+			# pick up the board / sticker to drag, else the start button
+			if _board_rect().has_point(m):
+				_drag = "board"
+				_drag_off = _board_pos - m
+			elif _note_pos.distance_to(m) < 42.0:
+				_drag = "note"
+				_drag_off = _note_pos - m
+			elif START_RECT.has_point(m):
+				_start()
+		else:
+			_drag = ""
+	elif event is InputEventMouseMotion and _drag != "":
+		var np: Vector2 = (get_global_mouse_position() - _offset()) + _drag_off
+		np.x = clamp(np.x, 24.0, float(W) - 24.0)
+		np.y = clamp(np.y, 46.0, 252.0)   # keep it on the wall, above the counter
+		if _drag == "board":
+			_board_pos = np
+		else:
+			_note_pos = np
+		queue_redraw()
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode in [KEY_ENTER, KEY_SPACE]:
 			_start()
@@ -83,6 +110,15 @@ func _unhandled_input(event: InputEvent) -> void:
 func _offset() -> Vector2:
 	var vp: Vector2 = get_viewport_rect().size
 	return Vector2(floor(max(0.0, (vp.x - W) / 2.0)), floor(max(0.0, (vp.y - H) / 2.0)))
+
+
+func _board_size() -> Vector2:
+	return Vector2(108.0, 97.0)
+
+
+func _board_rect() -> Rect2:
+	var bs := _board_size()
+	return Rect2(_board_pos - bs / 2.0, bs)
 
 
 func _start() -> void:
@@ -116,7 +152,12 @@ func _draw() -> void:
 	if stall_tex != null:
 		draw_texture_rect(stall_tex, Rect2(0, 0, W, H), false)
 
-	# white paper note taped on the wall (right side): app logo + version
+	# draggable price board on the wall
+	if board_tex != null:
+		var bs := _board_size()
+		draw_texture_rect(board_tex, Rect2(_board_pos - bs / 2.0, bs), false)
+
+	# white paper note taped on the wall (draggable): app logo + version
 	_draw_version_note()
 
 	# start button (hidden when rendering the splash)
@@ -181,8 +222,8 @@ func _draw_version_note() -> void:
 	# casual crooked look: app logo + version number
 	var pw := 62.0
 	var ph := 74.0
-	var cx := 220.0   # note centre x (right side)
-	var cy := 221.0   # note centre y (lowered ~one body from the wall top)
+	var cx := _note_pos.x
+	var cy := _note_pos.y
 	var off := _offset()
 	draw_set_transform(off + Vector2(cx, cy), deg_to_rad(-30.0), Vector2.ONE)
 	var hw := pw / 2.0
