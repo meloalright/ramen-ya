@@ -117,8 +117,8 @@ func _draw() -> void:
 	if stall_tex != null:
 		draw_texture_rect(stall_tex, Rect2(0, 0, W, H), false)
 
-	# flat wooden sign on the counter: iOS app logo + white version number
-	_draw_plaque()
+	# white paper note taped on the wall (right side): app logo + version
+	_draw_version_note()
 
 	# shop name on the noren
 	_ctext("拉麵怪奇物語", Vector2(135, 40), 22, COL_YELLOW)
@@ -134,36 +134,25 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
-func _poly(pts: PackedVector2Array, fill: Color) -> void:
-	draw_colored_polygon(pts, fill)
-	var o := pts.duplicate()
-	o.append(pts[0])
-	draw_polyline(o, COL_INK, 1.0)
-
-
-func _draw_plaque() -> void:
-	# a small triangular-prism (wedge) sign standing on the counter where the
-	# lucky cat was: the front face carries the app logo + version, the right
-	# end shows the triangular cross-section, the back slopes down to the table
-	var pw := 80.0
-	var ph := 34.0
-	var depth := 15.0
-	var cxp := 200.0
-	var px := cxp - pw / 2.0   # front face left
-	var py := 248.0            # ridge (top of front face)
-	var by := py + ph          # base on the counter
-	var rx := px + pw          # front face right edge
-	# right end cap = the triangular cross-section (the "三棱" side), sloping
-	# from the front-top corner back-down to the table
-	_poly(PackedVector2Array([
-		Vector2(rx, py), Vector2(rx + depth, by), Vector2(rx, by)]), Color("5f3f24"))
-	# front face (content)
-	draw_rect(Rect2(px, py, pw, ph), Color("8c5d34"))
-	draw_rect(Rect2(px, py, pw, 5.0), Color("a06c3e"))            # top highlight
-	draw_rect(Rect2(px, py, pw, ph), COL_INK, false, 1.5)        # outline
+func _draw_version_note() -> void:
+	# a white paper note taped on the wall, upper-right of the screen:
+	# app logo + version number
+	var pw := 62.0
+	var ph := 74.0
+	var px := 197.0
+	var py := 110.0
+	draw_rect(Rect2(px + 2.0, py + 3.0, pw, ph), Color(0, 0, 0, 0.12))   # soft shadow
+	draw_rect(Rect2(px, py, pw, ph), Color("f6f2e8"))                    # paper
+	draw_rect(Rect2(px, py, pw, ph), COL_INK, false, 1.0)               # outline
+	# tape at the top corners
+	var tape := Color(0.91, 0.89, 0.76, 0.6)
+	draw_rect(Rect2(px - 4.0, py - 3.0, 18.0, 8.0), tape)
+	draw_rect(Rect2(px + pw - 14.0, py - 3.0, 18.0, 8.0), tape)
+	# app logo (iOS rounded-rect icon)
 	if logo_tex != null:
-		draw_texture_rect(logo_tex, Rect2(px + 5.0, py + 5.0, 24.0, 24.0), false)
-	_ctext("v" + VERSION, Vector2(px + 55.0, py + 23.0), 12, COL_WHITE)
+		draw_texture_rect(logo_tex, Rect2(px + (pw - 40.0) / 2.0, py + 9.0, 40.0, 40.0), false)
+	# version number, dark text
+	_ctext("v" + VERSION, Vector2(px + pw / 2.0, py + 63.0), 12, COL_INK)
 
 
 func _button(r: Rect2, label: String, base: Color, enabled: bool) -> void:
