@@ -66,7 +66,6 @@ def register(cx, by):
             slots += (
                 f'<rect x="{sx}" y="{sy}" width="40" height="24" rx="3" fill="#c99f30"/>'
                 f'<rect x="{sx+4}" y="{sy+4}" width="32" height="16" rx="2" fill="#f8edc0" stroke="{INK}" stroke-width="2"/>'
-                f'<circle cx="{sx+31}" cy="{sy+12}" r="2.6" fill="#4fae5f"/>'
             )
     return f'''<g>
     <!-- all-yellow power-bank dispenser (no screen / banner) -->
