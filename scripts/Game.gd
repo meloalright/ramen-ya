@@ -12,6 +12,11 @@ var world_pos := Vector2.ZERO
 var has_pos := false
 var high_score: int = 0      # best 擊退 count in the shooter
 
+# menu wall layout — where the player dragged the price board / version sticker
+var board_pos := Vector2.ZERO
+var note_pos := Vector2.ZERO
+var has_layout := false
+
 # upgrade levels (bought at the street's upgrade store)
 var up_tip := 0          # +15% tips per level
 var up_patience := 0     # +5s customer patience per level
@@ -41,6 +46,8 @@ func save() -> void:
 		"coins": coins, "x": world_pos.x, "y": world_pos.y, "has_pos": has_pos,
 		"up_tip": up_tip, "up_patience": up_patience, "up_day": up_day,
 		"high": high_score,
+		"bx": board_pos.x, "by": board_pos.y, "nx": note_pos.x, "ny": note_pos.y,
+		"has_layout": has_layout,
 	}))
 	f.close()
 
@@ -62,6 +69,9 @@ func load_game() -> bool:
 	up_patience = int(d.get("up_patience", 0))
 	up_day = int(d.get("up_day", 0))
 	high_score = int(d.get("high", 0))
+	board_pos = Vector2(float(d.get("bx", 0.0)), float(d.get("by", 0.0)))
+	note_pos = Vector2(float(d.get("nx", 0.0)), float(d.get("ny", 0.0)))
+	has_layout = bool(d.get("has_layout", false))
 	return true
 
 
@@ -69,6 +79,13 @@ func submit_score(n: int) -> void:
 	if n > high_score:
 		high_score = n
 		save()
+
+
+func save_layout(bp: Vector2, np: Vector2) -> void:
+	board_pos = bp
+	note_pos = np
+	has_layout = true
+	save()
 
 
 func add_coins(n: int) -> void:

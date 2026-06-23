@@ -55,6 +55,9 @@ func _ready() -> void:
 		board_tex = load("res://assets/env/board.png")
 	if Game.has_save():
 		Game.load_game()        # pre-load so the menu can show the saved coins
+	if Game.has_layout:         # restore the player's saved wall arrangement
+		_board_pos = Game.board_pos
+		_note_pos = Game.note_pos
 	set_process(true)
 
 
@@ -92,6 +95,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			elif START_RECT.has_point(m):
 				_start()
 		else:
+			if _drag != "":
+				Game.save_layout(_board_pos, _note_pos)   # persist the arrangement
 			_drag = ""
 	elif event is InputEventMouseMotion and _drag != "":
 		var np: Vector2 = (get_global_mouse_position() - _offset()) + _drag_off
