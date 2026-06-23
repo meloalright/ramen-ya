@@ -145,7 +145,7 @@ func _board_rect() -> Rect2:
 
 # register hit area (fixed) + reset-dialog button rects, all in content coords
 func _reg_rect() -> Rect2:
-	return Rect2(42.0, 206.0, 66.0, 76.0)
+	return Rect2(42.0, 194.0, 66.0, 88.0)
 
 
 func _reset_no() -> Rect2:

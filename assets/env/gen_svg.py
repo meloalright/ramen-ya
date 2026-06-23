@@ -57,22 +57,32 @@ def bowl(cx, cy, s=1.0):
 
 
 def register(cx, by):
-    # a cash register sitting with its base on the counter top (y=by)
+    # a shared power-bank rental kiosk standing with its base on the counter (y=by)
+    slots = ""
+    for r in range(3):
+        for c in range(2):
+            sx = cx - 44 + c * 48
+            sy = by - 100 + r * 30
+            slots += (
+                f'<rect x="{sx}" y="{sy}" width="40" height="24" rx="3" fill="#7a2c1f"/>'
+                f'<rect x="{sx+4}" y="{sy+4}" width="32" height="16" rx="2" fill="#f0e6cf" stroke="{INK}" stroke-width="2"/>'
+                f'<circle cx="{sx+31}" cy="{sy+12}" r="2.6" fill="#4fae5f"/>'
+            )
     return f'''<g>
-    <rect x="{cx-60}" y="{by-98}" width="120" height="98" rx="8" fill="#cf6b4e" stroke="{INK}" stroke-width="4"/>
-    <rect x="{cx-60}" y="{by-98}" width="120" height="16" rx="8" fill="#e08a6c"/>
-    <!-- display housing + screen -->
-    <rect x="{cx-44}" y="{by-142}" width="88" height="48" rx="6" fill="#6f4230" stroke="{INK}" stroke-width="4"/>
-    <rect x="{cx-34}" y="{by-134}" width="68" height="32" rx="3" fill="#bfe6c8"/>
-    <g fill="#2e6b3f"><rect x="{cx-25}" y="{by-126}" width="8" height="16"/><rect x="{cx-11}" y="{by-126}" width="8" height="16"/><rect x="{cx+3}" y="{by-126}" width="8" height="16"/><rect x="{cx+17}" y="{by-126}" width="8" height="16"/></g>
-    <!-- keypad -->
-    <g fill="#f0d9a0" stroke="{INK}" stroke-width="2">
-      <rect x="{cx-42}" y="{by-72}" width="22" height="19" rx="3"/><rect x="{cx-12}" y="{by-72}" width="22" height="19" rx="3"/><rect x="{cx+18}" y="{by-72}" width="22" height="19" rx="3"/>
-      <rect x="{cx-42}" y="{by-47}" width="22" height="19" rx="3"/><rect x="{cx-12}" y="{by-47}" width="22" height="19" rx="3"/><rect x="{cx+18}" y="{by-47}" width="22" height="19" rx="3"/>
-    </g>
-    <!-- drawer line + handle -->
-    <rect x="{cx-60}" y="{by-24}" width="120" height="4" fill="{INK}"/>
-    <rect x="{cx-15}" y="{by-18}" width="30" height="9" rx="3" fill="#6f4230" stroke="{INK}" stroke-width="2"/>
+    <!-- cabinet -->
+    <rect x="{cx-58}" y="{by-168}" width="116" height="168" rx="12" fill="#e0583f" stroke="{INK}" stroke-width="4"/>
+    <rect x="{cx-58}" y="{by-168}" width="116" height="13" rx="12" fill="#ef7b5f"/>
+    <!-- screen -->
+    <rect x="{cx-44}" y="{by-156}" width="88" height="46" rx="6" fill="#23303a" stroke="{INK}" stroke-width="4"/>
+    <rect x="{cx-37}" y="{by-149}" width="74" height="32" rx="3" fill="#3fa7c4"/>
+    <!-- battery icon on the screen -->
+    <rect x="{cx-15}" y="{by-141}" width="26" height="15" rx="2" fill="#eef4ee" stroke="{INK}" stroke-width="2"/>
+    <rect x="{cx+11}" y="{by-138}" width="3" height="9" rx="1" fill="{INK}"/>
+    <rect x="{cx-12}" y="{by-138}" width="16" height="9" fill="#4fae5f"/>
+    <!-- power-bank slots (2 x 3) -->
+    {slots}
+    <!-- base -->
+    <rect x="{cx-62}" y="{by-10}" width="124" height="12" rx="4" fill="#a8412e" stroke="{INK}" stroke-width="4"/>
     </g>'''
 
 
