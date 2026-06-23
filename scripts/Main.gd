@@ -129,9 +129,9 @@ func _compute_layout() -> void:
 	if stations.size() >= 2:
 		var sy: float = _avail() - 96.0
 		stations[0]["center"] = Vector2(75, sy)
-		stations[0]["rect"] = Rect2(22, sy - 52, 106, 100)
+		stations[0]["rect"] = Rect2(18, sy - 54, 116, 104)
 		stations[1]["center"] = Vector2(195, sy)
-		stations[1]["rect"] = Rect2(142, sy - 52, 106, 100)
+		stations[1]["rect"] = Rect2(136, sy - 54, 116, 104)
 
 
 # usable content height between the safe-area insets
@@ -863,20 +863,20 @@ func _draw_pot_mouth(c: Vector2, item: String) -> void:
 	var broth: Color = C_SOUP if item == "soup" else Color("e3e9ea")
 	var broth_d: Color = Color("cf9a28") if item == "soup" else Color("c4cfd0")
 	# a little of the near wall under the front rim (hint of depth)
-	_fill_ellipse(Vector2(c.x, c.y + 6), 45, 15, Color("241a12"))
+	_fill_ellipse(Vector2(c.x, c.y + 7), 54, 18, Color("241a12"))
 	# recessed rim
-	_fill_ellipse(c, 46, 16, Color("31241a"))
-	_draw_ellipse_ring(c, 46, 16, Color("6f4d31"))
+	_fill_ellipse(c, 55, 19, Color("31241a"))
+	_draw_ellipse_ring(c, 55, 19, Color("6f4d31"))
 	# broth surface (front half darker)
-	_fill_ellipse(c, 39, 12, broth_d)
-	_fill_ellipse(Vector2(c.x, c.y - 1.5), 39, 11, broth)
+	_fill_ellipse(c, 47, 14.5, broth_d)
+	_fill_ellipse(Vector2(c.x, c.y - 2.0), 47, 13.5, broth)
 	# soft sheen + a couple of simmering bubbles
-	_fill_ellipse(Vector2(c.x - 13, c.y - 3), 9, 2.6, broth.lightened(0.25))
+	_fill_ellipse(Vector2(c.x - 16, c.y - 4), 11, 3.2, broth.lightened(0.25))
 	var t := Time.get_ticks_msec() / 1000.0
 	for i in range(3):
-		var bx := c.x + sin(t * 1.3 + i * 2.1) * (10.0 + i * 6.0)
-		var by := c.y + cos(t * 1.1 + i * 1.7) * 4.0
-		draw_circle(Vector2(bx, by), 1.6, broth.lightened(0.35))
+		var bx := c.x + sin(t * 1.3 + i * 2.1) * (13.0 + i * 7.0)
+		var by := c.y + cos(t * 1.1 + i * 1.7) * 5.0
+		draw_circle(Vector2(bx, by), 1.8, broth.lightened(0.35))
 
 
 func _draw_ellipse_ring(c: Vector2, rx: float, ry: float, col: Color) -> void:
