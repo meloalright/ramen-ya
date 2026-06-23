@@ -15,7 +15,7 @@ def main():
     <!-- steam -->
     <g fill="none" stroke="#ffffff" stroke-width="26" stroke-linecap="round" opacity="0.55">
       <path d="M430 300 q-50 -60 0 -120 q50 -60 0 -120"/>
-      <path d="M610 300 q50 -60 0 -120 q-50 -60 0 -120"/></g>
+      <path d="M610 300 q-50 -60 0 -120 q50 -60 0 -120"/></g>
     <!-- bowl -->
     <path d="M150 470 C150 300 874 300 874 470 C874 760 700 880 512 880 C324 880 150 760 150 470 Z"
           fill="#e85a52" stroke="{INK}" stroke-width="26" stroke-linejoin="round"/>
