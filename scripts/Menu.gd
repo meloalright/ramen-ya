@@ -214,8 +214,10 @@ func _draw() -> void:
 	# z40 — flower garland + shop name (full-width, on top)
 	_draw_garland(vp.x)
 	if _drag == "":
-		# shop name at the page's upper golden-ratio line (0.382 from the top)
-		_ctext("拉麵怪奇物語", Vector2(vp.x / 2.0, vp.y * 0.382), 28, COL_SOUP)
+		# shop name at the upper golden ratio between the garland bottom and the
+		# table top (0.382 down from the garland = 0.618 up from the table)
+		var ty := 50.0 + 0.382 * (ct - 50.0)
+		_ctext("拉麵怪奇物語", Vector2(vp.x / 2.0, ty), 28, COL_SOUP)
 
 	# UI on top — start button + tally (hidden on splash / while dragging)
 	draw_set_transform(Vector2(ox, oy), 0.0, Vector2.ONE)
