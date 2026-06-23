@@ -111,9 +111,10 @@ def tray(name, fill, fill_d, chunky):
     if chunky == "beef":
         bits = f'<g stroke="#5e2c20" stroke-width="2"><ellipse cx="18" cy="17" rx="9" ry="5" fill="{c[0]}"/><ellipse cx="30" cy="22" rx="9" ry="5" fill="{c[0]}"/></g>'
     else:
+        dot = "#a82c2c" if chunky == "chili" else c[1]   # chili = darker flecks
         import_dots = ""
         for cx, cy in ((14, 15), (24, 13), (33, 18), (18, 22), (28, 23)):
-            import_dots += f'<circle cx="{cx}" cy="{cy}" r="3.4" fill="{c[1]}"/>'
+            import_dots += f'<circle cx="{cx}" cy="{cy}" r="3.4" fill="{dot}"/>'
         bits = import_dots
     body = f'''
     <path d="M4 18 C4 10 44 10 44 18 C44 34 38 40 24 40 C10 40 4 34 4 18 Z"
