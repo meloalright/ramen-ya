@@ -138,10 +138,14 @@ def cashier():
     {rows}
     {register(150, cy)}
     '''
+    # supersample 2× the (already 2× content) design so the board / register
+    # curves stay crisp when the 270-wide menu scales up ~4× on hi-DPI phones.
+    # drawn at a fixed content rect in Menu.gd, so resolution ↑ but size unchanged
+    SS = 2
     svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W2} {H2}">{body}</svg>'
     cairosvg.svg2png(bytestring=svg.encode(), write_to=os.path.join(OUT, "cashier.png"),
-                     output_width=W2, output_height=H2)
-    print("wrote cashier.png (props only)", (W2, H2))
+                     output_width=W2 * SS, output_height=H2 * SS)
+    print("wrote cashier.png (props only)", (W2 * SS, H2 * SS))
 
 
 if __name__ == "__main__":
