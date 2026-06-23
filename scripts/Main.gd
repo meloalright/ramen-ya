@@ -810,8 +810,8 @@ func _draw_order_bubble(anchor: Vector2, c: Dictionary) -> void:
 	# beef-ramen base icon
 	if ctex.has("bowl_mini"):
 		var mb: Texture2D = ctex["bowl_mini"]
-		draw_texture_rect(mb, Rect2(bx + 13 - mb.get_width() / 2.0, by + 15 - mb.get_height() / 2.0,
-			mb.get_width(), mb.get_height()), false)
+		draw_texture_rect(mb, Rect2(bx + 13 - _tw(mb) / 2.0, by + 15 - _th(mb) / 2.0,
+			_tw(mb), _th(mb)), false)
 	else:
 		_mini_bowl(Vector2(bx + 13, by + 15))
 	_text("牛肉麵", Vector2(bx + 24, by + 11), 8, COL_INK)
@@ -974,8 +974,8 @@ func _draw_station(s: Dictionary) -> void:
 		if ctex.has(bk):
 			var bt: Texture2D = ctex[bk]
 			# liquid surface (sprite y=20) lands at the station centre
-			draw_texture_rect(bt, Rect2(c.x - bt.get_width() / 2.0, c.y - 20.0,
-				bt.get_width(), bt.get_height()), false)
+			draw_texture_rect(bt, Rect2(c.x - _tw(bt) / 2.0, c.y - 20.0,
+				_tw(bt), _th(bt)), false)
 		if s.item == "soup":
 			# a few simmering bubbles on the broth
 			var bcol: Color = C_SOUP.lightened(0.35)
@@ -995,8 +995,8 @@ func _draw_station(s: Dictionary) -> void:
 	var spr := _item_sprite(s.item)
 	if ctex.has(spr):
 		var t: Texture2D = ctex[spr]
-		draw_texture_rect(t, Rect2(c.x - t.get_width() / 2.0, c.y - t.get_height() / 2.0,
-			t.get_width(), t.get_height()), false)
+		draw_texture_rect(t, Rect2(c.x - _tw(t) / 2.0, c.y - _th(t) / 2.0,
+			_tw(t), _th(t)), false)
 	if held == s.item:
 		draw_arc(c, rr + 2, 0.0, TAU, 24, COL_YELLOW, 2.0)
 	_text(s.name, Vector2(c.x, c.y + rr + 12), 10, COL_WHITE, HORIZONTAL_ALIGNMENT_CENTER)
@@ -1048,12 +1048,19 @@ func _draw_ing_bowl(center: Vector2, col: Color, hi: Color) -> void:
 	draw_rect(Rect2(cx + 2, cy, 4, 3), hi)
 
 
+# cook sprites are rasterised at ART_SS× their design size (assets/cook/
+# gen_svg.py) so curves stay crisp on hi-DPI; divide pixel dims back to logical
+const ART_SS := 4.0
+func _tw(t: Texture2D) -> float: return t.get_width() / ART_SS
+func _th(t: Texture2D) -> float: return t.get_height() / ART_SS
+
+
 # --- assembly bowl (top-down) ----------------------------------------
 func _draw_assembly(center: Vector2) -> void:
 	if ctex.has("td_bowl"):
 		var b: Texture2D = ctex["td_bowl"]
-		var dst := Rect2(center.x - b.get_width() / 2.0, center.y - b.get_height() / 2.0,
-			b.get_width(), b.get_height())
+		var dst := Rect2(center.x - _tw(b) / 2.0, center.y - _th(b) / 2.0,
+			_tw(b), _th(b))
 		# subtle ring highlight (over the opening) while holding something
 		if held != "":
 			_draw_ellipse_ring(BOWL_OPEN, BOWL_RX + 2, BOWL_RY + 2, Color(1, 1, 0.4, 0.45))
@@ -1062,10 +1069,10 @@ func _draw_assembly(center: Vector2) -> void:
 		if soup_fill > 0.0 and ctex.has("td_broth"):
 			var t: Texture2D = ctex["td_broth"]
 			var sc: float = clamp(soup_fill, 0.0, 1.0)
-			var w := t.get_width() * sc
-			var h := t.get_height() * sc
+			var w := _tw(t) * sc
+			var h := _th(t) * sc
 			# keep the broth ellipse centred on the opening (sprite opening at 64,50)
-			var pos := BOWL_OPEN - Vector2(t.get_width() * 0.5 * sc, t.get_height() * (50.0 / 128.0) * sc)
+			var pos := BOWL_OPEN - Vector2(_tw(t) * 0.5 * sc, _th(t) * (50.0 / 128.0) * sc)
 			draw_texture_rect(t, Rect2(pos, Vector2(w, h)), false)
 		if bowl.noodles and ctex.has("td_noodles"):
 			draw_texture_rect(ctex["td_noodles"], dst, false)
@@ -1118,8 +1125,8 @@ func _draw_held(p: Vector2) -> void:
 		tool = "td_pot_noodle"
 	if tool != "" and ctex.has(tool):
 		var t: Texture2D = ctex[tool]
-		var w: float = t.get_width()
-		var h: float = t.get_height()
+		var w: float = _tw(t)
+		var h: float = _th(t)
 		if held == "noodles":
 			# chopstick grip sits at the cursor; the long noodles dangle below
 			draw_texture_rect(t, Rect2(p.x - w / 2.0, p.y - 52.0, w, h), false)
