@@ -97,6 +97,25 @@ def lucky_cat(cx, by):
     </g>'''
 
 
+def lantern(cx):
+    # a Chinese red lantern (大紅燈籠): gold caps, ribbed red body, tassel
+    cy, rx, ry = 128, 42, 46
+    g = "#edb93f"
+    return f'''<g>
+    <path d="M{cx} 0 V{cy-ry-3}" stroke="{INK}" stroke-width="3"/>
+    <rect x="{cx-15}" y="{cy-ry-9}" width="30" height="11" rx="3" fill="{g}" stroke="{INK}" stroke-width="3"/>
+    <ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="#d8352f" stroke="{INK}" stroke-width="3.5"/>
+    <g fill="none" stroke="#a52219" stroke-width="3" opacity="0.85">
+      <path d="M{cx-23} {cy-38} Q{cx-33} {cy} {cx-23} {cy+38}"/>
+      <path d="M{cx} {cy-ry} V{cy+ry}"/>
+      <path d="M{cx+23} {cy-38} Q{cx+33} {cy} {cx+23} {cy+38}"/></g>
+    <rect x="{cx-13}" y="{cy+ry-3}" width="26" height="10" rx="3" fill="{g}" stroke="{INK}" stroke-width="3"/>
+    <path d="M{cx} {cy+ry+7} v9" stroke="#cf9a2c" stroke-width="4"/>
+    <g stroke="{g}" stroke-width="3" stroke-linecap="round">
+      <path d="M{cx} {cy+ry+15} l-6 22 M{cx} {cy+ry+15} v24 M{cx} {cy+ry+15} l6 22"/></g>
+    </g>'''
+
+
 def cashier():
     W2, H2 = 540, 960
     cy = 560                       # counter top
@@ -109,13 +128,8 @@ def cashier():
     # props only on a TRANSPARENT background — the noren / wall / counter bands
     # are drawn procedurally full-width in Menu.gd so they extend to any width.
     body = f'''
-    <!-- hanging paper lanterns -->
-    <path d="M96 0 V52" stroke="{INK}" stroke-width="3.3"/>
-    <ellipse cx="96" cy="132" rx="38" ry="50" fill="#e2533f" stroke="{INK}" stroke-width="4"/>
-    <path d="M84 132 h24" stroke="{INK}" stroke-width="2.6" opacity="0.5"/>
-    <path d="M444 0 V52" stroke="{INK}" stroke-width="3.3"/>
-    <ellipse cx="444" cy="132" rx="38" ry="50" fill="#e2533f" stroke="{INK}" stroke-width="4"/>
-    <path d="M432 132 h24" stroke="{INK}" stroke-width="2.6" opacity="0.5"/>
+    <!-- hanging Chinese red lanterns -->
+    {lantern(96)}{lantern(444)}
     <!-- hanging menu / price board -->
     <g stroke="{INK}" stroke-width="2.6"><path d="M206 216 V190 M334 216 V190"/></g>
     <rect x="170" y="214" width="200" height="178" rx="10" fill="#5a3b26" stroke="{INK}" stroke-width="4.6"/>
