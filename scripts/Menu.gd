@@ -94,12 +94,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_confirm_reset = false
 				queue_redraw()
 				return
-			# pick up the board / sticker to drag, else the start button
-			if _board_rect().has_point(m):
-				_drag = "board"
-				_drag_off = _board_pos - m
-				_reg_taps = 0
-			elif _note_pos.distance_to(m) < 42.0:
+			# pick up the sticker to drag, else the start button
+			if _note_pos.distance_to(m) < 42.0:
 				_drag = "note"
 				_drag_off = _note_pos - m
 				_reg_taps = 0
@@ -201,10 +197,6 @@ func _draw() -> void:
 	draw_set_transform(Vector2(ox, oy), 0.0, Vector2.ONE)
 	# z2 — version sticker
 	_draw_version_note()
-	# z10 — price board
-	if board_tex != null:
-		var bs := _board_size()
-		draw_texture_rect(board_tex, Rect2(_board_pos - bs / 2.0, bs), false)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	# z20 — wooden counter (full-width)
@@ -222,7 +214,8 @@ func _draw() -> void:
 	# z40 — flower garland + shop name (full-width, on top)
 	_draw_garland(vp.x)
 	if _drag == "":
-		_ctext("拉麵怪奇物語", Vector2(vp.x / 2.0, 69.0), 28, COL_SOUP)
+		# shop name at the page's upper golden-ratio line (0.382 from the top)
+		_ctext("拉麵怪奇物語", Vector2(vp.x / 2.0, vp.y * 0.382), 28, COL_SOUP)
 
 	# UI on top — start button + tally (hidden on splash / while dragging)
 	draw_set_transform(Vector2(ox, oy), 0.0, Vector2.ONE)
