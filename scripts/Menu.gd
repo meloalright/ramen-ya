@@ -93,10 +93,10 @@ func _draw() -> void:
 	while sx < vp.x:
 		draw_rect(Rect2(sx, oy + 8.0, 2, nb - (oy + 8.0)), COL_INK)
 		sx += 28.0
-	draw_rect(Rect2(0, nb - 3.0, vp.x, 3), COL_INK)
+	draw_rect(Rect2(0, nb - 2.0, vp.x, 2), COL_INK)
 	# wooden counter that extends infinitely wide
 	draw_rect(Rect2(0, ct, vp.x, vp.y - ct), Color("a9743f"))
-	draw_rect(Rect2(0, ct, vp.x, 9), Color("c08a4e"))
+	draw_rect(Rect2(0, ct, vp.x, 6), Color("c08a4e"))
 	draw_rect(Rect2(0, ct + 60.0, vp.x, 2), Color("8c5d30"))
 	draw_rect(Rect2(0, ct + 120.0, vp.x, 2), Color("8c5d30"))
 	draw_set_transform(Vector2(ox, oy), 0.0, Vector2.ONE)
