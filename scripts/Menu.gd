@@ -20,6 +20,7 @@ const COL_RED   := Color("c23b3b")
 var font: Font
 var stall_tex: Texture2D
 var chef_tex: Texture2D
+var _splash := false   # when true, render just the counter scene (for the boot splash)
 const CHEF_FW := 52
 const CHEF_FH := 68
 const CHEF_SEQ := [0, 1, 2, 3]
@@ -107,11 +108,12 @@ func _draw() -> void:
 	# shop name on the noren
 	_ctext("拉麵怪奇物語", Vector2(135, 40), 22, COL_YELLOW)
 
-	# start button + progress (on the counter front)
-	_button(NEW_RECT, "開始製作", COL_GREEN, true)
-	_ctext("已完成  " + str(Game.high_score) + "  單", Vector2(135, 416), 10, COL_YELLOW)
-	_ctext("點擊 或 Enter / 空白鍵 開始", Vector2(135, 460), 9,
-		COL_GREEN if int(blink * 2.0) % 2 == 0 else COL_WHITE)
+	# start button + progress (on the counter front) — hidden when rendering the splash
+	if not _splash:
+		_button(NEW_RECT, "開始製作", COL_GREEN, true)
+		_ctext("已完成  " + str(Game.high_score) + "  單", Vector2(135, 416), 10, COL_YELLOW)
+		_ctext("點擊開始", Vector2(135, 460), 10,
+			COL_GREEN if int(blink * 2.0) % 2 == 0 else COL_WHITE)
 
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
