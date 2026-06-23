@@ -16,10 +16,15 @@ OUT = os.path.dirname(os.path.abspath(__file__))
 INK = "#241818"
 
 
+# supersample: rasterise at SSx the design size so curves stay crisp when the
+# 270-wide canvas is scaled up ~4x on high-DPI phones (textures downscale, not up)
+SS = 4
+
+
 def render(name, w, h, body):
     svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}">{body}</svg>'
     cairosvg.svg2png(bytestring=svg.encode(), write_to=os.path.join(OUT, name + ".png"),
-                     output_width=w, output_height=h)
+                     output_width=w * SS, output_height=h * SS)
     print("wrote", name)
 
 
