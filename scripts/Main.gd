@@ -688,7 +688,7 @@ func _draw_play() -> void:
 	_draw_order_ticket()
 
 	# raised little wooden platforms the bowl & toppings sit on
-	_draw_riser(Rect2(54, 178, 162, 46), 11.0)     # under the bowl
+	_draw_riser(Rect2(62, 170, 146, 56), 11.0)     # under the bowl (closer to square)
 	_draw_riser(Rect2(14, 240, 242, 30), 10.0)     # toppings — right below the bowl's stand
 
 	# the bowl (top-down) in the middle of the counter
