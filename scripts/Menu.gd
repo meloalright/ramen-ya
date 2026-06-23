@@ -140,7 +140,7 @@ func _draw_version_note() -> void:
 	var pw := 62.0
 	var ph := 74.0
 	var cx := 220.0   # note centre x (right side)
-	var cy := 184.0   # note centre y (lowered ~half a body)
+	var cy := 221.0   # note centre y (lowered ~one body from the wall top)
 	var off := _offset()
 	draw_set_transform(off + Vector2(cx, cy), deg_to_rad(-30.0), Vector2.ONE)
 	var hw := pw / 2.0
