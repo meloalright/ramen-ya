@@ -87,7 +87,11 @@ def lucky_cat(cx, by):
     <path d="M{cx-29} {by-127} l-4 -12 l13 7 Z" fill="#f4a6a6"/>
     <path d="M{cx+29} {by-127} l4 -12 l-13 7 Z" fill="#f4a6a6"/>
     <circle cx="{cx}" cy="{by-104}" r="37" fill="#ffffff" stroke="{INK}" stroke-width="4"/>
-    <ellipse cx="{cx+35}" cy="{by-58}" rx="13" ry="18" fill="#ffffff" stroke="{INK}" stroke-width="4"/>
+    <!-- raised beckoning paw (maneki-neko waving) -->
+    <path d="M{cx+18} {by-46} Q{cx+52} {by-72} {cx+46} {by-108}" fill="none" stroke="{INK}" stroke-width="22" stroke-linecap="round"/>
+    <path d="M{cx+18} {by-46} Q{cx+52} {by-72} {cx+46} {by-108}" fill="none" stroke="#ffffff" stroke-width="15" stroke-linecap="round"/>
+    <circle cx="{cx+47}" cy="{by-114}" r="12.5" fill="#ffffff" stroke="{INK}" stroke-width="3.5"/>
+    <path d="M{cx+41} {by-113} q6 5 12 0" fill="none" stroke="{INK}" stroke-width="1.8" opacity="0.55"/>
     <path d="M{cx-25} {by-80} Q{cx} {by-69} {cx+25} {by-80}" fill="none" stroke="#e23b3b" stroke-width="4.6"/>
     <circle cx="{cx}" cy="{by-73}" r="6" fill="#f2c14e" stroke="{INK}" stroke-width="2"/>
     <ellipse cx="{cx-14}" cy="{by-107}" rx="3.5" ry="5" fill="{INK}"/>
