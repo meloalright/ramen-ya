@@ -37,6 +37,8 @@ var _board_pos := Vector2(135.0, 134.0)   # draggable price-board centre
 var _note_pos := Vector2(220.0, 221.0)    # draggable version-note centre
 var _drag := ""                            # "", "board" or "note"
 var _drag_off := Vector2.ZERO
+var _reg_taps := 0                          # consecutive register taps (secret reset)
+var _confirm_reset := false                 # the reset-data dialog is open
 
 
 func _ready() -> void:
@@ -85,15 +87,34 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		var m: Vector2 = get_global_mouse_position() - _offset()
 		if event.pressed:
+			# the reset-data dialog intercepts all clicks while open
+			if _confirm_reset:
+				if _reset_yes().has_point(m):
+					_do_reset()
+				_confirm_reset = false
+				queue_redraw()
+				return
 			# pick up the board / sticker to drag, else the start button
 			if _board_rect().has_point(m):
 				_drag = "board"
 				_drag_off = _board_pos - m
+				_reg_taps = 0
 			elif _note_pos.distance_to(m) < 42.0:
 				_drag = "note"
 				_drag_off = _note_pos - m
+				_reg_taps = 0
 			elif START_RECT.has_point(m):
+				_reg_taps = 0
 				_start()
+			elif _reg_rect().has_point(m):
+				# secret: 7 taps in a row on the register → reset-data dialog
+				_reg_taps += 1
+				if _reg_taps >= 7:
+					_reg_taps = 0
+					_confirm_reset = true
+					queue_redraw()
+			else:
+				_reg_taps = 0
 		else:
 			if _drag != "":
 				Game.save_layout(_board_pos, _note_pos)   # persist the arrangement
@@ -124,6 +145,35 @@ func _board_size() -> Vector2:
 func _board_rect() -> Rect2:
 	var bs := _board_size()
 	return Rect2(_board_pos - bs / 2.0, bs)
+
+
+# register hit area (fixed) + reset-dialog button rects, all in content coords
+func _reg_rect() -> Rect2:
+	return Rect2(42.0, 206.0, 66.0, 76.0)
+
+
+func _reset_no() -> Rect2:
+	return Rect2(49.0, 214.0, 80.0, 28.0)
+
+
+func _reset_yes() -> Rect2:
+	return Rect2(141.0, 214.0, 80.0, 28.0)
+
+
+func _do_reset() -> void:
+	Game.reset_all()
+	_board_pos = Vector2(135.0, 134.0)
+	_note_pos = Vector2(220.0, 221.0)
+
+
+func _draw_reset_dialog() -> void:
+	var p := Rect2(35.0, 158.0, 200.0, 96.0)
+	draw_rect(p, Color("231f28"))
+	draw_rect(p, COL_YELLOW, false, 2.0)
+	_ctext("重置本地數據？", Vector2(135.0, 188.0), 14, COL_WHITE)
+	_ctext("清空完成記錄與擺放", Vector2(135.0, 206.0), 9, Color(1, 1, 1, 0.7))
+	_button(_reset_no(), "取消", COL_GREY, true)
+	_button(_reset_yes(), "重置", COL_RED, true)
 
 
 func _start() -> void:
@@ -182,6 +232,13 @@ func _draw() -> void:
 		var tally := Color.from_hsv(hue, 0.7, 1.0)
 		_ctext("已完成  " + str(Game.high_score) + "  單", Vector2(135, 445), 10, tally)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+	# secret reset-data dialog on top of everything
+	if _confirm_reset:
+		draw_rect(Rect2(0, 0, vp.x, vp.y), Color(0, 0, 0, 0.55))   # dim
+		draw_set_transform(Vector2(ox, oy), 0.0, Vector2.ONE)
+		_draw_reset_dialog()
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 # deterministic pseudo-random in [0,1) — stable per seed so the garland

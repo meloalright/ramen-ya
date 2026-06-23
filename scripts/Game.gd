@@ -38,6 +38,21 @@ func new_game() -> void:
 	save()
 
 
+# wipe all local progress + layout (the secret 7-tap reset)
+func reset_all() -> void:
+	coins = 0
+	world_pos = Vector2.ZERO
+	has_pos = false
+	high_score = 0
+	up_tip = 0
+	up_patience = 0
+	up_day = 0
+	board_pos = Vector2.ZERO
+	note_pos = Vector2.ZERO
+	has_layout = false
+	save()
+
+
 func save() -> void:
 	var f := FileAccess.open(PATH, FileAccess.WRITE)
 	if f == null:
