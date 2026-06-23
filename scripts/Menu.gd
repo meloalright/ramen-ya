@@ -134,28 +134,40 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
+func _poly(pts: PackedVector2Array, fill: Color) -> void:
+	draw_colored_polygon(pts, fill)
+	var o := pts.duplicate()
+	o.append(pts[0])
+	draw_polyline(o, COL_INK, 1.0)
+
+
 func _draw_plaque() -> void:
-	# a small wooden sign standing on the counter (right side, where the lucky
-	# cat used to be): app logo on the left, version number after it
-	var pw := 84.0
-	var ph := 30.0
+	# a small easel-style sign standing on the counter (where the lucky cat was):
+	# triangular kickstand support, a sliver of the board's right side showing,
+	# app logo on the left + version number after it
+	var pw := 80.0
+	var ph := 34.0
 	var cxp := 205.0           # sign centre x
-	var px := cxp - pw / 2.0
-	var py := 246.0            # board top
-	var base_y := 289.0        # foot rests on the counter
-	# stake + base foot (drawn first, behind the board)
-	draw_rect(Rect2(cxp - 4.0, py + ph - 2.0, 8.0, base_y - (py + ph) + 2.0), Color("6b4a2e"))
-	draw_rect(Rect2(cxp - 4.0, py + ph - 2.0, 8.0, base_y - (py + ph) + 2.0), COL_INK, false, 1.0)
-	draw_rect(Rect2(cxp - 16.0, base_y - 4.0, 32.0, 6.0), Color("7a5230"))
-	draw_rect(Rect2(cxp - 16.0, base_y - 4.0, 32.0, 6.0), COL_INK, false, 1.0)
+	var px := cxp - pw / 2.0   # 165
+	var py := 250.0
+	var bottom := py + ph      # 284, front edge on the counter
+	var rx := px + pw          # board right edge
+	# triangular kickstand (drawn first, peeks out behind the board's right)
+	_poly(PackedVector2Array([
+		Vector2(rx - 4.0, py + 6.0), Vector2(rx + 2.0, py + 5.0),
+		Vector2(rx + 22.0, bottom + 5.0), Vector2(rx + 13.0, bottom + 5.0)]), Color("5f3f24"))
+	# right side edge (board thickness — the "side" showing)
+	_poly(PackedVector2Array([
+		Vector2(rx, py), Vector2(rx + 5.0, py + 4.0),
+		Vector2(rx + 5.0, bottom + 4.0), Vector2(rx, bottom)]), Color("6b4a2e"))
 	# board face
-	draw_rect(Rect2(px, py + ph - 4.0, pw, 6.0), Color("5f3f24"))   # bottom edge
-	draw_rect(Rect2(px, py, pw, ph), Color("8c5d34"))               # face
-	draw_rect(Rect2(px, py, pw, 5.0), Color("a06c3e"))             # top highlight
-	draw_rect(Rect2(px, py, pw, ph), COL_INK, false, 1.5)          # outline
+	draw_rect(Rect2(px, py, pw, ph), Color("8c5d34"))              # face
+	draw_rect(Rect2(px, py, pw, 5.0), Color("a06c3e"))            # top highlight
+	draw_rect(Rect2(px, bottom - 4.0, pw, 4.0), Color("6f4a2a"))  # bottom lip
+	draw_rect(Rect2(px, py, pw, ph), COL_INK, false, 1.5)         # outline
 	if logo_tex != null:
-		draw_texture_rect(logo_tex, Rect2(px + 4.0, py + 3.0, 24.0, 24.0), false)
-	_ctext("v" + VERSION, Vector2(px + 56.0, py + 20.0), 12, COL_WHITE)
+		draw_texture_rect(logo_tex, Rect2(px + 5.0, py + 5.0, 24.0, 24.0), false)
+	_ctext("v" + VERSION, Vector2(px + 55.0, py + 23.0), 12, COL_WHITE)
 
 
 func _button(r: Rect2, label: String, base: Color, enabled: bool) -> void:
