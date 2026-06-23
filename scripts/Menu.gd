@@ -140,7 +140,7 @@ func _draw_garland(w: float) -> void:
 	var blooms := [Color("e2533f"), Color("e88aa0"), Color("e8a23a"), Color("f4ede0"), Color("c8508f")]
 	# two stacked rows of leafy base for depth
 	for row in 2:
-		var ly := 12.0 + float(row) * 16.0
+		var ly := 4.0 + float(row) * 16.0
 		var lx := -8.0
 		var i := 0
 		while lx < w + 14.0:
@@ -151,7 +151,7 @@ func _draw_garland(w: float) -> void:
 	var fx := 2.0
 	var k := 0
 	while fx < w + 10.0:
-		var fy := 9.0 + float(k % 4) * 7.0
+		var fy := 1.0 + float(k % 4) * 7.0
 		_flower(Vector2(fx, fy), 7.0, blooms[k % blooms.size()])
 		if k % 3 == 1:
 			# a hanging bud on a longer stem
