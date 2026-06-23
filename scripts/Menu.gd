@@ -135,24 +135,29 @@ func _draw() -> void:
 
 
 func _draw_version_note() -> void:
-	# a white paper note taped on the wall, upper-right of the screen:
-	# app logo + version number
+	# a white paper note taped on the wall (right side), tilted ~30° for a
+	# casual crooked look: app logo + version number
 	var pw := 62.0
 	var ph := 74.0
-	var px := 197.0
-	var py := 110.0
-	draw_rect(Rect2(px + 2.0, py + 3.0, pw, ph), Color(0, 0, 0, 0.12))   # soft shadow
-	draw_rect(Rect2(px, py, pw, ph), Color("f6f2e8"))                    # paper
-	draw_rect(Rect2(px, py, pw, ph), COL_INK, false, 1.0)               # outline
+	var cx := 220.0   # note centre x (right side)
+	var cy := 184.0   # note centre y (lowered ~half a body)
+	var off := _offset()
+	draw_set_transform(off + Vector2(cx, cy), deg_to_rad(-30.0), Vector2.ONE)
+	var hw := pw / 2.0
+	var hh := ph / 2.0
+	draw_rect(Rect2(-hw + 2.0, -hh + 3.0, pw, ph), Color(0, 0, 0, 0.12))   # soft shadow
+	draw_rect(Rect2(-hw, -hh, pw, ph), Color("f6f2e8"))                    # paper
+	draw_rect(Rect2(-hw, -hh, pw, ph), COL_INK, false, 1.0)               # outline
 	# tape at the top corners
 	var tape := Color(0.91, 0.89, 0.76, 0.6)
-	draw_rect(Rect2(px - 4.0, py - 3.0, 18.0, 8.0), tape)
-	draw_rect(Rect2(px + pw - 14.0, py - 3.0, 18.0, 8.0), tape)
+	draw_rect(Rect2(-hw - 4.0, -hh - 3.0, 18.0, 8.0), tape)
+	draw_rect(Rect2(hw - 14.0, -hh - 3.0, 18.0, 8.0), tape)
 	# app logo (iOS rounded-rect icon)
 	if logo_tex != null:
-		draw_texture_rect(logo_tex, Rect2(px + (pw - 40.0) / 2.0, py + 9.0, 40.0, 40.0), false)
+		draw_texture_rect(logo_tex, Rect2(-20.0, -hh + 9.0, 40.0, 40.0), false)
 	# version number, dark text
-	_ctext("v" + VERSION, Vector2(px + pw / 2.0, py + 63.0), 12, COL_INK)
+	_ctext("v" + VERSION, Vector2(0.0, -hh + 63.0), 12, COL_INK)
+	draw_set_transform(off, 0.0, Vector2.ONE)   # restore content transform
 
 
 func _button(r: Rect2, label: String, base: Color, enabled: bool) -> void:
