@@ -1170,7 +1170,7 @@ func _draw_over() -> void:
 	var pt := _vic_top()
 	draw_rect(Rect2(24, pt, 222, 250), Color("2a2030"))
 	draw_rect(Rect2(24, pt, 222, 250), COL_YELLOW, false, 2.0)
-	_text("製作成功！", Vector2(135, pt + 30.0), 19, COL_GREEN, HORIZONTAL_ALIGNMENT_CENTER)
+	_text("製作成功", Vector2(135, pt + 30.0), 19, COL_GREEN, HORIZONTAL_ALIGNMENT_CENTER)
 	# the finished bowl (scaled preview)
 	var bc := Vector2(135, pt + 88.0)
 	var sz := 86.0
