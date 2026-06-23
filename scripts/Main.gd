@@ -1139,8 +1139,14 @@ func _draw_held(p: Vector2) -> void:
 	# toppings (蔥花/香菜/辣椒) only show the sprinkle flower over the bowl
 	if held in TOP_ORDER and not _in_bowl(p):
 		return
-	# beef / toppings: a small pinch of colour on the cursor
-	var col: Color = C_BEEF if held == "beef" else TOPPING[held].col
+	# beef: a slice of beef on the cursor (not the sprinkle pinch)
+	if held == "beef":
+		draw_rect(Rect2(p.x - 9, p.y - 6, 18, 11), C_BEEF)
+		draw_rect(Rect2(p.x - 6, p.y - 4, 8, 3), C_BEEF_HI)
+		draw_rect(Rect2(p.x - 9, p.y - 6, 18, 11), COL_INK, false, 1.0)
+		return
+	# toppings (蔥花/香菜/辣椒): a small pinch of colour on the cursor
+	var col: Color = TOPPING[held].col
 	for d in [Vector2(-3, -2), Vector2(3, -2), Vector2(0, 0), Vector2(-2, 3), Vector2(3, 3)]:
 		draw_rect(Rect2(p.x + d.x - 1, p.y + d.y - 1, 3, 3), col)
 		draw_rect(Rect2(p.x + d.x - 1, p.y + d.y - 1, 3, 1), col.lightened(0.3))
