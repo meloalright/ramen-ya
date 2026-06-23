@@ -135,24 +135,29 @@ func _flower(c: Vector2, r: float, col: Color) -> void:
 
 
 func _draw_garland(w: float) -> void:
-	# a leafy flower garland hanging across the top of the shop, full-width
+	# a thick, lush leafy flower garland hanging across the top, full-width
 	var greens := [Color("4f9e4f"), Color("5fae5f"), Color("3f8e4f")]
 	var blooms := [Color("e2533f"), Color("e88aa0"), Color("e8a23a"), Color("f4ede0"), Color("c8508f")]
-	var lx := -8.0
-	var i := 0
-	while lx < w + 14.0:
-		draw_circle(Vector2(lx, 12.0 + float(i % 3) * 3.0), 8.5, greens[i % greens.size()])
-		lx += 12.0
-		i += 1
+	# two stacked rows of leafy base for depth
+	for row in 2:
+		var ly := 12.0 + float(row) * 16.0
+		var lx := -8.0
+		var i := 0
+		while lx < w + 14.0:
+			draw_circle(Vector2(lx, ly + float(i % 3) * 3.0), 9.0, greens[(i + row) % greens.size()])
+			lx += 11.0
+			i += 1
+	# flowers spread over a taller band, denser
 	var fx := 2.0
 	var k := 0
 	while fx < w + 10.0:
-		var fy := 10.0 + float(k % 3) * 4.0
+		var fy := 9.0 + float(k % 4) * 7.0
 		_flower(Vector2(fx, fy), 7.0, blooms[k % blooms.size()])
-		if k % 4 == 1:
-			draw_line(Vector2(fx, fy + 5.0), Vector2(fx + 2.0, fy + 17.0), greens[0], 1.5)
-			_flower(Vector2(fx + 2.0, fy + 20.0), 4.5, blooms[(k + 2) % blooms.size()])
-		fx += 18.0
+		if k % 3 == 1:
+			# a hanging bud on a longer stem
+			draw_line(Vector2(fx, fy + 6.0), Vector2(fx + 2.0, fy + 26.0), greens[0], 1.5)
+			_flower(Vector2(fx + 2.0, fy + 29.0), 5.0, blooms[(k + 2) % blooms.size()])
+		fx += 16.0
 		k += 1
 
 
