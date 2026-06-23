@@ -128,8 +128,6 @@ def cashier():
     # props only on a TRANSPARENT background — the noren / wall / counter bands
     # are drawn procedurally full-width in Menu.gd so they extend to any width.
     body = f'''
-    <!-- hanging Chinese red lanterns -->
-    {lantern(96)}{lantern(444)}
     <!-- hanging menu / price board -->
     <g stroke="{INK}" stroke-width="2.6"><path d="M206 216 V190 M334 216 V190"/></g>
     <rect x="170" y="214" width="200" height="178" rx="10" fill="#5a3b26" stroke="{INK}" stroke-width="4.6"/>
