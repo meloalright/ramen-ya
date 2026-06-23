@@ -128,12 +128,13 @@ def ladle():
     # side view: a deep scoop of broth with a long handle angled up
     body = f'''
     <path d="M31 40 L43 4" stroke="{INK}" stroke-width="6.5" stroke-linecap="round"/>
-    <path d="M31 40 L43 4" stroke="#9a6a3a" stroke-width="4" stroke-linecap="round"/>
+    <path d="M31 40 L43 4" stroke="#c9c4b4" stroke-width="3.6" stroke-linecap="round"/>
+    <path d="M31.5 38 L43 5" stroke="#e6e2d6" stroke-width="1" stroke-linecap="round" opacity="0.7"/>
     <path d="M8 40 Q8 62 23 62 Q38 62 38 40 Z" fill="#c9c4b4" stroke="{INK}" stroke-width="3.5" stroke-linejoin="round"/>
     <path d="M30 46 Q32 56 24 60" fill="none" stroke="#aca695" stroke-width="2.5" opacity="0.55"/>
-    <ellipse cx="23" cy="40" rx="15" ry="4.6" fill="#c9c4b4" stroke="{INK}" stroke-width="3"/>
-    <ellipse cx="23" cy="40" rx="10.5" ry="3" fill="#e9b63a" stroke="{INK}" stroke-width="2"/>
-    <ellipse cx="21.5" cy="39.4" rx="5" ry="1.3" fill="#f6cf5a"/>'''
+    <ellipse cx="23" cy="40" rx="15" ry="4.6" fill="#c9c4b4" stroke="{INK}" stroke-width="2.4"/>
+    <ellipse cx="23" cy="40" rx="13.4" ry="4.1" fill="#e9b63a" stroke="{INK}" stroke-width="1.6"/>
+    <ellipse cx="21.5" cy="39.3" rx="6" ry="1.5" fill="#f6cf5a"/>'''
     render("td_pot_soup", 48, 64, body)
 
 
