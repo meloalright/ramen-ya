@@ -91,9 +91,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			if _confirm_reset:
 				# only the dialog's own buttons close it (no dismiss-on-outside)
 				if _reset_yes().has_point(m):
+					Music.click()
 					_do_reset()
 					_confirm_reset = false
 				elif _reset_no().has_point(m):
+					Music.click()
 					_confirm_reset = false
 				queue_redraw()
 				return
