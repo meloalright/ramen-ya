@@ -40,8 +40,8 @@ func _ready() -> void:
 		stall_tex = load("res://assets/env/cashier.png")
 	elif ResourceLoader.exists("res://assets/env/ramen_stall.png"):
 		stall_tex = load("res://assets/env/ramen_stall.png")
-	if ResourceLoader.exists("res://assets/splash/logo_circle.png"):
-		logo_tex = load("res://assets/splash/logo_circle.png")
+	if ResourceLoader.exists("res://assets/splash/logo_rounded.png"):
+		logo_tex = load("res://assets/splash/logo_rounded.png")
 	if Game.has_save():
 		Game.load_game()        # pre-load so the menu can show the saved coins
 	set_process(true)
