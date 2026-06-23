@@ -54,7 +54,7 @@ const COL_POT      := Color("4a4652")
 const COL_POT_D    := Color("332f3a")
 
 # ingredient colors
-const C_SOUP    := Color("cf9a44")   # golden broth
+const C_SOUP    := Color("e9b63a")   # yellow oily broth
 const C_NOODLE  := Color("f0e0a8")
 const C_BEEF    := Color("a8503c")
 const C_BEEF_HI := Color("c46a52")
@@ -861,7 +861,7 @@ func _fill_ellipse(c: Vector2, rx: float, ry: float, col: Color) -> void:
 func _draw_pot_mouth(c: Vector2, item: String) -> void:
 	# a broth/water surface sunk into the counter; the pot body is off-frame below
 	var broth: Color = C_SOUP if item == "soup" else Color("e3e9ea")
-	var broth_d: Color = Color("b07f2e") if item == "soup" else Color("c4cfd0")
+	var broth_d: Color = Color("cf9a28") if item == "soup" else Color("c4cfd0")
 	# a little of the near wall under the front rim (hint of depth)
 	_fill_ellipse(Vector2(c.x, c.y + 6), 45, 15, Color("241a12"))
 	# recessed rim

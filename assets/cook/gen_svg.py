@@ -38,9 +38,14 @@ def bowl_empty():
 
 def broth():
     body = '''
-    <ellipse cx="64" cy="50" rx="48" ry="36" fill="#eaa43e"/>
-    <path d="M16 54 a48 36 0 0 0 96 0 a48 36 0 0 1 -96 0" fill="#d18b2c"/>
-    <ellipse cx="48" cy="40" rx="16" ry="8" fill="#f2bd5c" opacity="0.7"/>'''
+    <ellipse cx="64" cy="50" rx="48" ry="36" fill="#e9b63a"/>
+    <path d="M16 54 a48 36 0 0 0 96 0 a48 36 0 0 1 -96 0" fill="#cf9a28"/>
+    <ellipse cx="48" cy="40" rx="16" ry="8" fill="#f6cf5a" opacity="0.7"/>
+    <g fill="#f8d566">
+      <ellipse cx="82" cy="44" rx="6" ry="3.2" opacity="0.6"/>
+      <ellipse cx="62" cy="60" rx="4.5" ry="2.4" opacity="0.55"/>
+      <ellipse cx="92" cy="56" rx="3.5" ry="2" opacity="0.5"/>
+      <ellipse cx="44" cy="56" rx="3" ry="1.8" opacity="0.5"/></g>'''
     render("td_broth", 128, 128, body)
 
 
@@ -120,8 +125,8 @@ def ladle():
     <path d="M31 40 L43 4" stroke="{INK}" stroke-width="6.5" stroke-linecap="round"/>
     <path d="M31 40 L43 4" stroke="#9a6a3a" stroke-width="4" stroke-linecap="round"/>
     <path d="M8 41 L8 45 Q8 61 23 61 Q38 61 38 45 L38 41 Z" fill="#c9c4b4" stroke="{INK}" stroke-width="3.5" stroke-linejoin="round"/>
-    <path d="M11 42 Q11 58 23 58 Q35 58 35 42 Z" fill="#eaa43e"/>
-    <ellipse cx="23" cy="42" rx="14.5" ry="3.6" fill="#f2b65a" stroke="{INK}" stroke-width="2.6"/>'''
+    <path d="M11 42 Q11 58 23 58 Q35 58 35 42 Z" fill="#e9b63a"/>
+    <ellipse cx="23" cy="42" rx="14.5" ry="3.6" fill="#f6cf5a" stroke="{INK}" stroke-width="2.6"/>'''
     render("td_pot_soup", 48, 64, body)
 
 
@@ -142,7 +147,7 @@ def noodle_clump():
 
 def main():
     bowl_empty(); broth(); noodles(); beef(); ladle(); noodle_clump()
-    vat("td_vat_soup", "#eaa43e", "#d18b2c", "#f2bd5c", False)
+    vat("td_vat_soup", "#e9b63a", "#cf9a28", "#f6cf5a", False)
     vat("td_vat_noodle", "#ece8dc", "#d6d1c0", "#f8f5ee", False)   # 白汤 (noodles appear only while cooking)
     tray("td_box_beef", "#b06246", "#8a4a33", "beef")
     tray("td_box_scallion", "#8fd25a", "#6fb244", "scallion")
