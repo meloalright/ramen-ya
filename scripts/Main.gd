@@ -1121,6 +1121,9 @@ func _draw_held(p: Vector2) -> void:
 			# the ladle's bowl of broth sits at the cursor
 			draw_texture_rect(t, Rect2(p.x - w / 2.0, p.y - h + 14.0, w, h), false)
 		return
+	# toppings (蔥花/香菜/辣椒) only show the sprinkle flower over the bowl
+	if held in TOP_ORDER and not _in_bowl(p):
+		return
 	# beef / toppings: a small pinch of colour on the cursor
 	var col: Color = C_BEEF if held == "beef" else TOPPING[held].col
 	for d in [Vector2(-3, -2), Vector2(3, -2), Vector2(0, 0), Vector2(-2, 3), Vector2(3, 3)]:
