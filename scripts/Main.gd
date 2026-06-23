@@ -1183,6 +1183,12 @@ func _draw_over() -> void:
 			draw_texture_rect(ctex["td_noodles"], dst, false)
 		if bowl.beef and ctex.has("td_beef"):
 			draw_texture_rect(ctex["td_beef"], dst, false)
+		# the toppings shown exactly where the player sprinkled them
+		var pscale := sz / 128.0
+		var op := Vector2(bc.x, bc.y - sz / 2.0 + 50.0 * pscale)
+		for sp in sprinkles:
+			var pp: Vector2 = op + (sp.pos - BOWL_OPEN) * pscale
+			draw_rect(Rect2(pp.x - 1.25, pp.y - 1.25, 2.5, 2.5), TOPPING[sp.type].col)
 	# star rating (always 3 slots)
 	var sx0 := 135.0 - 3 * 18.0 / 2.0 + 9.0
 	for i in range(3):
