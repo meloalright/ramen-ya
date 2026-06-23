@@ -474,9 +474,6 @@ func _put_down() -> void:
 func _noodle_pot_click(cx: float) -> void:
 	if held == "noodles":
 		return
-	if held != "":
-		_spawn_float(Vector2(cx, 168), "手上拿著東西", COL_YELLOW)
-		return
 	if noodle_state == "empty":
 		noodle_state = "cooking"
 		noodle_t = 0.0
