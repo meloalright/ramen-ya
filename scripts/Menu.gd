@@ -223,7 +223,7 @@ func _draw() -> void:
 	if _drag == "":
 		# shop name at the upper golden ratio between the garland bottom and the
 		# table top (0.382 down from the garland = 0.618 up from the table)
-		var ty := 66.0 + 0.382 * (ct - 66.0)
+		var ty := 40.0 + 0.382 * (ct - 40.0)
 		_ctext("拉麵怪奇物語", Vector2(vp.x / 2.0, ty), 28, COL_SOUP)
 
 	# UI on top — start button + tally (hidden on splash / while dragging)
@@ -257,38 +257,16 @@ func _flower(c: Vector2, r: float, col: Color, rot := 0.0) -> void:
 	draw_circle(c, r * 0.5, COL_YELLOW)
 
 
-func _draw_garland(w: float) -> void:
-	# a thick, lush leafy flower garland hanging across the top, full-width;
-	# flowers scattered with deterministic randomness (position/size/colour/spin)
-	var greens := [Color("4f9e4f"), Color("5fae5f"), Color("3f8e4f")]
+func _draw_garland(_w: float) -> void:
+	# a single flower in the top-left corner — random colour, spin and a little
+	# position jitter (deterministic per menu visit so it doesn't flicker)
 	var blooms := [Color("e2533f"), Color("e88aa0"), Color("e8a23a"), Color("f4ede0"), Color("c8508f")]
-	# four stacked rows of leafy base for a deep, dense band
-	for row in 4:
-		var ly := 4.0 + float(row) * 15.0
-		var lx := -8.0
-		while lx < w + 14.0:
-			var jy: float = _hash(lx * 0.21 + float(row) * 7.0 + _garland_seed) * 5.0
-			draw_circle(Vector2(lx, ly + jy), 9.0, greens[int(_hash(lx + row + _garland_seed) * 100.0) % greens.size()])
-			lx += 11.0
-	# flowers — two per column, scattered over the full band
-	var fx := 2.0
-	var k := 0
-	while fx < w + 12.0:
-		for j in 2:
-			var s := float(k) * 1.7 + float(j) * 41.0 + _garland_seed
-			var h1: float = _hash(s)
-			var h2: float = _hash(s + 5.0)
-			var h3: float = _hash(s + 11.0)
-			var fy: float = -2.0 + h1 * 52.0
-			var fr: float = 6.0 + h2 * 3.5
-			_flower(Vector2(fx + (h2 - 0.5) * 7.0, fy), fr, blooms[int(h3 * 100.0) % blooms.size()], h1 * TAU)
-			if h3 > 0.72:
-				# a hanging bud on a stem
-				var bl: float = 22.0 + h1 * 12.0
-				draw_line(Vector2(fx, fy + 6.0), Vector2(fx + 2.0, fy + bl), greens[0], 1.5)
-				_flower(Vector2(fx + 2.0, fy + bl + 3.0), 4.5 + h2 * 1.5, blooms[int(h1 * 100.0) % blooms.size()], h2 * TAU)
-		fx += 13.0 + _hash(float(k) + _garland_seed) * 6.0
-		k += 1
+	var hx: float = _hash(_garland_seed + 1.3)
+	var hy: float = _hash(_garland_seed + 4.7)
+	var hc: float = _hash(_garland_seed + 9.1)
+	var hs: float = _hash(_garland_seed + 2.5)
+	var pos := Vector2(26.0 + (hx - 0.5) * 24.0, 26.0 + (hy - 0.5) * 18.0)
+	_flower(pos, 10.0 + hs * 3.0, blooms[int(hc * 100.0) % blooms.size()], hx * TAU)
 
 
 func _draw_version_note() -> void:
