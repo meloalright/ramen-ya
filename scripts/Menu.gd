@@ -172,8 +172,8 @@ func _reset_yes() -> Rect2:
 
 func _do_reset() -> void:
 	Game.reset_all()
-	_board_pos = Vector2(135.0, 134.0)
 	_note_pos = Vector2(220.0, 221.0)
+	_flower_pos = Vector2(90.0, 130.0)
 
 
 func _draw_reset_dialog() -> void:
