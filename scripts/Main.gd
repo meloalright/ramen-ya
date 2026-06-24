@@ -417,7 +417,8 @@ func _handle_key(key: int) -> void:
 
 
 func _handle_click(p: Vector2) -> void:
-	if BACK_RECT.has_point(p):
+	# the victory overlay is modal — the back button is covered and inert there
+	if state != State.OVER and BACK_RECT.has_point(p):
 		Music.click()
 		get_tree().change_scene_to_file("res://scenes/Menu.tscn")
 		return
@@ -652,7 +653,9 @@ func _draw() -> void:
 			_draw_play()
 			_draw_over()
 
-	_draw_back_button()
+	# back button hides under the victory overlay
+	if state != State.OVER:
+		_draw_back_button()
 
 	if flash > 0.0:
 		draw_rect(Rect2(0, 0, W, H), Color(flash_col.r, flash_col.g, flash_col.b, flash * 0.5))
