@@ -219,11 +219,12 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	# z40 — flower garland + shop name (full-width, on top)
-	_draw_garland(vp.x)
+	_draw_garland(vp.x, ct)
 	if _drag == "":
-		# shop name at the upper golden ratio between the garland bottom and the
-		# table top (0.382 down from the garland = 0.618 up from the table)
-		var ty := 40.0 + 0.382 * (ct - 40.0)
+		# shop name at the upper golden ratio between the top safe area and the
+		# table (0.382 down from the safe area = 0.618 up from the table)
+		var st := _safe_top(vp)
+		var ty := st + 0.382 * (ct - st)
 		_ctext("拉麵怪奇物語", Vector2(vp.x / 2.0, ty), 28, COL_SOUP)
 
 	# UI on top — start button + tally (hidden on splash / while dragging)
@@ -257,16 +258,20 @@ func _flower(c: Vector2, r: float, col: Color, rot := 0.0) -> void:
 	draw_circle(c, r * 0.5, COL_YELLOW)
 
 
-func _draw_garland(_w: float) -> void:
-	# a single flower in the top-left corner — random colour, spin and a little
-	# position jitter (deterministic per menu visit so it doesn't flicker)
-	var blooms := [Color("e2533f"), Color("e88aa0"), Color("e8a23a"), Color("f4ede0"), Color("c8508f")]
-	var hx: float = _hash(_garland_seed + 1.3)
-	var hy: float = _hash(_garland_seed + 4.7)
-	var hc: float = _hash(_garland_seed + 9.1)
-	var hs: float = _hash(_garland_seed + 2.5)
-	var pos := Vector2(26.0 + (hx - 0.5) * 24.0, 26.0 + (hy - 0.5) * 18.0)
-	_flower(pos, 10.0 + hs * 3.0, blooms[int(hc * 100.0) % blooms.size()], hx * TAU)
+func _draw_garland(w: float, ct: float) -> void:
+	# a single pink flower on the wall: left third, vertically mid-wall
+	_flower(Vector2(w / 3.0, ct * 0.5), 11.0, Color("e88aa0"), 0.0)
+
+
+func _safe_top(vp: Vector2) -> float:
+	# top safe-area inset (notch) in viewport coords; 0 on desktop / web
+	var ws := DisplayServer.window_get_size()
+	if ws.y <= 0:
+		return 0.0
+	var st := float(DisplayServer.get_display_safe_area().position.y) * vp.y / float(ws.y)
+	if OS.get_name() == "iOS":
+		st = max(st, 44.0)
+	return st
 
 
 func _draw_version_note() -> void:
