@@ -203,10 +203,11 @@ func _draw() -> void:
 	# → register(30) → garland(40); switch coord spaces between full-width
 	# bands (viewport) and centred props (content) as needed.
 
-	# z1 — wall (full-width)
+	# z1 — wall (full-width) with diagonal light: bright centre, dark sides
 	draw_rect(Rect2(0, 0, vp.x, vp.y), Color("e3cba0"))
 	draw_rect(Rect2(0, oy + 215.0, vp.x, ct - (oy + 215.0)), Color("d8bd8e"))    # lower wall
 	draw_rect(Rect2(0, oy + 215.0, vp.x, 1.0), Color("c8a874"))
+	_draw_wall_light(vp, ct)
 
 	draw_set_transform(Vector2(ox, oy), 0.0, Vector2.ONE)
 	# z2 — version sticker
@@ -269,6 +270,26 @@ func _flower(c: Vector2, r: float, col: Color, rot := 0.0) -> void:
 func _draw_flower() -> void:
 	# a single draggable pink flower on the wall (z5)
 	_flower(_flower_pos, 11.0, Color("e88aa0"), 0.0)
+
+
+func _draw_wall_light(vp: Vector2, ct: float) -> void:
+	# diagonal lighting on the wall: darken the two sides, a soft light beam
+	# slanting down from the top centre
+	var dark := Color(0.18, 0.11, 0.04, 0.26)
+	var clear := Color(0.18, 0.11, 0.04, 0.0)
+	var mL := vp.x * 0.40
+	var mR := vp.x * 0.60
+	draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(mL, 0), Vector2(mL, ct), Vector2(0, ct)]),
+		PackedColorArray([dark, clear, clear, dark]))
+	draw_polygon(PackedVector2Array([Vector2(mR, 0), Vector2(vp.x, 0), Vector2(vp.x, ct), Vector2(mR, ct)]),
+		PackedColorArray([clear, dark, dark, clear]))
+	# slanted light beam — brighter at the top, fading down
+	var lit := Color(1.0, 0.97, 0.85, 0.14)
+	var litc := Color(1.0, 0.97, 0.85, 0.0)
+	draw_polygon(PackedVector2Array([
+		Vector2(vp.x * 0.26, 0), Vector2(vp.x * 0.60, 0),
+		Vector2(vp.x * 0.74, ct), Vector2(vp.x * 0.40, ct)]),
+		PackedColorArray([lit, lit, litc, litc]))
 
 
 func _safe_top(vp: Vector2) -> float:
