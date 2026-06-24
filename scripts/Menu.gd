@@ -35,7 +35,8 @@ var blink := 0.0
 var _garland_seed := 0.0   # randomised per menu visit so the flowers vary
 var _board_pos := Vector2(135.0, 134.0)   # draggable price-board centre
 var _note_pos := Vector2(220.0, 221.0)    # draggable version-note centre
-var _drag := ""                            # "", "board" or "note"
+var _flower_pos := Vector2(90.0, 130.0)   # draggable pink flower (left-third, mid-wall)
+var _drag := ""                            # "", "flower" or "note"
 var _drag_off := Vector2.ZERO
 var _reg_taps := 0                          # consecutive register taps (secret reset)
 var _confirm_reset := false                 # the reset-data dialog is open
@@ -58,8 +59,9 @@ func _ready() -> void:
 	if Game.has_save():
 		Game.load_game()        # pre-load so the menu can show the saved coins
 	if Game.has_layout:         # restore the player's saved wall arrangement
-		_board_pos = Game.board_pos
 		_note_pos = Game.note_pos
+		if Game.flower_pos != Vector2.ZERO:
+			_flower_pos = Game.flower_pos
 	set_process(true)
 
 
@@ -99,8 +101,13 @@ func _unhandled_input(event: InputEvent) -> void:
 					_confirm_reset = false
 				queue_redraw()
 				return
-			# pick up the sticker to drag, else the start button
-			if _note_pos.distance_to(m) < 42.0:
+			# pick up the flower / sticker to drag, else the start button
+			if _flower_pos.distance_to(m) < 22.0:
+				_drag = "flower"
+				_drag_off = _flower_pos - m
+				_reg_taps = 0
+				Music.pick()
+			elif _note_pos.distance_to(m) < 42.0:
 				_drag = "note"
 				_drag_off = _note_pos - m
 				_reg_taps = 0
@@ -119,15 +126,15 @@ func _unhandled_input(event: InputEvent) -> void:
 				_reg_taps = 0
 		else:
 			if _drag != "":
-				Game.save_layout(_board_pos, _note_pos)   # persist the arrangement
+				Game.save_layout(_note_pos, _flower_pos)   # persist the arrangement
 				Music.drop()
 			_drag = ""
 	elif event is InputEventMouseMotion and _drag != "":
 		var np: Vector2 = (get_global_mouse_position() - _offset()) + _drag_off
 		np.x = clamp(np.x, 24.0, float(W) - 24.0)
 		np.y = clamp(np.y, 46.0, 252.0)   # keep it on the wall, above the counter
-		if _drag == "board":
-			_board_pos = np
+		if _drag == "flower":
+			_flower_pos = np
 		else:
 			_note_pos = np
 		queue_redraw()
@@ -204,6 +211,8 @@ func _draw() -> void:
 	draw_set_transform(Vector2(ox, oy), 0.0, Vector2.ONE)
 	# z2 — version sticker
 	_draw_version_note()
+	# z5 — draggable pink flower
+	_draw_flower()
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	# z20 — wooden counter (full-width)
@@ -218,8 +227,7 @@ func _draw() -> void:
 		draw_texture_rect(stall_tex, Rect2(0, 0, W, H), false)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
-	# z40 — flower garland + shop name (full-width, on top)
-	_draw_garland(vp.x, ct)
+	# shop name on top
 	if _drag == "":
 		# shop name at the upper golden ratio between the top safe area and the
 		# table (0.382 down from the safe area = 0.618 up from the table)
@@ -258,9 +266,9 @@ func _flower(c: Vector2, r: float, col: Color, rot := 0.0) -> void:
 	draw_circle(c, r * 0.5, COL_YELLOW)
 
 
-func _draw_garland(w: float, ct: float) -> void:
-	# a single pink flower on the wall: left third, vertically mid-wall
-	_flower(Vector2(w / 3.0, ct * 0.5), 11.0, Color("e88aa0"), 0.0)
+func _draw_flower() -> void:
+	# a single draggable pink flower on the wall (z5)
+	_flower(_flower_pos, 11.0, Color("e88aa0"), 0.0)
 
 
 func _safe_top(vp: Vector2) -> float:
