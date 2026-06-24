@@ -139,11 +139,31 @@ def board():
     print("wrote board.png", (vw * 4, vh * 4))
 
 
+def cups(cx, by):
+    # a stack of nested paper cups on the counter (base at y=by)
+    top_w, bot_w, h = 19, 14, 86
+    rims = ""
+    for i in range(1, 6):
+        f = i / 6.0
+        yy = (by - h) + f * h
+        wd = top_w + (bot_w - top_w) * f
+        rims += (f'<path d="M{cx-wd} {yy} q {wd} 5 {2*wd} 0" fill="none" '
+                 f'stroke="{INK}" stroke-width="2.4" opacity="0.8"/>')
+    return f'''<g>
+    <path d="M{cx-top_w} {by-h} L{cx-bot_w} {by} L{cx+bot_w} {by} L{cx+top_w} {by-h} Z"
+          fill="#f4f0e6" stroke="{INK}" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M{cx+top_w-7} {by-h} L{cx+bot_w-5} {by} L{cx+bot_w} {by} L{cx+top_w} {by-h} Z" fill="#e0d9c6"/>
+    {rims}
+    <ellipse cx="{cx}" cy="{by-h}" rx="{top_w}" ry="5.5" fill="#efe9d8" stroke="{INK}" stroke-width="4"/>
+    <ellipse cx="{cx}" cy="{by-h}" rx="{top_w-5}" ry="3" fill="#cfc7b0"/>
+    </g>'''
+
+
 def cashier():
-    # register only now (the board is a separate, draggable sprite); transparent bg
+    # register + a stack of cups (the board is a separate, draggable sprite)
     W2, H2 = 540, 960
     cy = 560                       # counter top
-    body = f'''{register(150, cy)}'''
+    body = f'''{register(150, cy)}{cups(248, cy)}'''
     SS = 2
     svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W2} {H2}">{body}</svg>'
     cairosvg.svg2png(bytestring=svg.encode(), write_to=os.path.join(OUT, "cashier.png"),
