@@ -744,14 +744,15 @@ func _puff(x: float, y: float) -> void:
 
 
 func _draw_hud() -> void:
-	# no top bar — completed-orders count sits top-right, sharing the back
-	# button's centre line (vertically centred on BACK_RECT's mid-y)
-	var s := "完成 " + str(served) + " 單"
-	var sz := 11
-	var cy: float = BACK_RECT.position.y + BACK_RECT.size.y / 2.0
-	var by: float = cy + (font.get_ascent(sz) - font.get_descent(sz)) / 2.0
-	_text(s, Vector2(W - 7, by + 1), sz, COL_INK, HORIZONTAL_ALIGNMENT_RIGHT)
-	_text(s, Vector2(W - 8, by), sz, COL_YELLOW, HORIZONTAL_ALIGNMENT_RIGHT)
+	# no top bar — this-round count sits top-right on the back button's centre
+	# line; hidden until at least one bowl is done this round
+	if served >= 1:
+		var s := "本輪 " + str(served) + " 單"
+		var sz := 11
+		var cy: float = BACK_RECT.position.y + BACK_RECT.size.y / 2.0
+		var by: float = cy + (font.get_ascent(sz) - font.get_descent(sz)) / 2.0
+		_text(s, Vector2(W - 7, by + 1), sz, COL_INK, HORIZONTAL_ALIGNMENT_RIGHT)
+		_text(s, Vector2(W - 8, by), sz, COL_YELLOW, HORIZONTAL_ALIGNMENT_RIGHT)
 
 
 func _draw_order_ticket() -> void:
