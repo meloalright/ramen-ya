@@ -164,7 +164,7 @@ def cashier():
     # register + a stack of cups (the board is a separate, draggable sprite)
     W2, H2 = 540, 960
     cy = 560                       # counter top
-    body = f'''{register(150, cy)}{cups(248, cy)}'''
+    body = f'''{register(150, cy)}'''
     SS = 2
     svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W2} {H2}">{body}</svg>'
     cairosvg.svg2png(bytestring=svg.encode(), write_to=os.path.join(OUT, "cashier.png"),
