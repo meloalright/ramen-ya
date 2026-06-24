@@ -140,22 +140,23 @@ def board():
 
 
 def cups(cx, by):
-    # a stack of nested paper cups on the counter (base at y=by)
-    top_w, bot_w, h = 19, 14, 86
+    # a stack of UPSIDE-DOWN nested paper cups (mouths down on the counter):
+    # wide where the rims meet the counter, tapering up to the closed bases
+    top_w, bot_w, h = 11, 22, 82
     rims = ""
     for i in range(1, 6):
         f = i / 6.0
         yy = (by - h) + f * h
         wd = top_w + (bot_w - top_w) * f
-        rims += (f'<path d="M{cx-wd} {yy} q {wd} 5 {2*wd} 0" fill="none" '
+        rims += (f'<path d="M{cx-wd} {yy} q {wd} 4 {2*wd} 0" fill="none" '
                  f'stroke="{INK}" stroke-width="2.4" opacity="0.8"/>')
     return f'''<g>
     <path d="M{cx-top_w} {by-h} L{cx-bot_w} {by} L{cx+bot_w} {by} L{cx+top_w} {by-h} Z"
           fill="#f4f0e6" stroke="{INK}" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M{cx+top_w-7} {by-h} L{cx+bot_w-5} {by} L{cx+bot_w} {by} L{cx+top_w} {by-h} Z" fill="#e0d9c6"/>
+    <path d="M{cx+top_w-5} {by-h} L{cx+bot_w-7} {by} L{cx+bot_w} {by} L{cx+top_w} {by-h} Z" fill="#e0d9c6"/>
     {rims}
-    <ellipse cx="{cx}" cy="{by-h}" rx="{top_w}" ry="5.5" fill="#efe9d8" stroke="{INK}" stroke-width="4"/>
-    <ellipse cx="{cx}" cy="{by-h}" rx="{top_w-5}" ry="3" fill="#cfc7b0"/>
+    <ellipse cx="{cx}" cy="{by-h}" rx="{top_w}" ry="4.5" fill="#efe9d8" stroke="{INK}" stroke-width="4"/>
+    <ellipse cx="{cx}" cy="{by-h}" rx="{top_w-5}" ry="2.6" fill="none" stroke="#cfc7b0" stroke-width="2"/>
     </g>'''
 
 
