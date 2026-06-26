@@ -759,7 +759,6 @@ func _draw_order_ticket() -> void:
 	if order.is_empty():
 		return
 	var r := Rect2(16, 28, 238, 44)
-	draw_rect(Rect2(r.position.x + r.size.x / 2 - 2, r.position.y - 4, 4, 6), COL_RED)   # pin
 	draw_rect(r, Color("efe7d6"))
 	draw_rect(r, COL_INK, false, 1.5)
 	_text("今日訂單", Vector2(r.position.x + 10, r.position.y + 15), 9, Color("7a6a52"))
