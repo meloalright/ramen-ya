@@ -25,6 +25,7 @@ const BOWL_RX := 50.0                  # opening (sprinkle) radii
 const BOWL_RY := 38.0
 const BOWL_HIT_RX := 56.0              # generous click radii (incl. rim)
 const BOWL_HIT_RY := 44.0
+const HELD_ANCHOR := Vector2(135, 120)  # held tool (湯勺/筷子) shows here, fixed above the bowl — never on the cursor (no drag-and-drop)
 
 # big pans: the sprite's liquid surface sits VAT_OPEN_Y down from its top
 const VAT_OPEN_Y := 30.0
@@ -707,9 +708,9 @@ func _draw_play() -> void:
 
 	_draw_hud()
 
-	# held ingredient follows the cursor
+	# held tool shows at a fixed spot above the bowl (not on the cursor — no drag feel)
 	if held != "":
-		_draw_held(mouse_pos)
+		_draw_held(HELD_ANCHOR)
 
 
 func _draw_riser(r: Rect2, depth: float) -> void:
