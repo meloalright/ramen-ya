@@ -164,7 +164,6 @@ const SOUP_LADLE := 1.0            # a single scoop is enough
 
 # 撒料: shake a topping over the bowl — where & how much is up to you
 var sprinkles: Array = []          # {type, pos}
-var dragging := false
 var last_sprinkle := Vector2(-999, -999)
 var sprinkle_cd := 0.0
 const SPRINKLE_MAX := 18            # per topping
@@ -394,16 +393,9 @@ func _make_order() -> Dictionary:
 # =====================================================================
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		# tap only — every action is a discrete click (no drag-and-drop)
 		if event.pressed:
-			dragging = true
 			_handle_click(get_global_mouse_position() - Vector2(_ox, _oy))
-		else:
-			dragging = false
-	elif event is InputEventMouseMotion and dragging:
-		# drag a topping over the bowl to keep sprinkling
-		var mp := get_global_mouse_position() - Vector2(_ox, _oy)
-		if state == State.PLAY and held in TOP_ORDER and _in_bowl(mp):
-			_sprinkle(mp)
 	elif event is InputEventKey and event.pressed and not event.echo:
 		_handle_key(event.keycode)
 
