@@ -272,14 +272,12 @@ func _draw() -> void:
 		draw_texture_rect(stall_tex, Rect2(0, 0, W, H), false)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
-	# z35 — "丟棄" hint while dragging a decoration over the machine
+	# z35 — "丟棄" hint on the dragged decoration itself while it's over the machine
 	if _drag != "" and _over_reg:
 		draw_set_transform(Vector2(ox, oy), 0.0, Vector2.ONE)
-		var rr := _reg_rect()
-		var hc := Vector2(rr.position.x + rr.size.x / 2.0, rr.position.y - 4.0)
-		draw_rect(rr, Color(0.76, 0.23, 0.23, 0.28))                     # highlight the machine
-		draw_rect(rr, COL_RED, false, 2.0)
-		_ctext("丟棄", hc, 12, COL_RED)
+		var dp: Vector2 = _flower_pos if _drag == "flower" else _note_pos
+		var dy: float = 22.0 if _drag == "flower" else 48.0
+		_ctext("丟棄", dp - Vector2(0.0, dy), 12, COL_RED)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	# shop name on top
