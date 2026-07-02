@@ -77,6 +77,7 @@ func _ready() -> void:
 		_stored.painting = Game.painting_stored
 		if Game.painting_pos != Vector2.ZERO:
 			_painting_pos = Game.painting_pos
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST   # crisp chunky pixels (Mona Lisa etc.)
 	set_process(true)
 
 
@@ -136,7 +137,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				return
 			# pick up a decoration to drag, else the start button.
 			# a stored decoration lives inside the machine — can't be grabbed off the wall
-			if _has_painting() and not _stored.painting and _painting_pos.distance_to(m) < 30.0:
+			if _has_painting() and not _stored.painting and _painting_pos.distance_to(m) < 44.0:
 				_drag = "painting"
 				_drag_off = _painting_pos - m
 				_reg_taps = 0
@@ -320,7 +321,7 @@ func _draw() -> void:
 			dy = 48.0
 		elif _drag == "painting":
 			dp = _painting_pos
-			dy = 42.0
+			dy = 54.0
 		_ctext("丟棄", dp - Vector2(0.0, dy), 12, COL_RED)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
@@ -375,9 +376,9 @@ func _machine_has_items() -> bool:
 # bonus 挂画: a gold-framed pixel Mona Lisa hung on the wall (content space)
 func _draw_painting() -> void:
 	var c := _painting_pos
-	var iw := 40.0
-	var ih := 52.0
-	var f := 5.0
+	var iw := 62.0
+	var ih := 80.0
+	var f := 6.0
 	var ow := iw + f * 2.0
 	var oh := ih + f * 2.0
 	var x0 := c.x - ow / 2.0
