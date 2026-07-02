@@ -40,6 +40,11 @@ var _drag := ""                            # "", "flower" or "note"
 var _drag_off := Vector2.ZERO
 var _reg_taps := 0                          # consecutive register taps (secret reset)
 var _confirm_reset := false                 # the reset-data dialog is open
+# a decoration dropped into the 充電寶 machine is "stored"; tapping the machine
+# rattles it and tosses a random stored one back onto the wall
+var _stored := {"flower": false, "note": false}
+var _reg_shake := 0.0                        # machine wobble timer after a tap
+var _over_reg := false                       # a dragged decoration is hovering over the machine
 
 
 func _ready() -> void:
@@ -62,6 +67,8 @@ func _ready() -> void:
 		_note_pos = Game.note_pos
 		if Game.flower_pos != Vector2.ZERO:
 			_flower_pos = Game.flower_pos
+		_stored.flower = Game.flower_stored
+		_stored.note = Game.note_stored
 	set_process(true)
 
 
@@ -82,6 +89,8 @@ func _process(delta: float) -> void:
 	if anim > 0.18:
 		anim -= 0.18
 		idx = (idx + 1) % CHEF_SEQ.size()
+	if _reg_shake > 0.0:
+		_reg_shake = max(0.0, _reg_shake - delta)
 	queue_redraw()
 
 
@@ -101,13 +110,14 @@ func _unhandled_input(event: InputEvent) -> void:
 					_confirm_reset = false
 				queue_redraw()
 				return
-			# pick up the flower / sticker to drag, else the start button
-			if _flower_pos.distance_to(m) < 22.0:
+			# pick up the flower / sticker to drag, else the start button.
+			# a stored decoration lives inside the machine — can't be grabbed off the wall
+			if not _stored.flower and _flower_pos.distance_to(m) < 22.0:
 				_drag = "flower"
 				_drag_off = _flower_pos - m
 				_reg_taps = 0
 				Music.pick()
-			elif _note_pos.distance_to(m) < 42.0:
+			elif not _stored.note and _note_pos.distance_to(m) < 42.0:
 				_drag = "note"
 				_drag_off = _note_pos - m
 				_reg_taps = 0
@@ -116,19 +126,19 @@ func _unhandled_input(event: InputEvent) -> void:
 				_reg_taps = 0
 				_start()
 			elif _reg_rect().has_point(m):
-				# secret: 7 taps in a row on the register → reset-data dialog
-				_reg_taps += 1
-				if _reg_taps >= 7:
-					_reg_taps = 0
-					_confirm_reset = true
-					queue_redraw()
+				_tap_register()
 			else:
 				_reg_taps = 0
 		else:
 			if _drag != "":
-				Game.save_layout(_note_pos, _flower_pos)   # persist the arrangement
-				Music.drop()
+				if _over_reg:
+					_stored[_drag] = true          # dropped onto the machine → discard it in
+					Music.drop()
+				else:
+					Music.drop()
+				Game.save_layout(_note_pos, _flower_pos, _stored.flower, _stored.note)
 			_drag = ""
+			_over_reg = false
 	elif event is InputEventMouseMotion and _drag != "":
 		var np: Vector2 = (get_global_mouse_position() - _offset()) + _drag_off
 		np.x = clamp(np.x, 24.0, float(W) - 24.0)
@@ -137,6 +147,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_flower_pos = np
 		else:
 			_note_pos = np
+		_over_reg = _reg_rect().has_point(np)   # hovering the machine → show 丟棄 hint
 		queue_redraw()
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode in [KEY_ENTER, KEY_SPACE]:
@@ -174,6 +185,34 @@ func _do_reset() -> void:
 	Game.reset_all()
 	_note_pos = Vector2(220.0, 221.0)
 	_flower_pos = Vector2(90.0, 130.0)
+	_stored = {"flower": false, "note": false}   # everything back onto the wall
+
+
+# tap the 充電寶 machine: it rattles, and tosses one random stored decoration
+# back onto the wall. (Seven taps in a row still opens the secret reset dialog.)
+func _tap_register() -> void:
+	_reg_shake = 0.35
+	Music.pick()
+	var inside := []
+	if _stored.flower:
+		inside.append("flower")
+	if _stored.note:
+		inside.append("note")
+	if inside.size() > 0:
+		var id: String = inside[randi() % inside.size()]
+		_stored[id] = false
+		var np := Vector2(randf_range(34.0, float(W) - 34.0), randf_range(58.0, 200.0))
+		if id == "flower":
+			_flower_pos = np
+		else:
+			_note_pos = np
+		Music.drop()
+		Game.save_layout(_note_pos, _flower_pos, _stored.flower, _stored.note)
+	_reg_taps += 1
+	if _reg_taps >= 7:
+		_reg_taps = 0
+		_confirm_reset = true
+	queue_redraw()
 
 
 func _draw_reset_dialog() -> void:
@@ -210,10 +249,12 @@ func _draw() -> void:
 	_draw_wall_light(vp, ct)
 
 	draw_set_transform(Vector2(ox, oy), 0.0, Vector2.ONE)
-	# z2 — version sticker
-	_draw_version_note()
-	# z5 — draggable pink flower
-	_draw_flower()
+	# z2 — version sticker (hidden while stored inside the machine)
+	if not _stored.note:
+		_draw_version_note()
+	# z5 — draggable pink flower (hidden while stored inside the machine)
+	if not _stored.flower:
+		_draw_flower()
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	# z20 — wooden counter (full-width)
@@ -222,11 +263,24 @@ func _draw() -> void:
 	draw_rect(Rect2(0, ct + 60.0, vp.x, 2), Color("8c5d30"))
 	draw_rect(Rect2(0, ct + 120.0, vp.x, 2), Color("8c5d30"))
 
-	draw_set_transform(Vector2(ox, oy), 0.0, Vector2.ONE)
-	# z30 — register
+	# z30 — register (wobbles briefly after a tap)
+	var shx := 0.0
+	if _reg_shake > 0.0:
+		shx = sin(Time.get_ticks_msec() * 0.045) * _reg_shake * 10.0
+	draw_set_transform(Vector2(ox + shx, oy), 0.0, Vector2.ONE)
 	if stall_tex != null:
 		draw_texture_rect(stall_tex, Rect2(0, 0, W, H), false)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+	# z35 — "丟棄" hint while dragging a decoration over the machine
+	if _drag != "" and _over_reg:
+		draw_set_transform(Vector2(ox, oy), 0.0, Vector2.ONE)
+		var rr := _reg_rect()
+		var hc := Vector2(rr.position.x + rr.size.x / 2.0, rr.position.y - 4.0)
+		draw_rect(rr, Color(0.76, 0.23, 0.23, 0.28))                     # highlight the machine
+		draw_rect(rr, COL_RED, false, 2.0)
+		_ctext("丟棄", hc, 12, COL_RED)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	# shop name on top
 	if _drag == "":

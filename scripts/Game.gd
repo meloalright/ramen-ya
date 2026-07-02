@@ -17,6 +17,9 @@ var board_pos := Vector2.ZERO
 var note_pos := Vector2.ZERO
 var flower_pos := Vector2.ZERO
 var has_layout := false
+# whether a wall decoration has been dropped into the 充電寶 machine (vs on the wall)
+var flower_stored := false
+var note_stored := false
 
 # upgrade levels (bought at the street's upgrade store)
 var up_tip := 0          # +15% tips per level
@@ -52,6 +55,8 @@ func reset_all() -> void:
 	note_pos = Vector2.ZERO
 	flower_pos = Vector2.ZERO
 	has_layout = false
+	flower_stored = false
+	note_stored = false
 	save()
 
 
@@ -65,6 +70,7 @@ func save() -> void:
 		"high": high_score,
 		"bx": board_pos.x, "by": board_pos.y, "nx": note_pos.x, "ny": note_pos.y, "fx": flower_pos.x, "fy": flower_pos.y,
 		"has_layout": has_layout,
+		"sf": flower_stored, "sn": note_stored,
 	}))
 	f.close()
 
@@ -90,6 +96,8 @@ func load_game() -> bool:
 	note_pos = Vector2(float(d.get("nx", 0.0)), float(d.get("ny", 0.0)))
 	flower_pos = Vector2(float(d.get("fx", 0.0)), float(d.get("fy", 0.0)))
 	has_layout = bool(d.get("has_layout", false))
+	flower_stored = bool(d.get("sf", false))
+	note_stored = bool(d.get("sn", false))
 	return true
 
 
@@ -99,9 +107,11 @@ func submit_score(n: int) -> void:
 		save()
 
 
-func save_layout(np: Vector2, fp: Vector2) -> void:
+func save_layout(np: Vector2, fp: Vector2, f_stored := false, n_stored := false) -> void:
 	note_pos = np
 	flower_pos = fp
+	flower_stored = f_stored
+	note_stored = n_stored
 	has_layout = true
 	save()
 
