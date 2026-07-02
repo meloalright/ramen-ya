@@ -23,6 +23,7 @@ var stall_tex: Texture2D
 var logo_tex: Texture2D
 var board_tex: Texture2D
 var chef_tex: Texture2D
+var mona_tex: Texture2D   # pixel Mona Lisa inside the bonus 挂画
 var _splash := false   # when true, render just the counter scene (for the boot splash)
 
 const VERSION := "0.0.1"
@@ -41,8 +42,10 @@ var _drag_off := Vector2.ZERO
 var _reg_taps := 0                          # consecutive register taps (secret reset)
 var _confirm_reset := false                 # the reset-data dialog is open
 # a decoration dropped into the 充電寶 machine is "stored"; tapping the machine
-# rattles it and tosses a random stored one back onto the wall
-var _stored := {"flower": false, "note": false}
+# rattles it and tosses a random stored one back onto the wall.
+# "painting" is the bonus 挂画 — only exists once high_score > 1, starts stored.
+var _stored := {"flower": false, "note": false, "painting": true}
+var _painting_pos := Vector2(188.0, 118.0)   # bonus painting's wall position
 var _reg_shake := 0.0                        # machine wobble timer after a tap
 var _over_reg := false                       # a dragged decoration is hovering over the machine
 
@@ -61,6 +64,8 @@ func _ready() -> void:
 		logo_tex = load("res://assets/splash/logo_rounded.png")
 	if ResourceLoader.exists("res://assets/env/board.png"):
 		board_tex = load("res://assets/env/board.png")
+	if ResourceLoader.exists("res://assets/env/mona.png"):
+		mona_tex = load("res://assets/env/mona.png")
 	if Game.has_save():
 		Game.load_game()        # pre-load so the menu can show the saved coins
 	if Game.has_layout:         # restore the player's saved wall arrangement
@@ -69,7 +74,26 @@ func _ready() -> void:
 			_flower_pos = Game.flower_pos
 		_stored.flower = Game.flower_stored
 		_stored.note = Game.note_stored
+		_stored.painting = Game.painting_stored
+		if Game.painting_pos != Vector2.ZERO:
+			_painting_pos = Game.painting_pos
 	set_process(true)
+
+
+func _has_painting() -> bool:
+	return Game.high_score > 1
+
+
+# copy the current wall arrangement into the save
+func _persist() -> void:
+	Game.note_pos = _note_pos
+	Game.flower_pos = _flower_pos
+	Game.painting_pos = _painting_pos
+	Game.flower_stored = _stored.flower
+	Game.note_stored = _stored.note
+	Game.painting_stored = _stored.painting
+	Game.has_layout = true
+	Game.save()
 
 
 func _make_font() -> Font:
@@ -110,9 +134,14 @@ func _unhandled_input(event: InputEvent) -> void:
 					_confirm_reset = false
 				queue_redraw()
 				return
-			# pick up the flower / sticker to drag, else the start button.
+			# pick up a decoration to drag, else the start button.
 			# a stored decoration lives inside the machine — can't be grabbed off the wall
-			if not _stored.flower and _flower_pos.distance_to(m) < 22.0:
+			if _has_painting() and not _stored.painting and _painting_pos.distance_to(m) < 30.0:
+				_drag = "painting"
+				_drag_off = _painting_pos - m
+				_reg_taps = 0
+				Music.pick()
+			elif not _stored.flower and _flower_pos.distance_to(m) < 22.0:
 				_drag = "flower"
 				_drag_off = _flower_pos - m
 				_reg_taps = 0
@@ -133,10 +162,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			if _drag != "":
 				if _over_reg:
 					_stored[_drag] = true          # dropped onto the machine → discard it in
-					Music.drop()
-				else:
-					Music.drop()
-				Game.save_layout(_note_pos, _flower_pos, _stored.flower, _stored.note)
+				Music.drop()
+				_persist()
 			_drag = ""
 			_over_reg = false
 	elif event is InputEventMouseMotion and _drag != "":
@@ -145,8 +172,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		np.y = clamp(np.y, 46.0, 252.0)   # keep it on the wall, above the counter
 		if _drag == "flower":
 			_flower_pos = np
-		else:
+		elif _drag == "note":
 			_note_pos = np
+		else:
+			_painting_pos = np
 		_over_reg = _reg_rect().has_point(np)   # hovering the machine → show 丟棄 hint
 		queue_redraw()
 	elif event is InputEventKey and event.pressed and not event.echo:
@@ -185,7 +214,7 @@ func _do_reset() -> void:
 	Game.reset_all()
 	_note_pos = Vector2(220.0, 221.0)
 	_flower_pos = Vector2(90.0, 130.0)
-	_stored = {"flower": false, "note": false}   # everything back onto the wall
+	_stored = {"flower": false, "note": false, "painting": true}   # decorations back to start
 
 
 # tap the 充電寶 machine: it rattles, and tosses one random stored decoration
@@ -198,16 +227,20 @@ func _tap_register() -> void:
 		inside.append("flower")
 	if _stored.note:
 		inside.append("note")
+	if _has_painting() and _stored.painting:
+		inside.append("painting")
 	if inside.size() > 0:
 		var id: String = inside[randi() % inside.size()]
 		_stored[id] = false
 		var np := Vector2(randf_range(34.0, float(W) - 34.0), randf_range(58.0, 200.0))
 		if id == "flower":
 			_flower_pos = np
-		else:
+		elif id == "note":
 			_note_pos = np
+		else:
+			_painting_pos = np
 		Music.drop()
-		Game.save_layout(_note_pos, _flower_pos, _stored.flower, _stored.note)
+		_persist()
 	_reg_taps += 1
 	if _reg_taps >= 7:
 		_reg_taps = 0
@@ -252,6 +285,9 @@ func _draw() -> void:
 	# z2 — version sticker (hidden while stored inside the machine)
 	if not _stored.note:
 		_draw_version_note()
+	# z3 — bonus 挂画 (Mona Lisa), once unlocked and out of the machine
+	if _has_painting() and not _stored.painting:
+		_draw_painting()
 	# z5 — draggable pink flower (hidden while stored inside the machine)
 	if not _stored.flower:
 		_draw_flower()
@@ -270,13 +306,21 @@ func _draw() -> void:
 	draw_set_transform(Vector2(ox + shx, oy), 0.0, Vector2.ONE)
 	if stall_tex != null:
 		draw_texture_rect(stall_tex, Rect2(0, 0, W, H), false)
+	if _machine_has_items():
+		_draw_port_glow()          # one charging port glows blue while it holds a decoration
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	# z35 — "丟棄" hint on the dragged decoration itself while it's over the machine
 	if _drag != "" and _over_reg:
 		draw_set_transform(Vector2(ox, oy), 0.0, Vector2.ONE)
-		var dp: Vector2 = _flower_pos if _drag == "flower" else _note_pos
-		var dy: float = 22.0 if _drag == "flower" else 48.0
+		var dp: Vector2 = _flower_pos
+		var dy: float = 22.0
+		if _drag == "note":
+			dp = _note_pos
+			dy = 48.0
+		elif _drag == "painting":
+			dp = _painting_pos
+			dy = 42.0
 		_ctext("丟棄", dp - Vector2(0.0, dy), 12, COL_RED)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
@@ -322,6 +366,41 @@ func _flower(c: Vector2, r: float, col: Color, rot := 0.0) -> void:
 func _draw_flower() -> void:
 	# a single draggable pink flower on the wall (z5)
 	_flower(_flower_pos, 11.0, Color("e88aa0"), 0.0)
+
+
+func _machine_has_items() -> bool:
+	return _stored.flower or _stored.note or (_has_painting() and _stored.painting)
+
+
+# bonus 挂画: a gold-framed pixel Mona Lisa hung on the wall (content space)
+func _draw_painting() -> void:
+	var c := _painting_pos
+	var iw := 40.0
+	var ih := 52.0
+	var f := 5.0
+	var ow := iw + f * 2.0
+	var oh := ih + f * 2.0
+	var x0 := c.x - ow / 2.0
+	var y0 := c.y - oh / 2.0
+	draw_rect(Rect2(x0 + 2.0, y0 + 3.0, ow, oh), Color(0, 0, 0, 0.18))     # shadow
+	draw_rect(Rect2(x0, y0, ow, oh), Color("caa24e"))                       # gold frame
+	draw_rect(Rect2(x0, y0, ow, oh), Color("7c5e22"), false, 1.0)
+	draw_rect(Rect2(x0 + 3.0, y0 + 3.0, ow - 6.0, oh - 6.0), Color("6a5220"), false, 1.0)
+	if mona_tex != null:
+		draw_texture_rect(mona_tex, Rect2(c.x - iw / 2.0, c.y - ih / 2.0, iw, ih), false)
+	else:
+		draw_rect(Rect2(c.x - iw / 2.0, c.y - ih / 2.0, iw, ih), Color("4a4632"))
+	draw_circle(Vector2(c.x, y0 - 3.0), 1.6, Color("3a3026"))               # hanging nail
+
+
+# one charging port lights up blue while the machine holds a decoration
+func _draw_port_glow() -> void:
+	var a: float = 0.55 + 0.3 * sin(blink * 4.0)
+	var px := 54.0
+	var py := 232.0
+	draw_circle(Vector2(px + 8.0, py + 6.0), 15.0, Color(0.3, 0.62, 1.0, 0.16 * a))
+	draw_rect(Rect2(px, py, 16.0, 12.0), Color(0.35, 0.7, 1.0, 0.85 * a))
+	draw_rect(Rect2(px, py, 16.0, 3.0), Color(0.75, 0.92, 1.0, 0.9 * a))
 
 
 func _draw_wall_light(vp: Vector2, ct: float) -> void:

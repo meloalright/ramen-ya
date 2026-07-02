@@ -20,6 +20,9 @@ var has_layout := false
 # whether a wall decoration has been dropped into the 充電寶 machine (vs on the wall)
 var flower_stored := false
 var note_stored := false
+# bonus 挂画 (pixel Mona Lisa), unlocked once high_score > 1; starts inside the machine
+var painting_stored := true
+var painting_pos := Vector2.ZERO
 
 # upgrade levels (bought at the street's upgrade store)
 var up_tip := 0          # +15% tips per level
@@ -57,6 +60,8 @@ func reset_all() -> void:
 	has_layout = false
 	flower_stored = false
 	note_stored = false
+	painting_stored = true
+	painting_pos = Vector2.ZERO
 	save()
 
 
@@ -71,6 +76,7 @@ func save() -> void:
 		"bx": board_pos.x, "by": board_pos.y, "nx": note_pos.x, "ny": note_pos.y, "fx": flower_pos.x, "fy": flower_pos.y,
 		"has_layout": has_layout,
 		"sf": flower_stored, "sn": note_stored,
+		"ps": painting_stored, "px": painting_pos.x, "py": painting_pos.y,
 	}))
 	f.close()
 
@@ -98,6 +104,8 @@ func load_game() -> bool:
 	has_layout = bool(d.get("has_layout", false))
 	flower_stored = bool(d.get("sf", false))
 	note_stored = bool(d.get("sn", false))
+	painting_stored = bool(d.get("ps", true))
+	painting_pos = Vector2(float(d.get("px", 0.0)), float(d.get("py", 0.0)))
 	return true
 
 
